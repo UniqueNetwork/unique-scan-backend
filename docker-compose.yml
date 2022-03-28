@@ -1,0 +1,67 @@
+version: "3"
+
+networks:
+  market:
+    external: true
+
+services:
+  scan-web-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scan-web-api
+    ports:
+      - "3031:3031"
+    networks:
+      - market
+    depends_on:
+      - postgres
+      - crawler
+    restart: on-failure
+    environment:
+      - PORT=3031
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DATABASE=polkastats
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+
+  postgres:
+    image: postgres:14.2-alpine
+    container_name: scan-database
+    networks:
+      - market
+    environment:
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DB=polkastats
+      - TZ=Europe/Moscow
+      - PGTZ=Europe/Moscow
+    ports:
+      - "3032:5432"
+    volumes:
+      - scan-pgdata:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+
+  crawler:
+    image: polkastats-backend:latest
+    container_name: scan-crawler
+    networks:
+      - market
+    depends_on:
+      - postgres
+    restart: on-failure
+    environment:
+      - NODE_ENV=production
+      - WS_PROVIDER_URL=${WS_PROVIDER_URL}
+      - TYPE_PROVIDER=${TYPE_PROVIDER}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DATABASE=polkastats
+      - PROMETHEUS_PORT=9003
+      - HOST_CRAWLER=0.0.0.0
+
+volumes:
+  scan-pgdata:
+    external: false
