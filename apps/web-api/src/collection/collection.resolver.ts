@@ -11,7 +11,6 @@ import {
   GQLWhereOpsInt,
   GQLWhereOpsString,
   IGQLQueryArgs,
-  IWhereOperators,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
