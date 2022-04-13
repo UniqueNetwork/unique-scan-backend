@@ -1,13 +1,15 @@
-import { Equal, Not, SelectQueryBuilder } from 'typeorm';
+import { Equal, ILike, Like, Not, SelectQueryBuilder } from 'typeorm';
 import { IGQLQueryArgs, IWhereOperators } from './gql-query-args';
 
 type TOperatorsMap = {
-  [key in keyof IWhereOperators]: typeof Equal | typeof Not;
+  [key in keyof IWhereOperators]: typeof Equal | typeof Not | typeof Like | typeof ILike;
 };
 
 const GQLToORMOperatorsMap: TOperatorsMap = {
   _eq: Equal,
   _neq: Not,
+  _like: Like,
+  _ilike: ILike,
 };
 
 export class BaseService<T, S> {

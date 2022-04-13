@@ -23,6 +23,9 @@ class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   owner?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  description?: GQLWhereOpsString;
 }
 
 @ArgsType()
