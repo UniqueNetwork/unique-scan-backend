@@ -40,6 +40,7 @@ import { Account } from '@entities/Account';
       debug: true,
       playground: true,
       sortSchema: true,
+      path: '/v1/graphql',
     }),
     HolderModule,
     TransferModule,
