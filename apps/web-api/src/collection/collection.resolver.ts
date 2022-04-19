@@ -6,11 +6,13 @@ import {
   Query,
   Resolver,
 } from '@nestjs/graphql';
+import { GraphQLEnumType, isEnumType, __EnumValue } from 'graphql';
 import {
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
   GQLWhereOpsString,
   IGQLQueryArgs,
+  IOrderByOperators,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
@@ -28,6 +30,12 @@ class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   description?: GQLWhereOpsString;
 }
 
+@InputType()
+class CollectionOrderByParams {
+  @Field(() => String, { nullable: true})
+  collection_id?: IOrderByOperators;
+}
+
 @ArgsType()
 class QueryArgs
   extends GQLQueryPaginationArgs
@@ -35,6 +43,9 @@ class QueryArgs
 {
   @Field(() => CollectionWhereParams, { nullable: true })
   where?: CollectionWhereParams;
+
+  @Field(() => CollectionOrderByParams, { nullable: true })
+  order_by?: CollectionOrderByParams;
 }
 
 @Resolver(() => CollectionDTO)
