@@ -6,7 +6,6 @@ import {
   Query,
   Resolver,
 } from '@nestjs/graphql';
-import { GraphQLEnumType, isEnumType, __EnumValue } from 'graphql';
 import {
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
