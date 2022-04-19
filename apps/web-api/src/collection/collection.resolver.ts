@@ -12,6 +12,7 @@ import {
   GQLWhereOpsString,
   IGQLQueryArgs,
   IOrderByOperators,
+  TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
@@ -30,7 +31,7 @@ class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 }
 
 @InputType()
-class CollectionOrderByParams {
+class CollectionOrderByParams implements TOrderByParams<CollectionDTO> {
   @Field(() => String, { nullable: true})
   collection_id?: IOrderByOperators;
 }
