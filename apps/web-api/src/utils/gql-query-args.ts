@@ -14,6 +14,7 @@ export interface IGQLQueryArgs<T> {
   limit?: number;
   offset?: number;
   where?: TWhereParams<T>;
+  order_by?: TOrderByParams<T>;
 }
 
 @InputType()
@@ -54,3 +55,15 @@ export class GQLQueryPaginationArgs {
   @Field(() => Int, { nullable: true })
   offset?: number;
 }
+
+export enum IOrderByOperators {
+  asc = 'ASC',
+  desc = 'DESC',
+}
+
+export type TOrderByParams<T> = {
+  [key in keyof T]: IOrderByOperators;
+};
+
+
+
