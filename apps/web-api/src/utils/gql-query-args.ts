@@ -1,4 +1,10 @@
-import { ArgsType, Field, InputType, Int } from '@nestjs/graphql';
+import {
+  ArgsType,
+  Field,
+  InputType,
+  Int,
+  registerEnumType,
+} from '@nestjs/graphql';
 
 export interface IWhereOperators {
   _eq?: number | string;
@@ -10,6 +16,7 @@ export interface IWhereOperators {
 export type TWhereParams<T> = {
   [key in keyof T]: IWhereOperators;
 };
+
 export interface IGQLQueryArgs<T> {
   limit?: number;
   offset?: number;
@@ -56,14 +63,19 @@ export class GQLQueryPaginationArgs {
   offset?: number;
 }
 
-export enum IOrderByOperators {
+export enum IOrderByParams {
   asc = 'ASC',
   desc = 'DESC',
+  asc_nulls_first = 'ASC NULLS FIRST',
+  asc_nulls_last = 'ASC NULLS LAST',
+  desc_nulls_first = 'DESC NULLS FIRST',
+  desc_nulls_last = 'DESC NULLS FIRST',
 }
 
 export type TOrderByParams<T> = {
-  [key in keyof T]: IOrderByOperators;
+  [key in keyof T]: IOrderByParams;
 };
 
-
-
+registerEnumType(IOrderByParams, {
+  name: 'IOrderByParams',
+});

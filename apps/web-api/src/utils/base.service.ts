@@ -2,7 +2,11 @@ import { Equal, ILike, Like, Not, SelectQueryBuilder } from 'typeorm';
 import { IGQLQueryArgs, IWhereOperators } from './gql-query-args';
 
 type TOperatorsMap = {
-  [key in keyof IWhereOperators]: typeof Equal | typeof Not | typeof Like | typeof ILike;
+  [key in keyof IWhereOperators]:
+    | typeof Equal
+    | typeof Not
+    | typeof Like
+    | typeof ILike;
 };
 
 const GQLToORMOperatorsMap: TOperatorsMap = {
@@ -11,6 +15,9 @@ const GQLToORMOperatorsMap: TOperatorsMap = {
   _like: Like,
   _ilike: ILike,
 };
+
+type TOrderBy = 'ASC' | 'DESC';
+type TOrderByNulls = 'NULLS FIRST' | 'NULLS LAST';
 
 export class BaseService<T, S> {
   readonly DEFAULT_PAGE_SIZE = 10;
@@ -55,6 +62,25 @@ export class BaseService<T, S> {
       whereCondition[field] = ormOperator(operators[operatorName]);
     }
     qb.andWhere(whereCondition);
+  }
+
+  protected applyOrderCondition(
+    qb: SelectQueryBuilder<T>,
+    args: IGQLQueryArgs<S>,
+  ): void {
+    if (!args.order_by) {
+      return;
+    }
+
+    for (const key in args.order_by) {
+      const template = args.order_by[key];
+      const [order, nulls] = [
+        template.split(' ', 1).join(),
+        template.split(' ').slice(1).join(' '),
+      ] as [TOrderBy, TOrderByNulls];
+
+      if (order) qb.addOrderBy(key, order, nulls || undefined);
+    }
   }
 
   private getOrmWhereOperator(
