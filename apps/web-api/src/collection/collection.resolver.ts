@@ -11,7 +11,7 @@ import {
   GQLWhereOpsInt,
   GQLWhereOpsString,
   IGQLQueryArgs,
-  IOrderByParams,
+  GQLOrderByParamsArgs,
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
@@ -32,14 +32,14 @@ class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
 @InputType()
 class CollectionOrderByParams implements TOrderByParams<CollectionDTO> {
-  @Field(() => IOrderByParams, { nullable: true })
-  collection_id?: IOrderByParams;
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  collection_id?: GQLOrderByParamsArgs;
 
-  @Field(() => IOrderByParams, { nullable: true })
-  owner?: IOrderByParams;
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  owner?: GQLOrderByParamsArgs;
 
-  @Field(() => IOrderByParams, { nullable: true })
-  description?: IOrderByParams;
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  description?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()

@@ -17,6 +17,32 @@ export type TWhereParams<T> = {
   [key in keyof T]: IWhereOperators;
 };
 
+export interface IOrderByOperators {
+  asc: string;
+  desc: string;
+  asc_nulls_first: string;
+  asc_nulls_last: string;
+  desc_nulls_first: string;
+  desc_nulls_last: string;
+}
+
+export enum GQLOrderByParamsArgs {
+  asc = 'asc',
+  desc = 'desc',
+  asc_nulls_first = 'asc_nulls_first',
+  asc_nulls_last = 'asc_nulls_last',
+  desc_nulls_first = 'desc_nulls_first',
+  desc_nulls_last = 'desc_nulls_last',
+}
+
+export type TOrderByParams<T> = {
+  [key in keyof T]: GQLOrderByParamsArgs;
+};
+
+registerEnumType(GQLOrderByParamsArgs, {
+  name: 'GQLOrderByParamsArgs',
+});
+
 export interface IGQLQueryArgs<T> {
   limit?: number;
   offset?: number;
@@ -62,20 +88,3 @@ export class GQLQueryPaginationArgs {
   @Field(() => Int, { nullable: true })
   offset?: number;
 }
-
-export enum IOrderByParams {
-  asc = 'ASC',
-  desc = 'DESC',
-  asc_nulls_first = 'ASC NULLS FIRST',
-  asc_nulls_last = 'ASC NULLS LAST',
-  desc_nulls_first = 'DESC NULLS FIRST',
-  desc_nulls_last = 'DESC NULLS FIRST',
-}
-
-export type TOrderByParams<T> = {
-  [key in keyof T]: IOrderByParams;
-};
-
-registerEnumType(IOrderByParams, {
-  name: 'IOrderByParams',
-});
