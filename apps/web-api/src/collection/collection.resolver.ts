@@ -28,11 +28,14 @@ class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   description?: GQLWhereOpsString;
+
+  @Field(() => CollectionWhereParams, { nullable: true })
+  _and?: CollectionWhereParams;
 }
 
 @InputType()
 class CollectionOrderByParams implements TOrderByParams<CollectionDTO> {
-  @Field(() => String, { nullable: true})
+  @Field(() => String, { nullable: true })
   collection_id?: IOrderByOperators;
 }
 

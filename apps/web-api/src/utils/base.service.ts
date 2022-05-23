@@ -1,8 +1,13 @@
-import { Equal, ILike, Like, Not, SelectQueryBuilder } from 'typeorm';
-import { IGQLQueryArgs, IWhereOperators } from './gql-query-args';
+import { Equal, ILike, Like, Not, Brackets, SelectQueryBuilder } from 'typeorm';
+
+import { IGQLQueryArgs, IWhereOperators, TWhereParams } from './gql-query-args';
 
 type TOperatorsMap = {
-  [key in keyof IWhereOperators]: typeof Equal | typeof Not | typeof Like | typeof ILike;
+  [key in keyof IWhereOperators]:
+    | typeof Equal
+    | typeof Not
+    | typeof Like
+    | typeof ILike;
 };
 
 const GQLToORMOperatorsMap: TOperatorsMap = {
@@ -12,8 +17,13 @@ const GQLToORMOperatorsMap: TOperatorsMap = {
   _ilike: ILike,
 };
 
+const GQLToORMOperators = {
+  _and: Brackets,
+};
+
 export class BaseService<T, S> {
   readonly DEFAULT_PAGE_SIZE = 10;
+
   protected applyLimitOffset(
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
@@ -53,17 +63,71 @@ export class BaseService<T, S> {
       const operatorName = operatorNames[0];
       const ormOperator = this.getOrmWhereOperator(operatorName);
       whereCondition[field] = ormOperator(operators[operatorName]);
+
+      qb.andWhere({ [field]: ormOperator(operators[operatorName]) });
     }
-    qb.andWhere(whereCondition);
+  }
+
+  protected applyWhereCondition2(
+    qb: SelectQueryBuilder<T>,
+    args: IGQLQueryArgs<S>,
+  ): void {
+    if (!args.where) {
+      return;
+    }
+
+    const generateWhereCondition = (
+      whereOperators: TWhereParams<S>,
+      needAddQuery = true,
+    ) => {
+      const whereCondition = {};
+      for (const [field, operators] of Object.entries<IWhereOperators>(
+        whereOperators,
+      )) {
+        const operatorNames = Object.keys(operators) as Array<
+          keyof IWhereOperators
+        >;
+
+        const operatorName = operatorNames[0];
+        const ormOperator = this.getOrmWhereOperator(operatorName);
+        const additionalOperator = this.getOrmWhereConditionalOperator(field);
+
+        if (ormOperator) {
+          whereCondition[field] = ormOperator(operators[operatorName]);
+        } else if (additionalOperator) {
+          qb.andWhere(
+            new additionalOperator((qb) =>
+              qb.andWhere(generateWhereCondition(whereOperators[field], false)),
+            ),
+          );
+        } else {
+          throw new Error(`Unknown GQL condition operator '${operatorName}'.`);
+        }
+      }
+
+      if (needAddQuery && Object.keys(whereCondition).length !== 0) {
+        qb.andWhere(whereCondition);
+      }
+
+      return whereCondition;
+    };
+
+    generateWhereCondition(args.where);
   }
 
   private getOrmWhereOperator(
     gqlWhereOperator: keyof IWhereOperators,
   ): typeof Equal {
     const ormOperator = GQLToORMOperatorsMap[gqlWhereOperator];
-    if (!ormOperator) {
-      throw new Error(`Unknown GQL condition operator '${gqlWhereOperator}'.`);
-    }
+    // if (!ormOperator) {
+    //   throw new Error(`Unknown GQL condition operator '${gqlWhereOperator}'.`);
+    // }
     return ormOperator;
+  }
+
+  private getOrmWhereConditionalOperator(
+    gqlWhereOperator: string,
+  ): typeof Brackets {
+    return GQLToORMOperators[gqlWhereOperator];
   }
 }

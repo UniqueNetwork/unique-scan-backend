@@ -1,6 +1,7 @@
 import { ArgsType, Field, InputType, Int } from '@nestjs/graphql';
 
 export interface IWhereOperators {
+  _and?: { [key: string]: IWhereOperators };
   _eq?: number | string;
   _neq?: number | string;
   _like?: number | string;
@@ -10,6 +11,7 @@ export interface IWhereOperators {
 export type TWhereParams<T> = {
   [key in keyof T]: IWhereOperators;
 };
+
 export interface IGQLQueryArgs<T> {
   limit?: number;
   offset?: number;
@@ -64,6 +66,3 @@ export enum IOrderByOperators {
 export type TOrderByParams<T> = {
   [key in keyof T]: IOrderByOperators;
 };
-
-
-

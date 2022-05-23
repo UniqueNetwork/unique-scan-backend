@@ -73,7 +73,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
 
     qb.leftJoin('Collections.statistics', 'Statistics');
     this.applyLimitOffset(qb, queryArgs);
-    this.applyWhereCondition(qb, queryArgs);
+    this.applyWhereCondition2(qb, queryArgs);
     const collections = await qb.getRawMany();
     return collections;
   }
