@@ -1,11 +1,14 @@
 import { ArgsType, Field, InputType, Int } from '@nestjs/graphql';
 
 export interface IWhereOperators {
-  _and?: { [key: string]: IWhereOperators };
   _eq?: number | string;
   _neq?: number | string;
   _like?: number | string;
   _ilike?: number | string;
+}
+
+export interface IWhereOperations {
+  _and?: IWhereOperators;
 }
 
 export type TWhereParams<T> = {

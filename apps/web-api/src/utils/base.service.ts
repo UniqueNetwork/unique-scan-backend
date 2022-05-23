@@ -2,12 +2,10 @@ import { Equal, ILike, Like, Not, Brackets, SelectQueryBuilder } from 'typeorm';
 
 import { IGQLQueryArgs, IWhereOperators, TWhereParams } from './gql-query-args';
 
+type TWhereCondition = typeof Equal | typeof Not | typeof Like | typeof ILike;
+
 type TOperatorsMap = {
-  [key in keyof IWhereOperators]:
-    | typeof Equal
-    | typeof Not
-    | typeof Like
-    | typeof ILike;
+  [key in keyof IWhereOperators]: TWhereCondition;
 };
 
 const GQLToORMOperatorsMap: TOperatorsMap = {
@@ -17,8 +15,8 @@ const GQLToORMOperatorsMap: TOperatorsMap = {
   _ilike: ILike,
 };
 
-const GQLToORMOperators = {
-  _and: Brackets,
+const GQLToORMOperationsMap = {
+  _and: 'AND',
 };
 
 export class BaseService<T, S> {
@@ -47,39 +45,8 @@ export class BaseService<T, S> {
       return;
     }
 
-    const whereCondition = {};
-    for (const [field, operators] of Object.entries<IWhereOperators>(
-      args.where,
-    )) {
-      const operatorNames = Object.keys(operators) as Array<
-        keyof IWhereOperators
-      >;
-
-      if (operatorNames.length !== 1) {
-        throw new Error(
-          'For every field you should use only one condition operator.',
-        );
-      }
-      const operatorName = operatorNames[0];
-      const ormOperator = this.getOrmWhereOperator(operatorName);
-      whereCondition[field] = ormOperator(operators[operatorName]);
-
-      qb.andWhere({ [field]: ormOperator(operators[operatorName]) });
-    }
-  }
-
-  protected applyWhereCondition2(
-    qb: SelectQueryBuilder<T>,
-    args: IGQLQueryArgs<S>,
-  ): void {
-    if (!args.where) {
-      return;
-    }
-
-    const generateWhereCondition = (
-      whereOperators: TWhereParams<S>,
-      needAddQuery = true,
-    ) => {
+    const subConditions = [];
+    const generateWhereCondition = (whereOperators: TWhereParams<S>) => {
       const whereCondition = {};
       for (const [field, operators] of Object.entries<IWhereOperators>(
         whereOperators,
@@ -90,44 +57,53 @@ export class BaseService<T, S> {
 
         const operatorName = operatorNames[0];
         const ormOperator = this.getOrmWhereOperator(operatorName);
-        const additionalOperator = this.getOrmWhereConditionalOperator(field);
+        const ormOperation = this.getOrmWhereOperation(field);
 
         if (ormOperator) {
           whereCondition[field] = ormOperator(operators[operatorName]);
-        } else if (additionalOperator) {
-          qb.andWhere(
-            new additionalOperator((qb) =>
-              qb.andWhere(generateWhereCondition(whereOperators[field], false)),
-            ),
-          );
+        } else if (ormOperation) {
+          subConditions.push(generateWhereCondition(whereOperators[field]));
         } else {
           throw new Error(`Unknown GQL condition operator '${operatorName}'.`);
         }
       }
-
-      if (needAddQuery && Object.keys(whereCondition).length !== 0) {
-        qb.andWhere(whereCondition);
-      }
-
       return whereCondition;
     };
 
-    generateWhereCondition(args.where);
+    const condition = generateWhereCondition(args.where);
+    qb.andWhere(condition);
+    this.applySubWhere(qb, subConditions);
+  }
+
+  private applySubWhere(
+    qb: SelectQueryBuilder<T>,
+    conditions: TWhereCondition[],
+  ) {
+    if (!conditions.length) return;
+    qb.andWhere(this.getSubQueryCondition(conditions.pop(), conditions));
+  }
+
+  private getSubQueryCondition(
+    condition: TWhereCondition,
+    nextConditions?: TWhereCondition[],
+  ) {
+    return new Brackets((qb) => {
+      qb.andWhere(condition);
+      if (nextConditions?.length) {
+        qb.andWhere(
+          this.getSubQueryCondition(nextConditions.pop(), nextConditions),
+        );
+      }
+    });
   }
 
   private getOrmWhereOperator(
     gqlWhereOperator: keyof IWhereOperators,
   ): typeof Equal {
-    const ormOperator = GQLToORMOperatorsMap[gqlWhereOperator];
-    // if (!ormOperator) {
-    //   throw new Error(`Unknown GQL condition operator '${gqlWhereOperator}'.`);
-    // }
-    return ormOperator;
+    return GQLToORMOperatorsMap[gqlWhereOperator];
   }
 
-  private getOrmWhereConditionalOperator(
-    gqlWhereOperator: string,
-  ): typeof Brackets {
-    return GQLToORMOperators[gqlWhereOperator];
+  private getOrmWhereOperation(gqlWhereOperator: string): string {
+    return GQLToORMOperationsMap[gqlWhereOperator];
   }
 }
