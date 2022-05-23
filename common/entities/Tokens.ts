@@ -9,6 +9,12 @@ import {
 import { Collections } from './Collections';
 
 @Index('tokens_pkey', ['id'], { unique: true })
+@Index('tokens_collection_id_token_id_owner_idx', [
+  'collection_id',
+  'token_id',
+  'owner',
+])
+@Index('tokens_owner_normalized_idx', ['owner_normalized'])
 @Entity('tokens', { schema: 'public' })
 export class Tokens {
   @PrimaryGeneratedColumn({ type: 'bigint', name: 'id' })
@@ -34,4 +40,7 @@ export class Tokens {
 
   @Column('bigint', { name: 'date_of_creation', nullable: true })
   date_of_creation?: number;
+
+  @Column('text', { name: 'owner_normalized' })
+  owner_normalized: string;
 }
