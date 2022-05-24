@@ -3,13 +3,18 @@ import {
   ArgsType,
   Field,
   InputType,
+  ObjectType,
   Query,
   Resolver,
 } from '@nestjs/graphql';
 import {
+  GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsString,
+  IDataListResponse,
   IGQLQueryArgs,
+  ListDataType,
+  TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { EventDTO } from './event.dto';
@@ -24,6 +29,15 @@ class EventWhereParams implements TWhereParams<EventDTO> {
   block_number?: GQLWhereOpsString;
 }
 
+@InputType()
+class EventOrderByParams implements TOrderByParams<EventDTO> {
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  block_index?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  block_number?: GQLOrderByParamsArgs;
+}
+
 @ArgsType()
 class QueryArgs
   extends GQLQueryPaginationArgs
@@ -31,14 +45,22 @@ class QueryArgs
 {
   @Field(() => EventWhereParams, { nullable: true })
   where?: EventWhereParams;
+
+  @Field(() => EventOrderByParams, { nullable: true })
+  order_by?: EventOrderByParams;
 }
+
+@ObjectType()
+class EventDataResponse extends ListDataType(EventDTO) {}
 
 @Resolver(() => EventDTO)
 export class EventResolver {
   constructor(private service: EventService) {}
 
-  @Query(() => [EventDTO])
-  public async events(@Args() args: QueryArgs): Promise<EventDTO[]> {
+  @Query(() => EventDataResponse)
+  public async events(
+    @Args() args: QueryArgs,
+  ): Promise<IDataListResponse<EventDTO>> {
     return this.service.find(args);
   }
 }

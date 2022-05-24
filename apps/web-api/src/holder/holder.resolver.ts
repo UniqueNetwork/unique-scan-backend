@@ -7,10 +7,12 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import {
+  GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
   GQLWhereOpsString,
   IGQLQueryArgs,
+  TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { HolderDTO } from './holder.dto';
@@ -25,6 +27,15 @@ class HolderWhereParams implements TWhereParams<HolderDTO> {
   collection_id?: GQLWhereOpsInt;
 }
 
+@InputType()
+class HolderOrderByParams implements TOrderByParams<HolderDTO> {
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  collection_id?: GQLOrderByParamsArgs;
+}
+
 @ArgsType()
 class QueryArgs
   extends GQLQueryPaginationArgs
@@ -32,6 +43,9 @@ class QueryArgs
 {
   @Field(() => HolderWhereParams, { nullable: true })
   where?: HolderWhereParams;
+
+  @Field(() => HolderOrderByParams, { nullable: true })
+  order_by?: HolderOrderByParams;
 }
 
 @Resolver(() => HolderDTO)

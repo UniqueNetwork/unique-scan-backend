@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IGQLQueryArgs } from '../utils/gql-query-args';
+import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { EventDTO } from './event.dto';
 
 @Injectable()
@@ -12,7 +12,9 @@ export class EventService extends BaseService<Event, EventDTO> {
     super();
   }
 
-  public async find(queryArgs: IGQLQueryArgs<EventDTO>): Promise<EventDTO[]> {
+  public async find(
+    queryArgs: IGQLQueryArgs<EventDTO>,
+  ): Promise<IDataListResponse<EventDTO>> {
     const qb = this.repo.createQueryBuilder();
     qb.select(['block_index', 'block_number']);
     qb.addSelect(
@@ -43,7 +45,8 @@ export class EventService extends BaseService<Event, EventDTO> {
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
-    const events = await qb.getRawMany();
-    return events;
+    const data = await qb.getRawMany();
+    const count = await qb.getCount();
+    return { data, count };
   }
 }

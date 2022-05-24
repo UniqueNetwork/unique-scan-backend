@@ -3,6 +3,7 @@ import {
   ArgsType,
   Field,
   InputType,
+  ObjectType,
   Query,
   Resolver,
 } from '@nestjs/graphql';
@@ -14,6 +15,8 @@ import {
   GQLOrderByParamsArgs,
   TOrderByParams,
   TWhereParams,
+  IDataListResponse,
+  ListDataType,
 } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 import { CollectionService } from './collection.service';
@@ -54,12 +57,17 @@ class QueryArgs
   order_by?: CollectionOrderByParams;
 }
 
+@ObjectType()
+class CollectionDataResponse extends ListDataType(CollectionDTO) {}
+
 @Resolver(() => CollectionDTO)
 export class CollectionResolver {
   constructor(private service: CollectionService) {}
 
-  @Query(() => [CollectionDTO])
-  public async collections(@Args() args: QueryArgs): Promise<CollectionDTO[]> {
+  @Query(() => CollectionDataResponse)
+  public async collections(
+    @Args() args: QueryArgs,
+  ): Promise<IDataListResponse<CollectionDTO>> {
     return this.service.find(args);
   }
 }
