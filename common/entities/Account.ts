@@ -1,6 +1,7 @@
 import { Column, Entity, Index } from 'typeorm';
 
 @Index('account_pkey', ['account_id'], { unique: true })
+@Index('account_account_id_normalized_idx', ['account_id_normalized'], {})
 @Entity('account', { schema: 'public' })
 export class Account {
   @Column('text', { primary: true, name: 'account_id' })
@@ -27,6 +28,6 @@ export class Account {
   @Column('bigint', { name: 'block_height' })
   block_height: string;
 
-  @Column('boolean', { name: 'is_staking' })
-  is_staking: boolean;
+  @Column('text', { name: 'account_id_normalized' })
+  account_id_normalized: string;
 }

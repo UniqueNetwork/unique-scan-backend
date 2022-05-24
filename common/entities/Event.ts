@@ -1,6 +1,9 @@
 import { Column, Entity, Index } from 'typeorm';
 
 @Index('event_pkey', ['block_number', 'event_index'], { unique: true })
+@Index('event_block_index_idx', ['block_index'], {})
+@Index('event_method_idx', ['method'], {})
+@Index('event_section_method_phase_idx', ['section', 'method', 'phase'], {})
 @Entity('event', { schema: 'public' })
 export class Event {
   @Column('bigint', { primary: true, name: 'block_number' })
