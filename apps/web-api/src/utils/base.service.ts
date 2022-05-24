@@ -1,6 +1,11 @@
 import { Equal, ILike, Like, Not, Brackets, SelectQueryBuilder } from 'typeorm';
 
-import { IGQLQueryArgs, IWhereOperators, TWhereParams, IOrderByOperators } from './gql-query-args';
+import {
+  IGQLQueryArgs,
+  IWhereOperators,
+  TWhereParams,
+  IOrderByOperators,
+} from './gql-query-args';
 
 type TWhereCondition = typeof Equal | typeof Not | typeof Like | typeof ILike;
 
