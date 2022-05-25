@@ -103,8 +103,9 @@ export class BaseService<T, S> {
     qb: SelectQueryBuilder<T>,
     conditions: TWhereCondition[],
   ) {
-    if (!conditions.length) return;
-    qb.andWhere(this.getSubQueryCondition(conditions.pop(), conditions));
+    if (conditions.length) {
+      qb.andWhere(this.getSubQueryCondition(conditions.pop(), conditions));
+    }
   }
 
   private getSubQueryCondition(

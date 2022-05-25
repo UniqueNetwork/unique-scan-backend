@@ -1,4 +1,3 @@
-import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
