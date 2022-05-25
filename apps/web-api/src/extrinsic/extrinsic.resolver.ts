@@ -3,13 +3,18 @@ import {
   ArgsType,
   Field,
   InputType,
+  ObjectType,
   Query,
   Resolver,
 } from '@nestjs/graphql';
 import {
+  GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsString,
+  IDataListResponse,
   IGQLQueryArgs,
+  ListDataType,
+  TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { ExtrinsicDTO } from './extrinsic.dto';
@@ -24,6 +29,15 @@ class ExtrinsicWhereParams implements TWhereParams<ExtrinsicDTO> {
   block_number?: GQLWhereOpsString;
 }
 
+@InputType()
+class ExtrinsicOrderByParams implements TOrderByParams<ExtrinsicDTO> {
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  block_index?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  block_number?: GQLOrderByParamsArgs;
+}
+
 @ArgsType()
 class QueryArgs
   extends GQLQueryPaginationArgs
@@ -31,14 +45,22 @@ class QueryArgs
 {
   @Field(() => ExtrinsicWhereParams, { nullable: true })
   where?: ExtrinsicWhereParams;
+
+  @Field(() => ExtrinsicOrderByParams, { nullable: true })
+  order_by?: ExtrinsicOrderByParams;
 }
+
+@ObjectType()
+class ExtrinsicDataResponse extends ListDataType(ExtrinsicDTO) {}
 
 @Resolver(() => ExtrinsicDTO)
 export class ExtrinsicResolver {
   constructor(private service: ExtrinsicService) {}
 
-  @Query(() => [ExtrinsicDTO])
-  public async extrinsics(@Args() args: QueryArgs): Promise<ExtrinsicDTO[]> {
+  @Query(() => ExtrinsicDataResponse)
+  public async extrinsics(
+    @Args() args: QueryArgs,
+  ): Promise<IDataListResponse<ExtrinsicDTO>> {
     return this.service.find(args);
   }
 }

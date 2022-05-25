@@ -3,8 +3,10 @@ import {
   Field,
   InputType,
   Int,
+  ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
+import { Type } from '@nestjs/common';
 
 export interface IWhereOperators {
   _eq?: number | string;
@@ -91,4 +93,22 @@ export class GQLQueryPaginationArgs {
 
   @Field(() => Int, { nullable: true })
   offset?: number;
+}
+
+export interface IDataListResponse<T> {
+  data: T[];
+  count: number;
+}
+
+export function ListDataType<T>(classRef: Type<T>): Type<IDataListResponse<T>> {
+  @ObjectType({ isAbstract: true })
+  abstract class ListDataType implements IDataListResponse<T> {
+    @Field(() => [classRef], { nullable: true })
+    data: T[];
+
+    @Field(() => Int)
+    count: number;
+  }
+
+  return ListDataType as Type<IDataListResponse<T>>;
 }

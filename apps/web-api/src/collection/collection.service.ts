@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IGQLQueryArgs } from '../utils/gql-query-args';
+import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
 
   public async find(
     queryArgs: IGQLQueryArgs<CollectionDTO>,
-  ): Promise<CollectionDTO[]> {
+  ): Promise<IDataListResponse<CollectionDTO>> {
     const qb = this.repo.createQueryBuilder();
     qb.select('Collections.collection_id', 'collection_id');
     qb.addSelect('Collections.owner', 'owner');
@@ -75,7 +75,8 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    const collections = await qb.getRawMany();
-    return collections;
+    const data = await qb.getRawMany();
+    const count = await qb.getCount();
+    return { data, count };
   }
 }

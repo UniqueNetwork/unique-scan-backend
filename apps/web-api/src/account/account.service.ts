@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IGQLQueryArgs } from '../utils/gql-query-args';
+import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { AccountDTO } from './account.dto';
 
 @Injectable()
@@ -12,7 +12,9 @@ export class AccountService extends BaseService<Account, AccountDTO> {
     super();
   }
 
-  public async find(queryArgs: IGQLQueryArgs<AccountDTO>): Promise<Account[]> {
+  public async find(
+    queryArgs: IGQLQueryArgs<AccountDTO>,
+  ): Promise<IDataListResponse<Account>> {
     const qb = this.repo.createQueryBuilder();
     qb.select('Account.account_id', 'account_id');
     qb.addSelect('Account.available_balance', 'available_balance');
@@ -23,6 +25,8 @@ export class AccountService extends BaseService<Account, AccountDTO> {
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
-    return qb.getRawMany();
+    const data = await qb.getRawMany();
+    const count = await qb.getCount();
+    return { data, count };
   }
 }

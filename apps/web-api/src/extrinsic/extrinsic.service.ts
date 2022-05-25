@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IGQLQueryArgs } from '../utils/gql-query-args';
+import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { ExtrinsicDTO } from './extrinsic.dto';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
 
   public async find(
     queryArgs: IGQLQueryArgs<ExtrinsicDTO>,
-  ): Promise<ExtrinsicDTO[]> {
+  ): Promise<IDataListResponse<ExtrinsicDTO>> {
     const qb = this.repo.createQueryBuilder();
 
     const subQuery = qb
@@ -75,6 +75,8 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     );
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
-    return qb.getRawMany();
+    const data = await qb.getRawMany();
+    const count = await qb.getCount();
+    return { data, count };
   }
 }
