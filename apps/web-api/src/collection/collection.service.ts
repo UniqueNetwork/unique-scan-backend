@@ -81,6 +81,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   getByCollectionId(id: number) {
     return this.find({
       where: { collection_id: { _eq: id } },
+      limit: 1000, // because default 10
     });
   }
 }

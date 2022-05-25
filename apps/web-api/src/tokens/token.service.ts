@@ -46,6 +46,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   getByCollectionId(id: number) {
     return this.find({
       where: { collection_id: { _eq: id } },
+      limit: 1000, // because default 10
     });
   }
 }
