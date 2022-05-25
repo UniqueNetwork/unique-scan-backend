@@ -16,7 +16,13 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc.js'],
   rules: {
-    'max-len': ["error", { "code": 120, "tabWidth": 2 }],
+    'max-len': ['error', { code: 120, tabWidth: 2 }],
+    curly: 'error',
+    'lines-between-class-members': [
+      'error',
+      'always',
+      { exceptAfterSingleLine: true },
+    ],
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',

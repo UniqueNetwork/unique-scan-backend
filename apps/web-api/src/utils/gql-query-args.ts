@@ -13,6 +13,10 @@ export interface IWhereOperators {
   _ilike?: number | string;
 }
 
+export interface IWhereOperations {
+  _and?: IWhereOperators;
+}
+
 export type TWhereParams<T> = {
   [key in keyof T]: IWhereOperators;
 };
