@@ -75,7 +75,12 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    const collections = await qb.getRawMany();
-    return collections;
+    return qb.getRawMany();
+  }
+
+  getByCollectionId(id: number) {
+    return this.find({
+      where: { collection_id: { _eq: id } },
+    });
   }
 }

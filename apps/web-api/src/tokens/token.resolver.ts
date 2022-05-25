@@ -3,9 +3,13 @@ import {
   ArgsType,
   Field,
   InputType,
+  ObjectType,
+  Parent,
   Query,
+  ResolveField,
   Resolver,
 } from '@nestjs/graphql';
+import { forwardRef, Inject } from '@nestjs/common';
 import {
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
@@ -15,6 +19,8 @@ import {
 } from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
 import { TokenService } from './token.service';
+import { CollectionDTO } from '../collection/collection.dto';
+import { CollectionService } from '../collection/collection.service';
 
 @InputType()
 class TokenWhereParams implements TWhereParams<TokenDTO> {
@@ -37,12 +43,27 @@ class QueryArgs
   where?: TokenWhereParams;
 }
 
-@Resolver(() => TokenDTO)
-export class TokenResolver {
-  constructor(private service: TokenService) {}
+@ObjectType()
+class TokenEntity extends TokenDTO {
+  @Field(() => [CollectionDTO], { nullable: true })
+  collections?: CollectionDTO[];
+}
 
-  @Query(() => [TokenDTO])
-  public tokens(@Args() args: QueryArgs): Promise<TokenDTO[]> {
+@Resolver(() => TokenEntity)
+export class TokenResolver {
+  constructor(
+    private service: TokenService,
+    @Inject(forwardRef(() => CollectionService))
+    private collectionService: CollectionService,
+  ) {}
+
+  @Query(() => [TokenEntity])
+  public tokens(@Args() args: QueryArgs): Promise<TokenEntity[]> {
     return this.service.find(args);
+  }
+
+  @ResolveField()
+  async collections(@Parent() { collection_id }: TokenEntity) {
+    return this.collectionService.getByCollectionId(collection_id);
   }
 }

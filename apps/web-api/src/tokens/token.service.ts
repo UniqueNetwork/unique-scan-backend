@@ -1,4 +1,3 @@
-import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -42,5 +41,11 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     return qb.getRawMany();
+  }
+
+  getByCollectionId(id: number) {
+    return this.find({
+      where: { collection_id: { _eq: id } },
+    });
   }
 }
