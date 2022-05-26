@@ -66,13 +66,13 @@ class QueryArgs
 }
 
 @ObjectType()
-class CollectionDataResponse extends ListDataType(CollectionDTO) {}
-
-@ObjectType()
 class CollectionEntity extends CollectionDTO {
   @Field(() => [TokenDTO], { nullable: true })
   tokens?: TokenDTO[];
 }
+
+@ObjectType()
+class CollectionDataResponse extends ListDataType(CollectionEntity) {}
 
 @Resolver(() => CollectionEntity)
 export class CollectionResolver {
@@ -85,7 +85,7 @@ export class CollectionResolver {
   public async collections(
     @Args() args: QueryArgs,
   ): Promise<IDataListResponse<CollectionDTO>> {
-    return this.service.find(args);
+    return this.service.findWithTotalCount(args);
   }
 
   @ResolveField()
