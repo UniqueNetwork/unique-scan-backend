@@ -18,6 +18,8 @@ import {
   GQLOrderByParamsArgs,
   TOrderByParams,
   TWhereParams,
+  IDataListResponse,
+  ListDataType,
 } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 import { CollectionService } from './collection.service';
@@ -34,6 +36,9 @@ class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   description?: GQLWhereOpsString;
+
+  @Field(() => CollectionWhereParams, { nullable: true })
+  _and?: CollectionWhereParams;
 }
 
 @InputType()
@@ -61,6 +66,9 @@ class QueryArgs
 }
 
 @ObjectType()
+class CollectionDataResponse extends ListDataType(CollectionDTO) {}
+
+@ObjectType()
 class CollectionEntity extends CollectionDTO {
   @Field(() => [TokenDTO], { nullable: true })
   tokens?: TokenDTO[];
@@ -73,10 +81,10 @@ export class CollectionResolver {
     @Inject(forwardRef(() => TokenService)) private tokenService: TokenService,
   ) {}
 
-  @Query(() => [CollectionEntity])
+  @Query(() => CollectionDataResponse)
   public async collections(
     @Args() args: QueryArgs,
-  ): Promise<CollectionEntity[]> {
+  ): Promise<IDataListResponse<CollectionDTO>> {
     return this.service.find(args);
   }
 

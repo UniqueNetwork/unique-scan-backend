@@ -7,9 +7,11 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import {
+  GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsString,
   IGQLQueryArgs,
+  TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { TransferDTO } from './transfer.dto';
@@ -24,6 +26,15 @@ class TransferWhereParams implements TWhereParams<TransferDTO> {
   section?: GQLWhereOpsString;
 }
 
+@InputType()
+class TransferOrderByParams implements TOrderByParams<TransferDTO> {
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  block_index: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  section?: GQLOrderByParamsArgs;
+}
+
 @ArgsType()
 class QueryArgs
   extends GQLQueryPaginationArgs
@@ -31,6 +42,9 @@ class QueryArgs
 {
   @Field(() => TransferWhereParams, { nullable: true })
   where?: TransferWhereParams;
+
+  @Field(() => TransferOrderByParams, { nullable: true })
+  order_by?: TransferOrderByParams;
 }
 
 @Resolver(() => [TransferDTO])

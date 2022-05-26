@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IGQLQueryArgs } from '../utils/gql-query-args';
+import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 
 @Injectable()
@@ -16,10 +16,14 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
 
   public async find(
     queryArgs: IGQLQueryArgs<CollectionDTO>,
-  ): Promise<CollectionDTO[]> {
+  ): Promise<IDataListResponse<CollectionDTO>> {
     const qb = this.repo.createQueryBuilder();
     this.applyFilters(qb, queryArgs);
     return qb.getRawMany();
+
+    const data = await qb.getRawMany();
+    const count = await qb.getCount();
+    return { data, count };
   }
 
   public async findOne(

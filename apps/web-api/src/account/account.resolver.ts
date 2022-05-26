@@ -3,13 +3,18 @@ import {
   ArgsType,
   Field,
   InputType,
+  ObjectType,
   Query,
   Resolver,
 } from '@nestjs/graphql';
 import {
+  GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsString,
+  IDataListResponse,
   IGQLQueryArgs,
+  ListDataType,
+  TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { AccountDTO } from './account.dto';
@@ -21,6 +26,12 @@ class AccountWhereParams implements TWhereParams<AccountDTO> {
   account_id?: GQLWhereOpsString;
 }
 
+@InputType()
+class AccountOrderByParams implements TOrderByParams<AccountDTO> {
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  account_id?: GQLOrderByParamsArgs;
+}
+
 @ArgsType()
 class QueryArgs
   extends GQLQueryPaginationArgs
@@ -28,14 +39,22 @@ class QueryArgs
 {
   @Field(() => AccountWhereParams, { nullable: true })
   where?: AccountWhereParams;
+
+  @Field(() => AccountOrderByParams, { nullable: true })
+  order_by?: AccountOrderByParams;
 }
+
+@ObjectType()
+class AccountDataResponse extends ListDataType(AccountDTO) {}
 
 @Resolver(() => AccountDTO)
 export class AccountResolver {
   constructor(private service: AccountService) {}
 
-  @Query(() => [AccountDTO])
-  public async accounts(@Args() args: QueryArgs): Promise<AccountDTO[]> {
+  @Query(() => AccountDataResponse)
+  public async accounts(
+    @Args() args: QueryArgs,
+  ): Promise<IDataListResponse<AccountDTO>> {
     return this.service.find(args);
   }
 }
