@@ -82,7 +82,6 @@ export class CollectionResolver {
 
   @ResolveField()
   async tokens(@Parent() { collection_id }: CollectionEntity) {
-    console.log(collection_id);
     return this.tokenService.getByCollectionId(collection_id);
   }
 }

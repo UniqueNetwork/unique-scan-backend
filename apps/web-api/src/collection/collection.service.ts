@@ -1,7 +1,7 @@
 import { Collections } from '@entities/Collections';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import { IGQLQueryArgs } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
@@ -18,6 +18,35 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     queryArgs: IGQLQueryArgs<CollectionDTO>,
   ): Promise<CollectionDTO[]> {
     const qb = this.repo.createQueryBuilder();
+    this.applyFilters(qb, queryArgs);
+    return qb.getRawMany();
+  }
+
+  public async findOne(
+    queryArgs: IGQLQueryArgs<CollectionDTO>,
+  ): Promise<CollectionDTO> {
+    const qb = this.repo.createQueryBuilder();
+    this.applyFilters(qb, queryArgs);
+    return qb.getRawOne();
+  }
+
+  public getCollectionById(id: number): Promise<CollectionDTO> {
+    return this.findOne({
+      where: { collection_id: { _eq: id } },
+    });
+  }
+
+  private applyFilters(
+    qb: SelectQueryBuilder<Collections>,
+    queryArgs: IGQLQueryArgs<CollectionDTO>,
+  ): void {
+    this.select(qb);
+    this.applyLimitOffset(qb, queryArgs);
+    this.applyWhereCondition(qb, queryArgs);
+    this.applyOrderCondition(qb, queryArgs);
+  }
+
+  private select(qb: SelectQueryBuilder<Collections>): void {
     qb.select('Collections.collection_id', 'collection_id');
     qb.addSelect('Collections.owner', 'owner');
     qb.addSelect('Collections.name', 'name');
@@ -72,16 +101,5 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.date_of_creation', 'date_of_creation');
 
     qb.leftJoin('Collections.statistics', 'Statistics');
-    this.applyLimitOffset(qb, queryArgs);
-    this.applyWhereCondition(qb, queryArgs);
-    this.applyOrderCondition(qb, queryArgs);
-    return qb.getRawMany();
-  }
-
-  getByCollectionId(id: number) {
-    return this.find({
-      where: { collection_id: { _eq: id } },
-      limit: 1000, // because default 10
-    });
   }
 }

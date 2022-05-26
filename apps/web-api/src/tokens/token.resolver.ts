@@ -45,8 +45,8 @@ class QueryArgs
 
 @ObjectType()
 class TokenEntity extends TokenDTO {
-  @Field(() => [CollectionDTO], { nullable: true })
-  collections?: CollectionDTO[];
+  @Field(() => CollectionDTO, { nullable: true })
+  collection?: CollectionDTO;
 }
 
 @Resolver(() => TokenEntity)
@@ -63,7 +63,7 @@ export class TokenResolver {
   }
 
   @ResolveField()
-  async collections(@Parent() { collection_id }: TokenEntity) {
-    return this.collectionService.getByCollectionId(collection_id);
+  async collection(@Parent() { collection_id }: TokenEntity) {
+    return this.collectionService.getCollectionById(collection_id);
   }
 }
