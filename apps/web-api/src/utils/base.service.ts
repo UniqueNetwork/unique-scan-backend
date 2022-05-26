@@ -1,4 +1,12 @@
-import { Equal, ILike, Like, Not, Brackets, SelectQueryBuilder } from 'typeorm';
+import {
+  Equal,
+  ILike,
+  Like,
+  Not,
+  In,
+  Brackets,
+  SelectQueryBuilder,
+} from 'typeorm';
 
 import {
   IGQLQueryArgs,
@@ -7,7 +15,12 @@ import {
   IOrderByOperators,
 } from './gql-query-args';
 
-type TWhereCondition = typeof Equal | typeof Not | typeof Like | typeof ILike;
+type TWhereCondition =
+  | typeof Equal
+  | typeof Not
+  | typeof Like
+  | typeof ILike
+  | typeof In;
 
 type TOperatorsMap = {
   [key in keyof IWhereOperators]: TWhereCondition;
@@ -18,6 +31,7 @@ const GQLToORMOperatorsMap: TOperatorsMap = {
   _neq: Not,
   _like: Like,
   _ilike: ILike,
+  _in: In,
 };
 
 type TOrderBy = 'ASC' | 'DESC';
@@ -84,6 +98,8 @@ export class BaseService<T, S> {
         const ormOperation = this.getOrmWhereOperation(field);
 
         if (ormOperator) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           whereCondition[field] = ormOperator(operators[operatorName]);
         } else if (ormOperation) {
           subConditions.push(generateWhereCondition(whereOperators[field]));
@@ -143,7 +159,7 @@ export class BaseService<T, S> {
 
   private getOrmWhereOperator(
     gqlWhereOperator: keyof IWhereOperators,
-  ): typeof Equal {
+  ): TWhereCondition {
     return GQLToORMOperatorsMap[gqlWhereOperator];
   }
 
