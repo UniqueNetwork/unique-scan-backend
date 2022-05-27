@@ -3,6 +3,7 @@ import {
   ArgsType,
   Field,
   InputType,
+  ObjectType,
   Query,
   Resolver,
 } from '@nestjs/graphql';
@@ -10,7 +11,9 @@ import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsString,
+  IDataListResponse,
   IGQLQueryArgs,
+  ListDataType,
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
@@ -35,6 +38,9 @@ class TransferOrderByParams implements TOrderByParams<TransferDTO> {
   section?: GQLOrderByParamsArgs;
 }
 
+@ObjectType()
+class TransferDataResponse extends ListDataType(TransferDTO) {}
+
 @ArgsType()
 class QueryArgs
   extends GQLQueryPaginationArgs
@@ -51,8 +57,10 @@ class QueryArgs
 export class TransferResolver {
   constructor(private service: TransferService) {}
 
-  @Query(() => [TransferDTO])
-  public async transfers(@Args() args: QueryArgs): Promise<TransferDTO[]> {
+  @Query(() => TransferDataResponse)
+  public async transfers(
+    @Args() args: QueryArgs,
+  ): Promise<IDataListResponse<TransferDTO>> {
     return this.service.find(args);
   }
 }
