@@ -6,7 +6,10 @@ import {
   ObjectType,
   Query,
   Resolver,
+  ResolveField,
+  Parent,
 } from '@nestjs/graphql';
+import { forwardRef, Inject } from '@nestjs/common';
 import {
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
@@ -20,6 +23,8 @@ import {
 } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 import { CollectionService } from './collection.service';
+import { TokenDTO } from '../tokens/token.dto';
+import { TokenService } from '../tokens/token.service';
 
 @InputType()
 class CollectionWhereParams implements TWhereParams<CollectionDTO> {
@@ -61,16 +66,30 @@ class QueryArgs
 }
 
 @ObjectType()
-class CollectionDataResponse extends ListDataType(CollectionDTO) {}
+class CollectionEntity extends CollectionDTO {
+  @Field(() => [TokenDTO], { nullable: true })
+  tokens?: TokenDTO[];
+}
 
-@Resolver(() => CollectionDTO)
+@ObjectType()
+class CollectionDataResponse extends ListDataType(CollectionEntity) {}
+
+@Resolver(() => CollectionEntity)
 export class CollectionResolver {
-  constructor(private service: CollectionService) {}
+  constructor(
+    private service: CollectionService,
+    @Inject(forwardRef(() => TokenService)) private tokenService: TokenService,
+  ) {}
 
   @Query(() => CollectionDataResponse)
   public async collections(
     @Args() args: QueryArgs,
   ): Promise<IDataListResponse<CollectionDTO>> {
     return this.service.find(args);
+  }
+
+  @ResolveField()
+  async tokens(@Parent() { collection_id }: CollectionEntity) {
+    return this.tokenService.getByCollectionId(collection_id);
   }
 }
