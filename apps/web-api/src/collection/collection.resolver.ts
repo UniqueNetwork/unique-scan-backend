@@ -5,6 +5,7 @@ import {
   InputType,
   ObjectType,
   Query,
+  registerEnumType,
   Resolver,
 } from '@nestjs/graphql';
 import {
@@ -18,8 +19,10 @@ import {
   IDataListResponse,
   ListDataType,
 } from '../utils/gql-query-args';
-import { CollectionDTO } from './collection.dto';
+import { CollectionDTO, CollectionEnum } from './collection.dto';
 import { CollectionService } from './collection.service';
+
+registerEnumType(CollectionEnum, { name: 'CollectionEnum' });
 
 @InputType()
 class CollectionWhereParams implements TWhereParams<CollectionDTO> {
@@ -53,6 +56,9 @@ class QueryArgs
   extends GQLQueryPaginationArgs
   implements IGQLQueryArgs<CollectionDTO>
 {
+  @Field(() => CollectionEnum, { nullable: true })
+  distinct_on?: CollectionEnum;
+
   @Field(() => CollectionWhereParams, { nullable: true })
   where?: CollectionWhereParams;
 

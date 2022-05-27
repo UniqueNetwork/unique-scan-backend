@@ -55,6 +55,7 @@ export interface IGQLQueryArgs<T> {
   offset?: number;
   where?: TWhereParams<T>;
   order_by?: TOrderByParams<T>;
+  distinct_on?: string;
 }
 
 @InputType()

@@ -2,6 +2,28 @@ import { Collections } from '@entities/Collections';
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSONObject } from 'graphql-type-json';
 
+export enum CollectionEnum {
+  collection_id = 'collection_id',
+  description = 'description',
+  offchain_schema = 'offchain_schema',
+  token_limit = 'token_limit',
+  token_prefix = 'token_prefix',
+  collection_cover = 'collection_cover',
+  mint_mode = 'mint_mode',
+  limits_account_ownership = 'limits_account_ownership',
+  limits_sponsore_data_size = 'limits_sponsore_data_size',
+  limits_sponsore_data_rate = 'limits_sponsore_data_rate',
+  owner_can_transfer = 'owner_can_transfer',
+  owner_can_destroy = 'owner_can_destroy',
+  schema_version = 'schema_version',
+  sponsorship = 'sponsorship',
+  const_chain_schema = 'const_chain_schema',
+  tokens_count = 'tokens_count',
+  holders_count = 'holders_count',
+  actions_count = 'actions_count',
+  date_of_creation = 'date_of_creation',
+}
+
 @ObjectType('collection')
 export class CollectionDTO implements Partial<Collections> {
   @Field(() => Int)

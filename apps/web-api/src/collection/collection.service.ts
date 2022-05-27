@@ -72,11 +72,14 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.date_of_creation', 'date_of_creation');
 
     qb.leftJoin('Collections.statistics', 'Statistics');
-    this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
+    this.applyLimitOffset(qb, queryArgs);
+    this.applyDistinctOn(qb, queryArgs);
     const data = await qb.getRawMany();
-    const count = await qb.getCount();
+
+    const count = await this.getCountByFilters(qb, queryArgs);
+
     return { data, count };
   }
 }

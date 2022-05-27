@@ -75,6 +75,15 @@ export class BaseService<T, S> {
     }
   }
 
+  protected applyDistinctOn(
+    qb: SelectQueryBuilder<T>,
+    args: IGQLQueryArgs<S>,
+  ): void {
+    if (args.distinct_on) {
+      qb.distinctOn([args.distinct_on]);
+    }
+  }
+
   protected applyWhereCondition(
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
@@ -113,6 +122,22 @@ export class BaseService<T, S> {
     const condition = generateWhereCondition(args.where);
     qb.andWhere(condition);
     this.applySubWhere(qb, subConditions);
+  }
+
+  protected async getCountByFilters(
+    qb: SelectQueryBuilder<T>,
+    args: IGQLQueryArgs<S>,
+  ): Promise<number> {
+    if (args.distinct_on) {
+      qb.distinctOn([]);
+      const { count } = (await qb
+        .select(`COUNT(DISTINCT(${args.distinct_on}))`, 'count')
+        .getRawOne()) as { count: number };
+
+      return count;
+    }
+
+    return qb.getCount();
   }
 
   private applySubWhere(
