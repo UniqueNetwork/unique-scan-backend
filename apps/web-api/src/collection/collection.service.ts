@@ -55,6 +55,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   private select(qb: SelectQueryBuilder<Collections>): void {
     qb.select('Collections.collection_id', 'collection_id');
     qb.addSelect('Collections.owner', 'owner');
+    qb.addSelect('Collections.owner_normalized', 'owner_normalized');
     qb.addSelect('Collections.name', 'name');
     qb.addSelect('Collections.description', 'description');
     qb.addSelect('Collections.offchain_schema', 'offchain_schema');
