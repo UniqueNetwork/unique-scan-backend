@@ -35,6 +35,10 @@ class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   owner?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
+  owner_normalized?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  @Field(() => GQLWhereOpsString, { nullable: true })
   description?: GQLWhereOpsString;
 
   @Field(() => CollectionWhereParams, { nullable: true })
@@ -51,6 +55,9 @@ class CollectionOrderByParams implements TOrderByParams<CollectionDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   description?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  date_of_creation?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
