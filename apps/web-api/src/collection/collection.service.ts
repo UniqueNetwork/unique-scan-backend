@@ -16,11 +16,14 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
 
   public async find(
     queryArgs: IGQLQueryArgs<CollectionDTO>,
-  ): Promise<CollectionDTO[]> {
+  ): Promise<IDataListResponse<CollectionDTO>> {
     const qb = this.repo.createQueryBuilder();
     this.applyFilters(qb, queryArgs);
 
-    return qb.getRawMany();
+    const data = await qb.getRawMany();
+    const count = await qb.getCount();
+
+    return { data, count };
   }
 
   public async findOne(
@@ -31,18 +34,6 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     this.applyFilters(qb, queryArgs);
 
     return qb.getRawOne();
-  }
-
-  public async findWithTotalCount(
-    queryArgs: IGQLQueryArgs<CollectionDTO>,
-  ): Promise<IDataListResponse<CollectionDTO>> {
-    const qb = this.repo.createQueryBuilder();
-    this.applyFilters(qb, queryArgs);
-
-    const data = await qb.getRawMany();
-    const count = await qb.getCount();
-
-    return { data, count };
   }
 
   public getCollectionById(id: number): Promise<CollectionDTO> {

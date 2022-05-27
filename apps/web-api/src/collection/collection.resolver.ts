@@ -85,7 +85,7 @@ export class CollectionResolver {
   public async collections(
     @Args() args: QueryArgs,
   ): Promise<IDataListResponse<CollectionDTO>> {
-    return this.service.findWithTotalCount(args);
+    return this.service.find(args);
   }
 
   @ResolveField()
