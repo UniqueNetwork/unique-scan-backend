@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IGQLQueryArgs } from '../utils/gql-query-args';
+import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
 
 @Injectable()
@@ -12,12 +12,15 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     super();
   }
 
-  public find(queryArgs: IGQLQueryArgs<TokenDTO>): Promise<TokenDTO[]> {
+  public async find(
+    queryArgs: IGQLQueryArgs<TokenDTO>,
+  ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
     qb.select('Tokens.collection_id', 'collection_id');
     qb.addSelect('Tokens.token_id', 'token_id');
     qb.addSelect('Tokens.data', 'data');
     qb.addSelect('Tokens.owner', 'owner');
+    qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
     qb.addSelect(
       `COALESCE(
         "Tokens".data::json ->> 'ipfsJson'::text,
@@ -40,7 +43,11 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.leftJoin('Tokens.collection', 'Collection');
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
-    return qb.getRawMany();
+
+    const data = await qb.getRawMany();
+    const count = await qb.getCount();
+
+    return { data, count };
   }
 
   getByCollectionId(id: number) {
