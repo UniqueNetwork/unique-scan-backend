@@ -17,6 +17,9 @@ export class TokenDTO implements Partial<Tokens> {
   owner?: string;
 
   @Field(() => String)
+  owner_normalized?: string;
+
+  @Field(() => String)
   image_path?: string;
 
   @Field(() => String)

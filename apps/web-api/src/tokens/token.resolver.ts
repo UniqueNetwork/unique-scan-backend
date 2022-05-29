@@ -15,7 +15,9 @@ import {
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
   GQLWhereOpsString,
+  IDataListResponse,
   IGQLQueryArgs,
+  ListDataType,
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
@@ -34,6 +36,9 @@ class TokenWhereParams implements TWhereParams<TokenDTO> {
 
   @Field(() => GQLWhereOpsInt, { nullable: true })
   token_id?: GQLWhereOpsInt;
+
+  @Field(() => TokenWhereParams, { nullable: true })
+  _and?: TokenWhereParams;
 }
 
 @InputType()
@@ -46,6 +51,9 @@ class TokenOrderByParams implements TOrderByParams<TokenDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   token_id?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  date_of_creation?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
@@ -66,6 +74,9 @@ class TokenEntity extends TokenDTO {
   collection?: CollectionDTO;
 }
 
+@ObjectType()
+class TokenDataResponse extends ListDataType(TokenEntity) {}
+
 @Resolver(() => TokenEntity)
 export class TokenResolver {
   constructor(
@@ -74,8 +85,10 @@ export class TokenResolver {
     private collectionService: CollectionService,
   ) {}
 
-  @Query(() => [TokenEntity])
-  public tokens(@Args() args: QueryArgs): Promise<TokenEntity[]> {
+  @Query(() => TokenDataResponse)
+  public tokens(
+    @Args() args: QueryArgs,
+  ): Promise<IDataListResponse<TokenEntity>> {
     return this.service.find(args);
   }
 
