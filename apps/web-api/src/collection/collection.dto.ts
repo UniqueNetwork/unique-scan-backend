@@ -33,6 +33,9 @@ export class CollectionDTO implements Partial<Collections> {
   owner?: string;
 
   @Field(() => String)
+  owner_normalized?: string;
+
+  @Field(() => String)
   name?: string;
 
   @Field(() => String, { nullable: true })

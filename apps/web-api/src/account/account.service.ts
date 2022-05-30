@@ -21,7 +21,9 @@ export class AccountService extends BaseService<Account, AccountDTO> {
     qb.addSelect('Account.free_balance', 'free_balance');
     qb.addSelect('Account.locked_balance', 'locked_balance');
     qb.addSelect('Account.nonce', 'nonce');
-    qb.addSelect('Account.is_staking', 'is_staking');
+    qb.addSelect('Account.timestamp', 'timestamp');
+    qb.addSelect('Account.block_height', 'block_height');
+    qb.addSelect('Account.account_id_normalized', 'account_id_normalized');
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
