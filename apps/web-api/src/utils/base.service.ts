@@ -127,11 +127,12 @@ export class BaseService<T, S> {
   protected async getCountByFilters(
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
+    tableName: string,
   ): Promise<number> {
     if (args.distinct_on) {
       qb.distinctOn([]);
       const { count } = (await qb
-        .select(`COUNT(DISTINCT(${args.distinct_on}))`, 'count')
+        .select(`COUNT(DISTINCT(${tableName}.${args.distinct_on}))`, 'count')
         .getRawOne()) as { count: number };
 
       return count;
