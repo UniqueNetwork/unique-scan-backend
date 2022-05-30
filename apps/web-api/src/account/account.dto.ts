@@ -18,6 +18,12 @@ export class AccountDTO implements Partial<Account> {
   @Field(() => Int)
   nonce?: string;
 
-  @Field(() => Boolean)
-  is_staking?: boolean;
+  @Field(() => Int)
+  timestamp?: string;
+
+  @Field(() => Int)
+  block_height?: string;
+
+  @Field(() => String)
+  account_id_normalized?: string;
 }

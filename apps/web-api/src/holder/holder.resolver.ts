@@ -3,6 +3,7 @@ import {
   ArgsType,
   Field,
   InputType,
+  ObjectType,
   Query,
   Resolver,
 } from '@nestjs/graphql';
@@ -11,7 +12,9 @@ import {
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
   GQLWhereOpsString,
+  IDataListResponse,
   IGQLQueryArgs,
+  ListDataType,
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
@@ -36,6 +39,9 @@ class HolderOrderByParams implements TOrderByParams<HolderDTO> {
   collection_id?: GQLOrderByParamsArgs;
 }
 
+@ObjectType()
+class HolderDataResponse extends ListDataType(HolderDTO) {}
+
 @ArgsType()
 class QueryArgs
   extends GQLQueryPaginationArgs
@@ -52,8 +58,10 @@ class QueryArgs
 export class HolderResolver {
   constructor(private service: HolderService) {}
 
-  @Query(() => [HolderDTO])
-  public async holders(@Args() args: QueryArgs): Promise<HolderDTO[]> {
+  @Query(() => HolderDataResponse)
+  public async holders(
+    @Args() args: QueryArgs,
+  ): Promise<IDataListResponse<HolderDTO>> {
     return this.service.find(args);
   }
 }
