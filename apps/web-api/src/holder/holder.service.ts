@@ -25,7 +25,6 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     qb.addGroupBy('Tokens.collection_id');
     qb.addGroupBy('owner');
     qb.addGroupBy('owner_normalized');
-    this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
     const { count } = await this.getCount(qb.getQuery(), qb.getParameters());
