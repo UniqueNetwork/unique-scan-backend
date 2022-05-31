@@ -20,11 +20,14 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     queryArgs: IGQLQueryArgs<HolderDTO>,
   ): Promise<IDataListResponse<Tokens>> {
     const qb = this.repo.createQueryBuilder();
-    qb.select(['collection_id', 'owner']);
+    qb.select(['collection_id', 'owner', 'owner_normalized']);
     qb.addSelect('count(token_id)', 'count');
     qb.addGroupBy('Tokens.collection_id');
-    qb.addGroupBy('Tokens.owner');
+    qb.addGroupBy('owner');
+    qb.addGroupBy('owner_normalized');
+    this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
+    this.applyOrderCondition(qb, queryArgs);
     const { count } = await this.getCount(qb.getQuery(), qb.getParameters());
     this.applyLimitOffset(qb, queryArgs);
     const data = await qb.getRawMany();
