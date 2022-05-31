@@ -28,6 +28,9 @@ class HolderWhereParams implements TWhereParams<HolderDTO> {
 
   @Field(() => GQLWhereOpsInt, { nullable: true })
   collection_id?: GQLWhereOpsInt;
+
+  @Field(() => HolderWhereParams, { nullable: true })
+  _and?: HolderWhereParams;
 }
 
 @InputType()
@@ -37,6 +40,9 @@ class HolderOrderByParams implements TOrderByParams<HolderDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   collection_id?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  count?: GQLOrderByParamsArgs;
 }
 
 @ObjectType()
