@@ -43,6 +43,9 @@ class HolderOrderByParams implements TOrderByParams<HolderDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   collection_id?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  count?: GQLOrderByParamsArgs;
 }
 
 @ObjectType()
