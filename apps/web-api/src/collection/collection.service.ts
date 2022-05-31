@@ -8,8 +8,6 @@ import { CollectionDTO } from './collection.dto';
 
 @Injectable()
 export class CollectionService extends BaseService<Collections, CollectionDTO> {
-  private readonly tableName = 'Collections';
-
   constructor(
     @InjectRepository(Collections) private repo: Repository<Collections>,
   ) {
@@ -26,10 +24,9 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     this.applyOrderCondition(qb, queryArgs);
     this.applyLimitOffset(qb, queryArgs);
     this.applyDistinctOn(qb, queryArgs);
-    const data = await qb.getRawMany();
 
-    // without collection name return "filed is ambiguous" error
-    const count = await this.getCountByFilters(qb, queryArgs, this.tableName);
+    const data = await qb.getRawMany();
+    const count = await this.getCountByFilters(qb, queryArgs);
 
     return { data, count };
   }

@@ -6,6 +6,7 @@ import {
   In,
   Brackets,
   SelectQueryBuilder,
+  FindOperator,
 } from 'typeorm';
 
 import {
@@ -25,6 +26,11 @@ type TWhereCondition =
 type TOperatorsMap = {
   [key in keyof IWhereOperators]: TWhereCondition;
 };
+
+type TWhereValue = (string | FindOperator<string>) &
+  (string[] | FindOperator<string>) &
+  (number | FindOperator<number>) &
+  (number[] | FindOperator<number>);
 
 const GQLToORMOperatorsMap: TOperatorsMap = {
   _eq: Equal,
@@ -107,9 +113,9 @@ export class BaseService<T, S> {
         const ormOperation = this.getOrmWhereOperation(field);
 
         if (ormOperator) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          whereCondition[field] = ormOperator(operators[operatorName]);
+          whereCondition[field] = ormOperator(
+            operators[operatorName] as TWhereValue,
+          );
         } else if (ormOperation) {
           subConditions.push(generateWhereCondition(whereOperators[field]));
         } else {
@@ -127,12 +133,11 @@ export class BaseService<T, S> {
   protected async getCountByFilters(
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
-    tableName: string,
   ): Promise<number> {
     if (args.distinct_on) {
       qb.distinctOn([]);
       const { count } = (await qb
-        .select(`COUNT(DISTINCT(${tableName}.${args.distinct_on}))`, 'count')
+        .select(`COUNT(DISTINCT(${qb.alias}.${args.distinct_on}))`, 'count')
         .getRawOne()) as { count: number };
 
       return count;
