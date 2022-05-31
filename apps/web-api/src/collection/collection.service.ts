@@ -48,8 +48,8 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   ): void {
     this.select(qb);
     this.applyLimitOffset(qb, queryArgs);
-    this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
+    this.applyWhereCondition(qb, queryArgs);
   }
 
   private select(qb: SelectQueryBuilder<Collections>): void {

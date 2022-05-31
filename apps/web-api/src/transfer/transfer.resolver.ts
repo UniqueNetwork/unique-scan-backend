@@ -27,6 +27,12 @@ class TransferWhereParams implements TWhereParams<TransferDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   section?: GQLWhereOpsString;
+
+  @Field(() => [TransferWhereParams], { nullable: true })
+  _and?: TransferWhereParams[];
+
+  @Field(() => [TransferWhereParams], { nullable: true })
+  _or?: TransferWhereParams[];
 }
 
 @InputType()

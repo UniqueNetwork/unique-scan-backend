@@ -38,11 +38,16 @@ class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   owner_normalized?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
+  name?: GQLWhereOpsString;
+
   @Field(() => GQLWhereOpsString, { nullable: true })
   description?: GQLWhereOpsString;
 
-  @Field(() => CollectionWhereParams, { nullable: true })
-  _and?: CollectionWhereParams;
+  @Field(() => [CollectionWhereParams], { nullable: true })
+  _and?: CollectionWhereParams[];
+
+  @Field(() => [CollectionWhereParams], { nullable: true })
+  _or?: CollectionWhereParams[];
 }
 
 @InputType()
