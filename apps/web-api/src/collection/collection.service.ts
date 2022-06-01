@@ -20,8 +20,13 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     const qb = this.repo.createQueryBuilder();
     this.applyFilters(qb, queryArgs);
 
+    this.applyWhereCondition(qb, queryArgs);
+    this.applyOrderCondition(qb, queryArgs);
+    this.applyLimitOffset(qb, queryArgs);
+    this.applyDistinctOn(qb, queryArgs);
+
     const data = await qb.getRawMany();
-    const count = await qb.getCount();
+    const count = await this.getCountByFilters(qb, queryArgs);
 
     return { data, count };
   }

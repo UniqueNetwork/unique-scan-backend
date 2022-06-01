@@ -2,6 +2,14 @@ import { Collections } from '@entities/Collections';
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSONObject } from 'graphql-type-json';
 
+export enum CollectionEnum {
+  collection_id = 'collection_id',
+  owner = 'owner',
+  owner_normalized = 'owner_normalized',
+  name = 'name',
+  token_prefix = 'token_prefix',
+}
+
 @ObjectType('collection')
 export class CollectionDTO implements Partial<Collections> {
   @Field(() => Int)
