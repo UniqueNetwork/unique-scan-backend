@@ -105,46 +105,6 @@ export class BaseService<T, S> {
     }
   }
 
-  protected applyWhereCondition(
-    qb: SelectQueryBuilder<T>,
-    args: IGQLQueryArgs<S>,
-  ): void {
-    if (!args.where) {
-      return;
-    }
-
-    const subConditions = [];
-    const generateWhereCondition = (whereOperators: TWhereParams<S>) => {
-      const whereCondition = {};
-      for (const [field, operators] of Object.entries<IWhereOperators>(
-        whereOperators,
-      )) {
-        const operatorNames = Object.keys(operators) as Array<
-          keyof IWhereOperators
-        >;
-
-        const operatorName = operatorNames[0];
-        const ormOperator = this.getOrmWhereOperator(operatorName);
-        const ormOperation = this.getOrmWhereOperation(field);
-
-        if (ormOperator) {
-          whereCondition[field] = ormOperator(
-            operators[operatorName] as TWhereValue,
-          );
-        } else if (ormOperation) {
-          subConditions.push(generateWhereCondition(whereOperators[field]));
-        } else {
-          throw new Error(`Unknown GQL condition operator '${operatorName}'.`);
-        }
-      }
-      return whereCondition;
-    };
-
-    const condition = generateWhereCondition(args.where);
-    qb.andWhere(condition);
-    this.applySubWhere(qb, subConditions);
-  }
-
   protected async getCountByFilters(
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
@@ -159,29 +119,6 @@ export class BaseService<T, S> {
     }
 
     return qb.getCount();
-  }
-
-  private applySubWhere(
-    qb: SelectQueryBuilder<T>,
-    conditions: TWhereCondition[],
-  ) {
-    if (conditions.length) {
-      qb.andWhere(this.getSubQueryCondition(conditions.pop(), conditions));
-    }
-  }
-
-  private getSubQueryCondition(
-    condition: TWhereCondition,
-    nextConditions?: TWhereCondition[],
-  ) {
-    return new Brackets((qb) => {
-      qb.andWhere(condition);
-      if (nextConditions?.length) {
-        qb.andWhere(
-          this.getSubQueryCondition(nextConditions.pop(), nextConditions),
-        );
-      }
-    });
   }
 
   protected applyOrderCondition(
@@ -245,9 +182,7 @@ export class BaseService<T, S> {
     method: OperatorMethods,
   ): void {
     for (const [field, operators] of Object.entries<IWhereOperators>(where)) {
-      console.log(field, operators);
       Object.entries(operators).forEach((parameters) => {
-        console.log(parameters);
         const [operation, value] = parameters;
         const ormOperator = this.getOrmWhereOperator(
           operation as keyof IWhereOperators,
@@ -257,7 +192,7 @@ export class BaseService<T, S> {
           throw new Error(`Unknown GQL condition operator '${operation}'.`);
         }
 
-        qb[method]({ [field]: ormOperator(value) });
+        qb[method]({ [field]: ormOperator(value as TWhereValue) });
       });
     }
   }
