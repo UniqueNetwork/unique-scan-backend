@@ -29,7 +29,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     this.applyFilters(qb, {
       where: { collection_id: { _eq: id } },
-      limit: 1000, // because default 10
+      limit: null, // return all tokens
     });
 
     return qb.getRawMany();

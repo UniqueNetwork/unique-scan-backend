@@ -70,10 +70,12 @@ export class BaseService<T, S> {
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
   ): void {
-    if (args.limit) {
-      qb.limit(args.limit);
-    } else {
-      qb.limit(this.DEFAULT_PAGE_SIZE);
+    if (args.limit !== null) {
+      if (args.limit) {
+        qb.limit(args.limit);
+      } else {
+        qb.limit(this.DEFAULT_PAGE_SIZE);
+      }
     }
 
     if (args.offset) {
