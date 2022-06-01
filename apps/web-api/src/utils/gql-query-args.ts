@@ -13,6 +13,7 @@ export interface IWhereOperators {
   _neq?: number | string;
   _like?: number | string;
   _ilike?: number | string;
+  _in?: number[] | string[];
 }
 
 export interface IWhereOperations {
@@ -54,6 +55,7 @@ export interface IGQLQueryArgs<T> {
   offset?: number;
   where?: TWhereParams<T>;
   order_by?: TOrderByParams<T>;
+  distinct_on?: string;
 }
 
 @InputType()
@@ -69,6 +71,9 @@ export class GQLWhereOpsInt implements IWhereOperators {
 
   @Field(() => Int, { nullable: true })
   _ilike?: number;
+
+  @Field(() => [Int], { nullable: true })
+  _in?: number[];
 }
 
 @InputType()
@@ -84,6 +89,9 @@ export class GQLWhereOpsString implements IWhereOperators {
 
   @Field(() => String, { nullable: true })
   _ilike?: string;
+
+  @Field(() => [String], { nullable: true })
+  _in?: string[];
 }
 
 @ArgsType()

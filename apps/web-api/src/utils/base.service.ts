@@ -1,4 +1,13 @@
-import { Equal, ILike, Like, Not, Brackets, SelectQueryBuilder } from 'typeorm';
+import {
+  Equal,
+  ILike,
+  Like,
+  Not,
+  In,
+  Brackets,
+  SelectQueryBuilder,
+  FindOperator,
+} from 'typeorm';
 
 import {
   IGQLQueryArgs,
@@ -7,17 +16,28 @@ import {
   IOrderByOperators,
 } from './gql-query-args';
 
-type TWhereCondition = typeof Equal | typeof Not | typeof Like | typeof ILike;
+type TWhereCondition =
+  | typeof Equal
+  | typeof Not
+  | typeof Like
+  | typeof ILike
+  | typeof In;
 
 type TOperatorsMap = {
   [key in keyof IWhereOperators]: TWhereCondition;
 };
+
+type TWhereValue = (string | FindOperator<string>) &
+  (string[] | FindOperator<string>) &
+  (number | FindOperator<number>) &
+  (number[] | FindOperator<number>);
 
 const GQLToORMOperatorsMap: TOperatorsMap = {
   _eq: Equal,
   _neq: Not,
   _like: Like,
   _ilike: ILike,
+  _in: In,
 };
 
 type TOrderBy = 'ASC' | 'DESC';
@@ -50,14 +70,25 @@ export class BaseService<T, S> {
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
   ): void {
-    if (args.limit) {
-      qb.limit(args.limit);
-    } else {
-      qb.limit(this.DEFAULT_PAGE_SIZE);
+    if (args.limit !== null) {
+      if (args.limit) {
+        qb.limit(args.limit);
+      } else {
+        qb.limit(this.DEFAULT_PAGE_SIZE);
+      }
     }
 
     if (args.offset) {
       qb.offset(args.offset);
+    }
+  }
+
+  protected applyDistinctOn(
+    qb: SelectQueryBuilder<T>,
+    args: IGQLQueryArgs<S>,
+  ): void {
+    if (args.distinct_on) {
+      qb.distinctOn([args.distinct_on]);
     }
   }
 
@@ -84,7 +115,9 @@ export class BaseService<T, S> {
         const ormOperation = this.getOrmWhereOperation(field);
 
         if (ormOperator) {
-          whereCondition[field] = ormOperator(operators[operatorName]);
+          whereCondition[field] = ormOperator(
+            operators[operatorName] as TWhereValue,
+          );
         } else if (ormOperation) {
           subConditions.push(generateWhereCondition(whereOperators[field]));
         } else {
@@ -97,6 +130,22 @@ export class BaseService<T, S> {
     const condition = generateWhereCondition(args.where);
     qb.andWhere(condition);
     this.applySubWhere(qb, subConditions);
+  }
+
+  protected async getCountByFilters(
+    qb: SelectQueryBuilder<T>,
+    args: IGQLQueryArgs<S>,
+  ): Promise<number> {
+    if (args.distinct_on) {
+      qb.distinctOn([]);
+      const { count } = (await qb
+        .select(`COUNT(DISTINCT(${qb.alias}.${args.distinct_on}))`, 'count')
+        .getRawOne()) as { count: number };
+
+      return count;
+    }
+
+    return qb.getCount();
   }
 
   private applySubWhere(
@@ -143,7 +192,7 @@ export class BaseService<T, S> {
 
   private getOrmWhereOperator(
     gqlWhereOperator: keyof IWhereOperators,
-  ): typeof Equal {
+  ): TWhereCondition {
     return GQLToORMOperatorsMap[gqlWhereOperator];
   }
 
