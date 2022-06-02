@@ -30,7 +30,7 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     qb.addSelect('Extrinsic.timestamp', 'timestamp');
     qb.addSelect('Extrinsic.method', 'method');
     qb.addSelect('Extrinsic.section', 'section');
-    qb.addSelect('Extrinsic.amount', 'amount');
+    qb.addSelect(`NULLIF(Extrinsic.amount, 'NaN')`, 'amount');
     qb.addSelect('Extrinsic.fee', 'fee');
     qb.where({
       method: In([
@@ -45,6 +45,7 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     this.applyOrderCondition(qb, queryArgs);
     const data = await qb.getRawMany();
     const count = await qb.getCount();
+    console.log('data', data);
     return { data, count };
   }
 }
