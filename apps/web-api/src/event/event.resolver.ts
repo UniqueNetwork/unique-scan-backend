@@ -27,6 +27,12 @@ class EventWhereParams implements TWhereParams<EventDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   block_number?: GQLWhereOpsString;
+
+  @Field(() => [EventWhereParams], { nullable: true })
+  _and?: EventWhereParams[];
+
+  @Field(() => [EventWhereParams], { nullable: true })
+  _or?: EventWhereParams[];
 }
 
 @InputType()

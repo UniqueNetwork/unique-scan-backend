@@ -16,8 +16,9 @@ export interface IWhereOperators {
   _in?: number[] | string[];
 }
 
-export interface IWhereOperations {
-  _and?: IWhereOperators;
+export interface IWhereOperations extends IWhereOperators {
+  _and?: IWhereOperators[];
+  _or?: IWhereOperators[];
 }
 
 export type TWhereParams<T> = {

@@ -24,6 +24,12 @@ import { AccountService } from './account.service';
 class AccountWhereParams implements TWhereParams<AccountDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   account_id?: GQLWhereOpsString;
+
+  @Field(() => [AccountWhereParams], { nullable: true })
+  _and?: AccountWhereParams[];
+
+  @Field(() => [AccountWhereParams], { nullable: true })
+  _or?: AccountWhereParams[];
 }
 
 @InputType()

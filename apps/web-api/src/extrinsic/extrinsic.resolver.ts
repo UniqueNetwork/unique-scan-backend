@@ -29,6 +29,9 @@ class ExtrinsicWhereParams implements TWhereParams<ExtrinsicDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   block_number?: GQLWhereOpsString;
 
+  @Field(() => [ExtrinsicWhereParams], { nullable: true })
+  _or?: ExtrinsicWhereParams[];
+
   @Field(() => GQLWhereOpsString, { nullable: true })
   method?: GQLWhereOpsString;
 

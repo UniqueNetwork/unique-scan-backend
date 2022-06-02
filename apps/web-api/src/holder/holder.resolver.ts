@@ -29,8 +29,11 @@ class HolderWhereParams implements TWhereParams<HolderDTO> {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   collection_id?: GQLWhereOpsInt;
 
-  @Field(() => HolderWhereParams, { nullable: true })
-  _and?: HolderWhereParams;
+  @Field(() => [HolderWhereParams], { nullable: true })
+  _and?: HolderWhereParams[];
+
+  @Field(() => [HolderWhereParams], { nullable: true })
+  _or?: HolderWhereParams[];
 }
 
 @InputType()
