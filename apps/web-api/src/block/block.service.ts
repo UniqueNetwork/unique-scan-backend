@@ -17,22 +17,24 @@ export class BlockService extends BaseService<Block, BlockDto> {
   ): Promise<IDataListResponse<Block>> {
     const qb = this.repo.createQueryBuilder();
 
-    qb.select('Block.block_number', 'block_number');
-    qb.addSelect('Block.timestamp', 'timestamp');
-    qb.addSelect('Block.block_hash', 'block_hash');
-    qb.addSelect('Block.parent_hash', 'parent_hash');
-    qb.addSelect('Block.extrinsics_root', 'extrinsics_root');
-    qb.addSelect('Block.state_root', 'state_root');
-    qb.addSelect('Block.session_length', 'session_length');
-    qb.addSelect('Block.spec_name', 'spec_name');
-    qb.addSelect('Block.spec_version', 'spec_version');
-    qb.addSelect('Block.total_events', 'total_events');
-    qb.addSelect('Block.num_transfers', 'num_transfers');
-    qb.addSelect('Block.new_accounts', 'new_accounts');
-    qb.addSelect('Block.total_issuance', 'total_issuance');
-    qb.addSelect('Block.timestamp', 'timestamp');
-    qb.addSelect('Block.need_rescan', 'need_rescan');
-    qb.addSelect('Block.total_extrinsics', 'total_extrinsics');
+    qb.select([
+      'block_number',
+      'timestamp',
+      'block_hash',
+      'parent_hash',
+      'extrinsics_root',
+      'state_root',
+      'session_length',
+      'spec_name',
+      'spec_version',
+      'total_events',
+      'num_transfers',
+      'new_accounts',
+      'total_issuance',
+      'timestamp',
+      'total_extrinsics',
+      'need_rescan',
+    ]);
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
