@@ -17,6 +17,7 @@ module.exports = {
   ignorePatterns: ['.eslintrc.js'],
   rules: {
     'max-len': ['error', { code: 120, tabWidth: 2 }],
+    'no-console': 'error',
     curly: 'error',
     'lines-between-class-members': [
       'error',
