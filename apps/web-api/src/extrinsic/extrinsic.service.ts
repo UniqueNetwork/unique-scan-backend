@@ -52,7 +52,9 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     qb.select('Extrinsic.block_index', 'block_index');
     qb.addSelect('Extrinsic.block_number', 'block_number');
     qb.addSelect('Extrinsic.signer', 'from_owner');
+    qb.addSelect('Extrinsic.signer_normalized', 'from_owner_normalized');
     qb.addSelect('Extrinsic.to_owner', 'to_owner');
+    qb.addSelect('Extrinsic.to_owner_normalized', 'to_owner_normalized');
     qb.addSelect('Extrinsic.hash', 'hash');
     qb.addSelect('Extrinsic.success', 'success');
     qb.addSelect('Extrinsic.timestamp', 'timestamp');
