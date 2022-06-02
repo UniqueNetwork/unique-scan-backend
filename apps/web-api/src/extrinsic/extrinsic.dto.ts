@@ -9,11 +9,17 @@ export class ExtrinsicDTO implements Partial<Extrinsic> {
   @Field(() => String)
   block_number?: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   from_owner?: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
+  from_owner_normalized?: string;
+
+  @Field(() => String, { nullable: true })
   to_owner?: string;
+
+  @Field(() => String, { nullable: true })
+  to_owner_normalized?: string;
 
   @Field(() => String)
   hash?: string;

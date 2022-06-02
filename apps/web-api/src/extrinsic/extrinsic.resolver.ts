@@ -10,6 +10,7 @@ import {
 import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
+  GQLWhereOpsInt,
   GQLWhereOpsString,
   IDataListResponse,
   IGQLQueryArgs,
@@ -27,6 +28,15 @@ class ExtrinsicWhereParams implements TWhereParams<ExtrinsicDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   block_number?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  method?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  amount?: GQLWhereOpsInt;
+
+  @Field(() => ExtrinsicWhereParams, { nullable: true })
+  _and?: ExtrinsicWhereParams;
 }
 
 @InputType()
@@ -36,6 +46,9 @@ class ExtrinsicOrderByParams implements TOrderByParams<ExtrinsicDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   block_number?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  timestamp?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
