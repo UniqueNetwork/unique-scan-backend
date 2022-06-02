@@ -44,19 +44,7 @@ export class BlockDto implements Partial<Block> {
 
   @Field(() => Boolean, { nullable: true })
   need_rescan?: boolean;
-}
-
-@ObjectType('lastBlock')
-export class LastBlockDto implements Partial<Block> {
-  @Field(() => Int, { nullable: true })
-  block_number?: number;
 
   @Field(() => Int, { nullable: true })
-  event_count?: number;
-
-  @Field(() => Int, { nullable: true })
-  extrinsic_count?: number;
-
-  @Field(() => Int, { nullable: true })
-  timestamp?: string;
+  total_extrinsics?: number;
 }

@@ -9,28 +9,7 @@ import {
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
-import { BlockDto, LastBlockDto } from './block.dto';
-
-@InputType()
-class LastBlockWhereParams implements TWhereParams<LastBlockDto> {
-  @Field(() => GQLWhereOpsInt, { nullable: true })
-  block_number?: GQLWhereOpsInt;
-
-  @Field(() => GQLWhereOpsInt, { nullable: true })
-  timestamp?: GQLWhereOpsInt;
-
-  @Field(() => LastBlockWhereParams, { nullable: true })
-  _and?: LastBlockWhereParams;
-}
-
-@InputType()
-export class LastBlockOrderByParams implements TOrderByParams<LastBlockDto> {
-  @Field(() => GQLOrderByParamsArgs, { nullable: true })
-  block_number?: GQLOrderByParamsArgs;
-
-  @Field(() => GQLOrderByParamsArgs, { nullable: true })
-  timestamp?: GQLOrderByParamsArgs;
-}
+import { BlockDto } from './block.dto';
 
 @InputType()
 class BlockWhereParams implements TWhereParams<BlockDto> {
@@ -45,6 +24,12 @@ class BlockWhereParams implements TWhereParams<BlockDto> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   extrinsics_root?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  total_events?: GQLWhereOpsInt;
+
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  total_extrinsics?: GQLWhereOpsInt;
 
   @Field(() => BlockWhereParams, { nullable: true })
   _and?: BlockWhereParams;
@@ -62,6 +47,12 @@ class BlockOrderByParams implements TOrderByParams<BlockDto> {
   parent_hash?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  total_events?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  total_extrinsics?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
   extrinsics_root?: GQLOrderByParamsArgs;
 }
 
@@ -76,21 +67,6 @@ export class BlockQueryArgs
   @Field(() => BlockOrderByParams, { nullable: true })
   order_by?: BlockOrderByParams;
 }
-
-@ArgsType()
-export class LastBlockQueryArgs
-  extends GQLQueryPaginationArgs
-  implements IGQLQueryArgs<LastBlockDto>
-{
-  @Field(() => LastBlockWhereParams, { nullable: true })
-  where?: LastBlockWhereParams;
-
-  @Field(() => LastBlockOrderByParams, { nullable: true })
-  order_by?: LastBlockOrderByParams;
-}
-
-@ObjectType()
-export class LastBlockDataResponse extends ListDataType(LastBlockDto) {}
 
 @ObjectType()
 export class BlockDataResponse extends ListDataType(BlockDto) {}
