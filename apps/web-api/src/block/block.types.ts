@@ -16,6 +16,9 @@ class LastBlockWhereParams implements TWhereParams<LastBlockDto> {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   block_number?: GQLWhereOpsInt;
 
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  timestamp?: GQLWhereOpsInt;
+
   @Field(() => LastBlockWhereParams, { nullable: true })
   _and?: LastBlockWhereParams;
 }
@@ -24,6 +27,9 @@ class LastBlockWhereParams implements TWhereParams<LastBlockDto> {
 export class LastBlockOrderByParams implements TOrderByParams<LastBlockDto> {
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   block_number?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  timestamp?: GQLOrderByParamsArgs;
 }
 
 @InputType()
