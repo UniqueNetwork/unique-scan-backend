@@ -83,8 +83,6 @@ export class BlockService extends BaseService<Block, BlockDto | LastBlockDto> {
     this.applyOrderCondition(qb, queryArgs);
 
     const data = await qb.getRawMany();
-
-    console.log('data', data);
     const count = await qb.getCount();
     return { data, count };
   }
