@@ -31,8 +31,11 @@ class BlockWhereParams implements TWhereParams<BlockDto> {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   total_extrinsics?: GQLWhereOpsInt;
 
-  @Field(() => BlockWhereParams, { nullable: true })
-  _and?: BlockWhereParams;
+  @Field(() => [BlockWhereParams], { nullable: true })
+  _and?: BlockWhereParams[];
+
+  @Field(() => [BlockWhereParams], { nullable: true })
+  _or?: BlockWhereParams[];
 }
 
 @InputType()
