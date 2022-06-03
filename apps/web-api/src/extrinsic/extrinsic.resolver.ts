@@ -51,6 +51,9 @@ class ExtrinsicOrderByParams implements TOrderByParams<ExtrinsicDTO> {
   block_number?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  amount?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
   timestamp?: GQLOrderByParamsArgs;
 }
 
