@@ -2,13 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { createQueryBuilder } from 'typeorm';
 import { Account } from '@entities/Account';
 import { INestApplication } from '@nestjs/common';
-import { BaseService } from '../src/utils/base.service';
-import { AccountDTO } from '../src/account/account.dto';
-import { AppModule } from '../src/app.module';
-import {
-  GQLOrderByParamsArgs,
-  IGQLQueryArgs,
-} from '../src/utils/gql-query-args';
+import { BaseService } from './base.service';
+import { AccountDTO } from '../account/account.dto';
+import { AppModule } from '../app.module';
+import { GQLOrderByParamsArgs, IGQLQueryArgs } from './gql-query-args';
 
 describe('BaseService', () => {
   let app: INestApplication;

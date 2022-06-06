@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ScraperController } from '../src/scraper.controller';
-import { ScraperService } from '../src/scraper.service';
+import { ScraperController } from './scraper.controller';
+import { ScraperService } from './scraper.service';
 
 describe('ScraperController', () => {
   let scraperController: ScraperController;
