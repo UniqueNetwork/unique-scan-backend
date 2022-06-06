@@ -1,9 +1,26 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": ".",
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
+  "rootDir": "../../../",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "roots": [
+    "<rootDir>/apps/"
+  ],
+  "moduleNameMapper": {
+    "^@interfaces/(.*)$": "<rootDir>/common/interfaces/$1",
+    "^@entities/(.*)$": "<rootDir>/common/entities/$1",
+    "^@common/(.*)$": "<rootDir>/common/$1"
+  },
+  "testTimeout": 50000,
+  "maxWorkers": 1,
+  "setupFilesAfterEnv": [
+    "<rootDir>/apps/web-api/test/jest.setup.ts"
+  ]
 }
