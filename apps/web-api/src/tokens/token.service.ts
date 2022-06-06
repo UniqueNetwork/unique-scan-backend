@@ -50,6 +50,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.token_id', 'token_id');
     qb.addSelect('Tokens.data', 'data');
     qb.addSelect('Tokens.owner', 'owner');
+    qb.addSelect('Tokens.date_of_creation', 'date_of_creation');
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
     qb.addSelect(
       `COALESCE(
