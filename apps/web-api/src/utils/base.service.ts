@@ -165,9 +165,10 @@ export class BaseService<T, S> {
           ),
         );
       } else {
+        const whereEntity = { [op]: where[op] } as TWhereParams<S>;
         this.setWhereConditionValue(
           qb,
-          where,
+          whereEntity,
           upperOperator === Operator.AND
             ? OperatorMethods.AND
             : OperatorMethods.OR,

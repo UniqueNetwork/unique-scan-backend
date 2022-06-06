@@ -22,7 +22,7 @@ export interface IWhereOperations extends IWhereOperators {
 }
 
 export type TWhereParams<T> = {
-  [key in keyof T]: IWhereOperators;
+  [key in keyof T]: IWhereOperations;
 };
 
 export interface IOrderByOperators {
