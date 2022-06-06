@@ -25,6 +25,9 @@ class AccountWhereParams implements TWhereParams<AccountDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   account_id?: GQLWhereOpsString;
 
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  account_id_normalized?: GQLWhereOpsString;
+
   @Field(() => [AccountWhereParams], { nullable: true })
   _and?: AccountWhereParams[];
 
