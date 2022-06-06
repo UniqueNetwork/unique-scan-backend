@@ -17,6 +17,7 @@ export class AccountService extends BaseService<Account, AccountDTO> {
   ): Promise<IDataListResponse<Account>> {
     const qb = this.repo.createQueryBuilder();
     qb.select('Account.account_id', 'account_id');
+    qb.addSelect('Account.balances', 'balances');
     qb.addSelect('Account.available_balance', 'available_balance');
     qb.addSelect('Account.free_balance', 'free_balance');
     qb.addSelect('Account.locked_balance', 'locked_balance');
