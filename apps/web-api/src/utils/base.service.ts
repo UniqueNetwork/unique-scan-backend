@@ -145,7 +145,7 @@ export class BaseService<T, S> {
       if (!query) {
         throw new Error(`Unknown GQL order by operator '${operator}'.`);
       }
-      qb.addOrderBy(`${qb.alias}.${key}`, query.order, query.nulls);
+      qb.addOrderBy(`"${qb.alias}"."${key}"`, query.order, query.nulls);
     }
   }
 
