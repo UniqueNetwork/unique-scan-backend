@@ -28,6 +28,12 @@ class EventWhereParams implements TWhereParams<EventDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   block_number?: GQLWhereOpsString;
 
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  fee?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  amount?: GQLWhereOpsString;
+
   @Field(() => [EventWhereParams], { nullable: true })
   _and?: EventWhereParams[];
 
@@ -42,6 +48,12 @@ class EventOrderByParams implements TOrderByParams<EventDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   block_number?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  amount?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  fee?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
