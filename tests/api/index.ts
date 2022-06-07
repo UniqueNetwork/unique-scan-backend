@@ -1,1 +1,1 @@
-export { collection } from './collections';
+export { collectionApi } from './collections';

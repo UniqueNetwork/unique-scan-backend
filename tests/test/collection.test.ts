@@ -1,18 +1,19 @@
 import { expect } from 'chai';
 import { expectResponseContains } from '../utils';
-import { collection } from '../api';
+import { collectionApi } from '../api';
+import { createCollection } from '../scripts/create-test-collections.js';
+import { collections } from '../data/collections.js';
 
 describe('Collections', function () {
   it('are returned after being created in the blockchain', async function () {
-    const collectionId: number = await createCollection(
-      'Collection',
-      'The one!',
-      'THE1',
-      'NFT',
-      '//Alice',
-    );
+    const schema = collections[0].schema;
+    schema.name = 'Collection';
+    schema.description = 'The one!';
+    schema.tokenPrefix = 'THE1';
 
-    const getActualCollection = async () => collection.getById(collectionId);
+    const collection = await createCollection('//Alice', schema);
+    const collectionId = collection.collectionId;
+    const getActualCollection = async () => collectionApi.getById(collectionId);
 
     const expectedCollection = {
       collection_id: Number(collectionId),
@@ -24,14 +25,13 @@ describe('Collections', function () {
   });
 
   it('This test should be green in Gitlab, remove it', async function () {
-    const collectionId = await createCollection(
-      'Name',
-      'Description',
-      'Prefix',
-      'NFT',
-      '//Bob',
-    );
+    const schema = collections[0].schema;
+    schema.name = 'Collection';
+    schema.description = 'Description';
+    schema.tokenPrefix = 'Prefix';
 
-    expect(Number(collectionId)).to.be.above(0);
+    const collection = await createCollection('//Bob', schema);
+
+    expect(Number(collection.collectionId)).to.be.above(0);
   });
 });

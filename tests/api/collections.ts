@@ -22,4 +22,4 @@ const getById = async (collectionId: number | string) => {
   return handleResponse(response).data.collections[0];
 };
 
-export const collection = { getAll, getById };
+export const collectionApi = { getAll, getById };
