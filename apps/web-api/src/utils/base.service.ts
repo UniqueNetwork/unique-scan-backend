@@ -76,8 +76,17 @@ const GQLToORMOperationsMap = {
   _or: OperatorMethods.OR,
 };
 
+interface IAliasObject {
+  [key: string]: string;
+}
+
 export class BaseService<T, S> {
   readonly DEFAULT_PAGE_SIZE = 10;
+  private aliasSchema: IAliasObject = {};
+
+  public applyAliasSchema(schema: IAliasObject) {
+    this.aliasSchema = schema;
+  }
 
   protected applyLimitOffset(
     qb: SelectQueryBuilder<T>,
@@ -165,9 +174,10 @@ export class BaseService<T, S> {
           ),
         );
       } else {
+        const whereEntity = { [op]: where[op] } as TWhereParams<S>;
         this.setWhereConditionValue(
           qb,
-          where,
+          whereEntity,
           upperOperator === Operator.AND
             ? OperatorMethods.AND
             : OperatorMethods.OR,
@@ -192,7 +202,9 @@ export class BaseService<T, S> {
           throw new Error(`Unknown GQL condition operator '${operation}'.`);
         }
 
-        qb[method]({ [field]: ormOperator(value as TWhereValue) });
+        qb[method]({
+          [this.aliasSchema[field] ?? field]: ormOperator(value as TWhereValue),
+        });
       });
     }
   }

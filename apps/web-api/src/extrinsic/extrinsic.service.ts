@@ -33,6 +33,11 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     qb.addSelect(`NULLIF(Extrinsic.amount, 'NaN')`, 'amount');
     qb.addSelect('Extrinsic.fee', 'fee');
 
+    const aliasSchema = {
+      from_owner: 'signer',
+      from_owner_normalized: 'signer_normalized',
+    };
+    this.applyAliasSchema(aliasSchema);
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);

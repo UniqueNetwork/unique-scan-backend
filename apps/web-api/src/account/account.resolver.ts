@@ -28,6 +28,12 @@ class AccountWhereParams implements TWhereParams<AccountDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   account_id_normalized?: GQLWhereOpsString;
 
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  balances?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  block_height?: GQLWhereOpsString;
+
   @Field(() => [AccountWhereParams], { nullable: true })
   _and?: AccountWhereParams[];
 
@@ -39,6 +45,24 @@ class AccountWhereParams implements TWhereParams<AccountDTO> {
 class AccountOrderByParams implements TOrderByParams<AccountDTO> {
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   account_id?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  balances?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  timestamp?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  available_balance?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  free_balance?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  block_height?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  locked_balance?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
