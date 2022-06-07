@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const config = {
   // eslint-disable-next-line no-undef
-  wsEndpoint: process.env.TEST_UNIQUE_WS_ENDPOINT,
+  wsEndpoint: process.env.TESTS_UNIQUE_WS_ENDPOINT,
   silentLogger: true,
 };
 
