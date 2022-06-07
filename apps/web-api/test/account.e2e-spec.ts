@@ -174,5 +174,83 @@ describe('Account (e2e)', () => {
           expect(res.body.data.accounts.data[0].timestamp).toBe(1653962321);
         });
     });
+
+    it('should return two accounts', async () => {
+      const args = {
+        order_by: {
+          account_id: 'desc',
+        },
+        where: {
+          _or: [
+            {
+              account_id: {
+                _eq: 'yGJQYCM4cLQQiHb3H7ExKkZRCpgRHEdLTJjxuLrLtdq6X9xzj',
+              },
+            },
+            {
+              account_id: {
+                _eq: 'account_id_1',
+              },
+            },
+          ],
+        },
+      };
+
+      return request(app.getHttpServer())
+        .post(graphqlUrl)
+        .send({ query, variables: { ...args } })
+        .expect((res) => {
+          expect(res.body.data.accounts.count).toBe(2);
+          expect(res.body.data.accounts.data.length).toBe(2);
+
+          expect(res.body.data.accounts.data[0].account_id).toBe(
+            'yGJQYCM4cLQQiHb3H7ExKkZRCpgRHEdLTJjxuLrLtdq6X9xzj',
+          );
+          expect(res.body.data.accounts.data[0].account_id_normalized).toBe(
+            '5Hjjaak1TgCxzMde7hYYPd3wUHj2cfG6FKcUcJgoXDpB15S',
+          );
+          expect(res.body.data.accounts.data[0].available_balance).toBe(
+            '226.064588',
+          );
+          expect(res.body.data.accounts.data[0].block_height).toBe(934550);
+          expect(res.body.data.accounts.data[0].free_balance).toBe(
+            '226.064588',
+          );
+          expect(res.body.data.accounts.data[0].locked_balance).toBe('0');
+          expect(res.body.data.accounts.data[0].nonce).toBe('132');
+          expect(res.body.data.accounts.data[0].timestamp).toBe(1653962324);
+
+          expect(res.body.data.accounts.data[1].account_id).toBe(
+            'account_id_1',
+          );
+          expect(res.body.data.accounts.data[1].account_id_normalized).toBe(
+            'asd',
+          );
+          expect(res.body.data.accounts.data[1].available_balance).toBe('1');
+          expect(res.body.data.accounts.data[1].block_height).toBe(123);
+          expect(res.body.data.accounts.data[1].free_balance).toBe('1');
+          expect(res.body.data.accounts.data[1].locked_balance).toBe('1');
+          expect(res.body.data.accounts.data[1].nonce).toBe('test_text');
+          expect(res.body.data.accounts.data[1].timestamp).toBe(1653962321);
+        });
+    });
+
+    it('should apply offset and return data length === limit', async () => {
+      const args = {
+        order_by: {
+          account_id: 'desc',
+        },
+        offset: 10,
+        limit: 3,
+      };
+
+      return request(app.getHttpServer())
+        .post(graphqlUrl)
+        .send({ query, variables: { ...args } })
+        .expect((res) => {
+          expect(res.body.data.accounts.count).toBe(31);
+          expect(res.body.data.accounts.data.length).toBe(args.limit);
+        });
+    });
   });
 });
