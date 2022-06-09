@@ -20,7 +20,7 @@ export class BaseService<T, S> {
   private readonly entitiesSchema: ISetting = {};
 
   constructor(schemas: ISettingsSchema = {}) {
-    const { aliasSchema, entitiesSchema } = schemas;
+    const { aliasSchema = {}, entitiesSchema = {} } = schemas;
     this.aliasSchema = aliasSchema;
     this.entitiesSchema = entitiesSchema;
   }
@@ -83,7 +83,7 @@ export class BaseService<T, S> {
         throw new Error(`Unknown GQL order by operator '${operator}'.`);
       }
 
-      qb.addOrderBy(this.getSchemaField(qb, field), query.order, query.nulls);
+      qb.addOrderBy(this.getOrderField(qb, field), query.order, query.nulls);
     }
   }
 
@@ -141,7 +141,7 @@ export class BaseService<T, S> {
         }
 
         qb[method]({
-          [this.getSchemaField(qb, field)]: ormOperator(value as TWhereValue),
+          [field]: ormOperator(value as TWhereValue),
         });
       });
     }
@@ -169,7 +169,7 @@ export class BaseService<T, S> {
     return GQLToORMOperationsMap[gqlWhereOperator];
   }
 
-  private getSchemaField(qb: SelectQueryBuilder<T>, key: string): string {
+  private getOrderField(qb: SelectQueryBuilder<T>, key: string): string {
     return `"${this.entitiesSchema[key] ?? qb.alias}"."${
       this.aliasSchema[key] ?? key
     }"`;
