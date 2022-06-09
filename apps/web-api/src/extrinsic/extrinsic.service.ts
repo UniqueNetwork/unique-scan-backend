@@ -1,8 +1,7 @@
-import { Event } from '@entities/Event';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { ExtrinsicDTO } from './extrinsic.dto';
@@ -20,35 +19,6 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
   ): Promise<IDataListResponse<ExtrinsicDTO>> {
     const qb = this.repo.createQueryBuilder();
 
-    const subQuery = qb
-      .subQuery()
-      .select('block_index')
-      .addSelect(
-        `
-        sum(CASE
-          WHEN "Event".method = 'Transfer' THEN "Event".amount::double precision
-          ELSE 0
-        END)
-        `,
-        'amount',
-      )
-      .addSelect(
-        `
-        sum(CASE
-          WHEN "Event".method = 'Deposit' THEN "Event".amount::double precision::double precision
-          ELSE 0
-        END)
-        `,
-        'fee',
-      )
-      .from(Event, 'Event')
-      .where({
-        phase: Not('Initialization'),
-        section: 'balances',
-        method: In(['Transfer', 'Deposit']),
-      })
-      .groupBy('"Event".block_index');
-
     qb.select('Extrinsic.block_index', 'block_index');
     qb.addSelect('Extrinsic.block_number', 'block_number');
     qb.addSelect('Extrinsic.signer', 'from_owner');
@@ -60,24 +30,18 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     qb.addSelect('Extrinsic.timestamp', 'timestamp');
     qb.addSelect('Extrinsic.method', 'method');
     qb.addSelect('Extrinsic.section', 'section');
-    qb.addSelect('"SumByEvent".amount', 'amount');
-    qb.addSelect('"SumByEvent".fee', 'fee');
-    qb.where({
-      method: In([
-        'transfer',
-        'transferAll',
-        'transferKeepAlive',
-        'vestedTransfer',
-      ]),
-    });
-    qb.leftJoin(
-      subQuery.getQuery(),
-      'SumByEvent',
-      '"SumByEvent".block_index = "Extrinsic".block_index',
-    );
+    qb.addSelect(`NULLIF(Extrinsic.amount, 'NaN')`, 'amount');
+    qb.addSelect('Extrinsic.fee', 'fee');
+
+    const aliasSchema = {
+      from_owner: 'signer',
+      from_owner_normalized: 'signer_normalized',
+    };
+    this.applyAliasSchema(aliasSchema);
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
+
     const data = await qb.getRawMany();
     const count = await qb.getCount();
     return { data, count };

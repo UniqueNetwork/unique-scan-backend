@@ -31,6 +31,12 @@ class TokenWhereParams implements TWhereParams<TokenDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   owner?: GQLWhereOpsString;
 
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  owner_normalized?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  collection_name?: GQLWhereOpsString;
+
   @Field(() => GQLWhereOpsInt, { nullable: true })
   collection_id?: GQLWhereOpsInt;
 
@@ -48,6 +54,12 @@ class TokenWhereParams implements TWhereParams<TokenDTO> {
 class TokenOrderByParams implements TOrderByParams<TokenDTO> {
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  owner_normalized?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  collection_name?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   collection_id?: GQLOrderByParamsArgs;

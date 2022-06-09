@@ -29,17 +29,41 @@ class ExtrinsicWhereParams implements TWhereParams<ExtrinsicDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   block_number?: GQLWhereOpsString;
 
-  @Field(() => [ExtrinsicWhereParams], { nullable: true })
-  _or?: ExtrinsicWhereParams[];
-
   @Field(() => GQLWhereOpsString, { nullable: true })
   method?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsInt, { nullable: true })
   amount?: GQLWhereOpsInt;
 
-  @Field(() => ExtrinsicWhereParams, { nullable: true })
-  _and?: ExtrinsicWhereParams;
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  from_owner?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  from_owner_normalized?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  to_owner?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  to_owner_normalized?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  fee?: GQLWhereOpsInt;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  section?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  timestamp?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  hash?: GQLWhereOpsString;
+
+  @Field(() => [ExtrinsicWhereParams], { nullable: true })
+  _and?: ExtrinsicWhereParams[];
+
+  @Field(() => [ExtrinsicWhereParams], { nullable: true })
+  _or?: ExtrinsicWhereParams[];
 }
 
 @InputType()
@@ -49,6 +73,24 @@ class ExtrinsicOrderByParams implements TOrderByParams<ExtrinsicDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   block_number?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  from_owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  amount?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  from_owner_normalized?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  to_owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  to_owner_normalized?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  fee?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   timestamp?: GQLOrderByParamsArgs;

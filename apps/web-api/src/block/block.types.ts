@@ -31,8 +31,11 @@ class BlockWhereParams implements TWhereParams<BlockDto> {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   total_extrinsics?: GQLWhereOpsInt;
 
-  @Field(() => BlockWhereParams, { nullable: true })
-  _and?: BlockWhereParams;
+  @Field(() => [BlockWhereParams], { nullable: true })
+  _and?: BlockWhereParams[];
+
+  @Field(() => [BlockWhereParams], { nullable: true })
+  _or?: BlockWhereParams[];
 }
 
 @InputType()
@@ -48,6 +51,9 @@ class BlockOrderByParams implements TOrderByParams<BlockDto> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   total_events?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  timestamp?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   total_extrinsics?: GQLOrderByParamsArgs;
