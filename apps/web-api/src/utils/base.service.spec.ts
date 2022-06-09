@@ -46,7 +46,7 @@ describe('BaseService', () => {
       });
 
       expect(qb.getQuery()).toBe(
-        'SELECT * FROM "public"."account" "Account" ORDER BY account_id DESC LIMIT 10 OFFSET 10',
+        'SELECT * FROM "public"."account" "Account" ORDER BY "Account"."account_id" DESC LIMIT 10 OFFSET 10',
       );
     });
 
