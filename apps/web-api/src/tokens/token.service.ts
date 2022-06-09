@@ -45,7 +45,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     this.applyOrderCondition(qb, queryArgs);
   }
 
-  private select(qb: SelectQueryBuilder<TokenDTO>): void {
+  private select(qb: SelectQueryBuilder<Tokens>): void {
     qb.select('Tokens.collection_id', 'collection_id');
     qb.addSelect('Tokens.token_id', 'token_id');
     qb.addSelect('Tokens.data', 'data');
