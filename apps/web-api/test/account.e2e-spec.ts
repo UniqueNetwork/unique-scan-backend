@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { print } from 'graphql';
 import * as request from 'supertest';
-import { Fixtures } from '@common/test/loadFixtures';
+import { Fixtures } from '@common/test/fixtures';
 import { gql } from 'apollo-server-express';
 import { AppModule } from '../src/app.module';
 
