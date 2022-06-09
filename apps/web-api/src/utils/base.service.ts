@@ -141,7 +141,7 @@ export class BaseService<T, S> {
         }
 
         qb[method]({
-          [field]: ormOperator(value as TWhereValue),
+          [this.getFilterField(field)]: ormOperator(value as TWhereValue),
         });
       });
     }
@@ -173,5 +173,9 @@ export class BaseService<T, S> {
     return `"${this.entitiesSchema[key] ?? qb.alias}"."${
       this.aliasSchema[key] ?? key
     }"`;
+  }
+
+  private getFilterField(key: string): string {
+    return `${this.aliasSchema[key] ?? key}`;
   }
 }
