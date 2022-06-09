@@ -1,91 +1,28 @@
-import {
-  Equal,
-  ILike,
-  Like,
-  Not,
-  In,
-  Brackets,
-  SelectQueryBuilder,
-  FindOperator,
-} from 'typeorm';
+import { Brackets, SelectQueryBuilder } from 'typeorm';
 import { isEmpty } from 'lodash';
 
+import { IGQLQueryArgs, IWhereOperators, TWhereParams } from './gql-query-args';
 import {
-  IGQLQueryArgs,
-  IWhereOperators,
-  TWhereParams,
-  IOrderByOperators,
-  IWhereOperations,
-} from './gql-query-args';
-
-type TWhereCondition =
-  | typeof Equal
-  | typeof Not
-  | typeof Like
-  | typeof ILike
-  | typeof In;
-
-type TOperatorsMap = {
-  [key in keyof IWhereOperations]: TWhereCondition;
-};
-
-type TWhereValue = (string | FindOperator<string>) &
-  (string[] | FindOperator<string>) &
-  (number | FindOperator<number>) &
-  (number[] | FindOperator<number>);
-
-const GQLToORMOperatorsMap: TOperatorsMap = {
-  _eq: Equal,
-  _neq: Not,
-  _like: Like,
-  _ilike: ILike,
-  _in: In,
-};
-
-type TOrderBy = 'ASC' | 'DESC';
-type TOrderByNulls = 'NULLS FIRST' | 'NULLS LAST';
-
-enum Operator {
-  AND = '_and',
-  OR = '_or',
-}
-
-enum OperatorMethods {
-  AND = 'andWhere',
-  OR = 'orWhere',
-}
-
-interface IOrderByEntity {
-  order: TOrderBy;
-  nulls?: TOrderByNulls;
-}
-
-const GQLToORMOrderByOperatorsMap: {
-  [key in keyof IOrderByOperators]: IOrderByEntity;
-} = {
-  asc: { order: 'ASC' },
-  desc: { order: 'DESC' },
-  asc_nulls_first: { order: 'ASC', nulls: 'NULLS FIRST' },
-  asc_nulls_last: { order: 'ASC', nulls: 'NULLS LAST' },
-  desc_nulls_first: { order: 'DESC', nulls: 'NULLS FIRST' },
-  desc_nulls_last: { order: 'DESC', nulls: 'NULLS LAST' },
-};
-
-const GQLToORMOperationsMap = {
-  _and: OperatorMethods.AND,
-  _or: OperatorMethods.OR,
-};
-
-interface IAliasObject {
-  [key: string]: string;
-}
+  GQLToORMOperationsMap,
+  GQLToORMOperatorsMap,
+  GQLToORMOrderByOperatorsMap,
+  ISetting,
+  ISettingsSchema,
+  Operator,
+  OperatorMethods,
+  TWhereCondition,
+  TWhereValue,
+} from './base.service.types';
 
 export class BaseService<T, S> {
-  readonly DEFAULT_PAGE_SIZE = 10;
-  private aliasSchema: IAliasObject = {};
+  private readonly DEFAULT_PAGE_SIZE = 10;
+  private readonly aliasSchema: ISetting = {};
+  private readonly entitiesSchema: ISetting = {};
 
-  public applyAliasSchema(schema: IAliasObject) {
-    this.aliasSchema = schema;
+  constructor(schemas: ISettingsSchema = {}) {
+    const { aliasSchema = {}, entitiesSchema = {} } = schemas;
+    this.aliasSchema = aliasSchema;
+    this.entitiesSchema = entitiesSchema;
   }
 
   protected applyLimitOffset(
@@ -138,14 +75,15 @@ export class BaseService<T, S> {
       return;
     }
 
-    for (const key in args.order_by) {
-      const operator = args.order_by[key];
+    for (const field in args.order_by) {
+      const operator = args.order_by[field];
 
       const query = GQLToORMOrderByOperatorsMap[operator];
       if (!query) {
         throw new Error(`Unknown GQL order by operator '${operator}'.`);
       }
-      qb.addOrderBy(`"${qb.alias}"."${key}"`, query.order, query.nulls);
+
+      qb.addOrderBy(this.getOrderField(qb, field), query.order, query.nulls);
     }
   }
 
@@ -203,7 +141,7 @@ export class BaseService<T, S> {
         }
 
         qb[method]({
-          [this.aliasSchema[field] ?? field]: ormOperator(value as TWhereValue),
+          [this.getFilterField(field)]: ormOperator(value as TWhereValue),
         });
       });
     }
@@ -229,5 +167,15 @@ export class BaseService<T, S> {
 
   private getOrmWhereOperation(gqlWhereOperator: string): OperatorMethods {
     return GQLToORMOperationsMap[gqlWhereOperator];
+  }
+
+  private getOrderField(qb: SelectQueryBuilder<T>, key: string): string {
+    return `"${this.entitiesSchema[key] ?? qb.alias}"."${
+      this.aliasSchema[key] ?? key
+    }"`;
+  }
+
+  private getFilterField(key: string): string {
+    return `${this.aliasSchema[key] ?? key}`;
   }
 }
