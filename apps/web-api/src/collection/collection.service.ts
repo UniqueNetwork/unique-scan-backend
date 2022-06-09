@@ -6,12 +6,18 @@ import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 
+const entitiesSchema = {
+  tokens_count: 'Statistics',
+  actions_count: 'Statistics',
+  holders_count: 'Statistics',
+};
+
 @Injectable()
 export class CollectionService extends BaseService<Collections, CollectionDTO> {
   constructor(
     @InjectRepository(Collections) private repo: Repository<Collections>,
   ) {
-    super();
+    super({ entitiesSchema });
   }
 
   public async find(
@@ -111,7 +117,6 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
       'actions_count',
     );
     qb.addSelect('Collections.date_of_creation', 'date_of_creation');
-
     qb.leftJoin('Collections.statistics', 'Statistics');
   }
 }
