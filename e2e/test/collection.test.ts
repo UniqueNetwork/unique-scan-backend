@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 import { expect } from 'chai';
 import { expectResponseContains } from '../utils';
 import { collectionApi } from '../api';
@@ -11,7 +13,7 @@ describe('Collections', function () {
     schema.description = 'The one!';
     schema.tokenPrefix = 'THE1';
 
-    const collection = await createCollection('//Alice', schema);
+    const collection = await createCollection('//Eve', schema);
     const collectionId = collection.collectionId;
     const getActualCollection = async () => collectionApi.getById(collectionId);
 

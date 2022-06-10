@@ -56,7 +56,7 @@ const mintCollectionsAndTokens = async () => {
   }
 };
 
-export const createCollection = async (
+const createCollection = async (
   seed = '//Eve',
   schema = collections[0].schema,
 ) => {
@@ -84,7 +84,7 @@ export const createCollection = async (
   }
 };
 
-export const addTokensToCollection = async (collection, tokens) => {
+const addTokensToCollection = async (collection, tokens) => {
   await mintedCollection.mintMultipleTokens(
     account,
     tokens.map((token) => {
@@ -96,4 +96,10 @@ export const addTokensToCollection = async (collection, tokens) => {
   );
 };
 
-mintCollectionsAndTokens().catch((err) => console.log(err.message));
+//mintCollectionsAndTokens().catch((err) => console.log(err.message));
+
+module.exports = {
+  createCollection,
+  addTokensToCollection,
+  mintCollectionsAndTokens,
+};
