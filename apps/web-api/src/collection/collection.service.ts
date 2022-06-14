@@ -12,6 +12,10 @@ const entitiesSchema = {
   holders_count: 'Statistics',
 };
 
+const relationSchema = {
+  tokens: 'Tokens',
+};
+
 @Injectable()
 export class CollectionService extends BaseService<Collections, CollectionDTO> {
   constructor(

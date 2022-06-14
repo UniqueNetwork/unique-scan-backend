@@ -9,6 +9,7 @@ import {
   CollectionEntity,
   QueryArgs,
 } from './collection.resolver.types';
+import { QueryArgs as TokenQueryArgs } from '../tokens/token.resolver.types';
 
 @Resolver(() => CollectionEntity)
 export class CollectionResolver {
@@ -25,7 +26,10 @@ export class CollectionResolver {
   }
 
   @ResolveField()
-  async tokens(@Parent() { collection_id }: CollectionEntity) {
-    return this.tokenService.getByCollectionId(collection_id);
+  async tokens(
+    @Parent() { collection_id }: CollectionEntity,
+    @Args({ nullable: true, defaultValue: {} }) args: TokenQueryArgs,
+  ) {
+    return this.tokenService.getByCollectionId(collection_id, args);
   }
 }

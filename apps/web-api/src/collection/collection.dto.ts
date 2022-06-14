@@ -55,10 +55,10 @@ export class CollectionDTO implements Partial<Collections> {
   limits_sponsore_data_rate?: number;
 
   @Field(() => Boolean)
-  owner_can_transfer: boolean;
+  owner_can_transfer?: boolean;
 
   @Field(() => Boolean)
-  owner_can_destroy: boolean;
+  owner_can_destroy?: boolean;
 
   @Field(() => String, { nullable: true })
   schema_version?: string;
@@ -80,4 +80,7 @@ export class CollectionDTO implements Partial<Collections> {
 
   @Field(() => Int, { nullable: true })
   date_of_creation?: number;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  variable_on_chain_schema?: object;
 }

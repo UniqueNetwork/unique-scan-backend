@@ -24,12 +24,14 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return { data, count };
   }
 
-  public getByCollectionId(id: number) {
+  public getByCollectionId(id: number, queryArgs?: IGQLQueryArgs<TokenDTO>) {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, {
-      where: { collection_id: { _eq: id } },
-      limit: null, // return all tokens
+      ...queryArgs,
+      where: {
+        _and: [{ collection_id: { _eq: id } }, { ...queryArgs.where }],
+      },
     });
 
     return qb.getRawMany();

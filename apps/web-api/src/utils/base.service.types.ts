@@ -1,6 +1,6 @@
 import { Equal, ILike, Like, Not, In, FindOperator } from 'typeorm';
 
-import { IOrderByOperators, IWhereOperations } from './gql-query-args';
+import { IOrderByOperators, IWhereOperators } from './gql-query-args';
 
 export type TWhereCondition =
   | typeof Equal
@@ -10,7 +10,7 @@ export type TWhereCondition =
   | typeof In;
 
 type TOperatorsMap = {
-  [key in keyof IWhereOperations]: TWhereCondition;
+  [key in keyof IWhereOperators]: TWhereCondition;
 };
 
 export type TWhereValue = (string | FindOperator<string>) &

@@ -17,6 +17,7 @@ import {
 } from '../utils/gql-query-args';
 import { CollectionDTO, CollectionEnum } from './collection.dto';
 import { TokenDTO } from '../tokens/token.dto';
+import { TokenWhereParams } from '../tokens/token.resolver.types';
 
 registerEnumType(CollectionEnum, { name: 'CollectionEnum' });
 
@@ -36,6 +37,9 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   description?: GQLWhereOpsString;
+
+  @Field(() => TokenWhereParams, { nullable: true })
+  tokens?: TokenWhereParams;
 
   @Field(() => [CollectionWhereParams], { nullable: true })
   _and?: CollectionWhereParams[];
