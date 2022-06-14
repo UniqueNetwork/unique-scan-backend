@@ -8,15 +8,15 @@ import { AppModule } from '../src/app.module';
 
 describe('Block (e2e)', () => {
   let app: INestApplication;
-  const fixtures = new Fixtures();
-  const graphqlUrl = '/v1/graphql';
+  const fixtures = new Fixtures('apps/web-api/test/fixtures', 'block');
+  const graphqlUrl = process.env.GRAPHQL_URL;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
-    await fixtures.loadFixtures('apps/web-api/test/fixtures');
+    await fixtures.loadFixtures();
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -115,7 +115,7 @@ describe('Block (e2e)', () => {
         });
     });
 
-    it('should return one account', async () => {
+    it('should return one block', async () => {
       const args = {
         order_by: {
           block_number: 'desc',

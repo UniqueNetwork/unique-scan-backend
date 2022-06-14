@@ -21,7 +21,7 @@ const typeormConfig: TypeOrmModuleOptions = {
     migrationsDir,
     entitiesDir,
   },
-  logging: process.env.LOGGING === '0' ? false : true,
+  logging: process.env.LOGGING === '1',
 };
 
 export default typeormConfig;

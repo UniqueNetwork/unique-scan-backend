@@ -8,15 +8,15 @@ import { AppModule } from '../src/app.module';
 
 describe('Account (e2e)', () => {
   let app: INestApplication;
-  const fixtures = new Fixtures();
-  const graphqlUrl = '/v1/graphql';
+  const fixtures = new Fixtures('apps/web-api/test/fixtures', 'account');
+  const graphqlUrl = process.env.GRAPHQL_URL;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
-    await fixtures.loadFixtures('apps/web-api/test/fixtures');
+    await fixtures.loadFixtures();
 
     app = moduleFixture.createNestApplication();
     await app.init();

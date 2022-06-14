@@ -81,6 +81,9 @@ export class Collections {
   mode: string | null;
 
   @OneToMany(() => Tokens, (tokens) => tokens.collection)
+  @JoinColumn([
+    { name: 'collection_id', referencedColumnName: 'collection_id' },
+  ])
   tokens: Tokens[];
 
   @Column('boolean', { name: 'mint_mode', nullable: true })
