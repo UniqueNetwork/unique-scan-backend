@@ -6,10 +6,15 @@ import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
 
+const entitiesSchema = {
+  token_prefix: 'collection',
+  collection_name: 'collection',
+};
+
 @Injectable()
 export class TokenService extends BaseService<Tokens, TokenDTO> {
   constructor(@InjectRepository(Tokens) private repo: Repository<Tokens>) {
-    super();
+    super({ entitiesSchema });
   }
 
   public async find(

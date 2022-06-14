@@ -1,4 +1,4 @@
-import { Brackets, SelectQueryBuilder } from 'typeorm';
+import { Brackets, FindOperator, SelectQueryBuilder } from 'typeorm';
 import { isEmpty } from 'lodash';
 
 import { IGQLQueryArgs, IWhereOperators, TWhereParams } from './gql-query-args';
@@ -11,7 +11,6 @@ import {
   Operator,
   OperatorMethods,
   TWhereCondition,
-  TWhereValue,
 } from './base.service.types';
 
 export class BaseService<T, S> {
@@ -107,6 +106,7 @@ export class BaseService<T, S> {
       if (operator) {
         qb[operator](
           this.addSubQuery(
+            qb,
             where,
             operator === OperatorMethods.AND ? Operator.AND : Operator.OR,
           ),
@@ -140,21 +140,19 @@ export class BaseService<T, S> {
           throw new Error(`Unknown GQL condition operator '${operation}'.`);
         }
 
-        qb[method]({
-          [this.getFilterField(field)]: ormOperator(value as TWhereValue),
-        });
+        qb[method](this.getFilterCondition(field, ormOperator(value)));
       });
     }
   }
 
-  private addSubQuery(where: TWhereParams<S>, operator: Operator) {
-    return new Brackets((qb) =>
+  private addSubQuery(
+    qb: SelectQueryBuilder<T>,
+    where: TWhereParams<S>,
+    operator: Operator,
+  ) {
+    return new Brackets(() =>
       where[operator].map((queryArray) => {
-        this.applyConditionTree(
-          qb as SelectQueryBuilder<T>,
-          queryArray,
-          operator,
-        );
+        this.applyConditionTree(qb, queryArray, operator);
       }),
     );
   }
@@ -175,7 +173,15 @@ export class BaseService<T, S> {
     }"`;
   }
 
-  private getFilterField(key: string): string {
-    return `${this.aliasSchema[key] ?? key}`;
+  private getFilterCondition(field: string, value: FindOperator<any>) {
+    if (this.entitiesSchema[field]) {
+      return {
+        [this.entitiesSchema[field]]: {
+          [field]: value,
+        },
+      };
+    }
+
+    return { [field]: value };
   }
 }
