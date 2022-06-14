@@ -19,8 +19,5 @@ export class CollectionsStats {
   @OneToOne(() => Collections, (collections) => collections.statistics, {
     nullable: true,
   })
-  // @JoinColumn([
-  //   { name: 'collection_id', referencedColumnName: 'collection_id' },
-  // ])
   collection: Collections;
 }
