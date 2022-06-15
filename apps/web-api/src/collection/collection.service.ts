@@ -7,9 +7,9 @@ import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 
 const relationsFields = {
-  tokens_count: 'statistics',
-  actions_count: 'statistics',
-  holders_count: 'statistics',
+  tokens_count: 'Statistics',
+  actions_count: 'Statistics',
+  holders_count: 'Statistics',
 };
 
 @Injectable()
