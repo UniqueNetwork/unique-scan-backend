@@ -1,27 +1,27 @@
-import { Brackets, FindOperator, SelectQueryBuilder } from 'typeorm';
-import { isEmpty } from 'lodash';
+import { Brackets, SelectQueryBuilder } from 'typeorm';
+import { isEmpty, random } from 'lodash';
 
 import { IGQLQueryArgs, IWhereOperators, TWhereParams } from './gql-query-args';
 import {
   GQLToORMOperationsMap,
-  GQLToORMOperatorsMap,
+  GQLToORMOperatorsDict,
   GQLToORMOrderByOperatorsMap,
   ISetting,
   ISettingsSchema,
   Operator,
   OperatorMethods,
-  TWhereCondition,
+  TParamValue,
 } from './base.service.types';
 
 export class BaseService<T, S> {
   private readonly DEFAULT_PAGE_SIZE = 10;
-  private readonly aliasSchema: ISetting = {};
-  private readonly entitiesSchema: ISetting = {};
+  private readonly aliasFields: ISetting = {};
+  private readonly relationsFields: ISetting = {};
 
   constructor(schemas: ISettingsSchema = {}) {
-    const { aliasSchema = {}, entitiesSchema = {} } = schemas;
-    this.aliasSchema = aliasSchema;
-    this.entitiesSchema = entitiesSchema;
+    const { aliasFields = {}, relationsFields = {} } = schemas;
+    this.aliasFields = aliasFields;
+    this.relationsFields = relationsFields;
   }
 
   protected applyLimitOffset(
@@ -82,7 +82,11 @@ export class BaseService<T, S> {
         throw new Error(`Unknown GQL order by operator '${operator}'.`);
       }
 
-      qb.addOrderBy(this.getOrderField(qb, field), query.order, query.nulls);
+      qb.addOrderBy(
+        this.getConditionField(qb, field),
+        query.order,
+        query.nulls,
+      );
     }
   }
 
@@ -106,14 +110,13 @@ export class BaseService<T, S> {
       if (operator) {
         qb[operator](
           this.addSubQuery(
-            qb,
             where,
             operator === OperatorMethods.AND ? Operator.AND : Operator.OR,
           ),
         );
       } else {
         const whereEntity = { [op]: where[op] } as TWhereParams<S>;
-        this.setWhereConditionValue(
+        this.setWhereConditionExpression(
           qb,
           whereEntity,
           upperOperator === Operator.AND
@@ -124,7 +127,7 @@ export class BaseService<T, S> {
     });
   }
 
-  private setWhereConditionValue(
+  private setWhereConditionExpression(
     qb: SelectQueryBuilder<T>,
     where: TWhereParams<S>,
     method: OperatorMethods,
@@ -132,56 +135,73 @@ export class BaseService<T, S> {
     for (const [field, operators] of Object.entries<IWhereOperators>(where)) {
       Object.entries(operators).forEach((parameters) => {
         const [operation, value] = parameters;
-        const ormOperator = this.getOrmWhereOperator(
+
+        const { query, params } = this.createWhereConditionExpression(
+          qb,
+          field,
+          value,
           operation as keyof IWhereOperators,
         );
 
-        if (!operation) {
-          throw new Error(`Unknown GQL condition operator '${operation}'.`);
-        }
-
-        qb[method](this.getFilterCondition(field, ormOperator(value)));
+        qb[method](query, params);
       });
     }
   }
 
-  private addSubQuery(
-    qb: SelectQueryBuilder<T>,
-    where: TWhereParams<S>,
-    operator: Operator,
-  ) {
-    return new Brackets(() =>
+  private addSubQuery(where: TWhereParams<S>, operator: Operator) {
+    return new Brackets((qb) =>
       where[operator].map((queryArray) => {
-        this.applyConditionTree(qb, queryArray, operator);
+        this.applyConditionTree(
+          qb as SelectQueryBuilder<T>,
+          queryArray,
+          operator,
+        );
       }),
     );
   }
 
-  private getOrmWhereOperator(
-    gqlWhereOperator: keyof IWhereOperators,
-  ): TWhereCondition {
-    return GQLToORMOperatorsMap[gqlWhereOperator];
+  private createWhereConditionExpression(
+    qb: SelectQueryBuilder<T>,
+    field: string,
+    value: TParamValue,
+    op: keyof IWhereOperators,
+  ) {
+    const fieldWithAlias = this.getConditionField(qb, field);
+    const paramName = `${field}_${Date.now()}_${random(1, 1000)}`;
+    const operation = this.getOrmWhereOperator(op);
+    let query = '';
+
+    switch (op) {
+      case '_in':
+        query = `${fieldWithAlias} ${operation} (:...${paramName})`;
+        break;
+      case '_like':
+      case '_ilike':
+      case '_eq':
+      case '_neq':
+        query = `${fieldWithAlias} ${operation} :${paramName}`;
+        break;
+      default:
+        throw new Error(`Unknown filter operation: ${op}`);
+    }
+
+    return {
+      query,
+      params: { [paramName]: value },
+    };
+  }
+
+  private getOrmWhereOperator(gqlWhereOperator: keyof IWhereOperators) {
+    return GQLToORMOperatorsDict[gqlWhereOperator];
   }
 
   private getOrmWhereOperation(gqlWhereOperator: string): OperatorMethods {
     return GQLToORMOperationsMap[gqlWhereOperator];
   }
 
-  private getOrderField(qb: SelectQueryBuilder<T>, key: string): string {
-    return `"${this.entitiesSchema[key] ?? qb.alias}"."${
-      this.aliasSchema[key] ?? key
+  private getConditionField(qb: SelectQueryBuilder<T>, field: string): string {
+    return `"${this.relationsFields[field] ?? qb.alias}"."${
+      this.aliasFields[field] ?? field
     }"`;
-  }
-
-  private getFilterCondition(field: string, value: FindOperator<any>) {
-    if (this.entitiesSchema[field]) {
-      return {
-        [this.entitiesSchema[field]]: {
-          [field]: value,
-        },
-      };
-    }
-
-    return { [field]: value };
   }
 }
