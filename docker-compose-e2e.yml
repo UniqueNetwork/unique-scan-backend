@@ -1,0 +1,101 @@
+version: "3"
+
+networks:
+  scan:
+    external: false
+
+services:
+  scan-web-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scan-web-api
+    ports:
+      - "3031:3031"
+    networks:
+      - scan
+    depends_on:
+      - postgres
+      - crawler
+    restart: on-failure
+    environment:
+      - PORT=3031
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DATABASE=polkastats
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+
+  postgres:
+    image: postgres:14.2-alpine
+    container_name: scan-database
+    networks:
+      - scan
+    environment:
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DB=polkastats
+      - TZ=Europe/Moscow
+      - PGTZ=Europe/Moscow
+    ports:
+      - "3032:5432"
+    volumes:
+      - scan-pgdata:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+
+  crawler:
+    image: registry.uniquenetwork.dev/uniquenetwork/unique-explorer-api:b66f5dc00b4de9446bd8591f5888497a510f9c2a35a01c3dda1d6616-1655272711166
+    container_name: scan-crawler
+    networks:
+      - scan
+    depends_on:
+      - crawler-migrations
+    restart: on-failure
+    environment:
+      - NODE_ENV=production
+      - WS_PROVIDER_URL=ws://blockchain:9944
+      - TYPE_PROVIDER=quartz
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DATABASE=polkastats
+      - PROMETHEUS_PORT=9003
+      - HOST_CRAWLER=0.0.0.0
+    entrypoint: ["node", "--enable-source-maps", "-r", "./dist/bundle.js"]
+
+  blockchain:
+    image: uniquenetwork/quartz-node-private:latest
+    container_name: scan-blockchain
+    networks:
+      - scan
+    restart: on-failure
+    ports:
+      - "9933:9933"
+      - "9944:9944"
+      - "9844:9844"
+
+  crawler-migrations:
+    image: registry.uniquenetwork.dev/uniquenetwork/unique-explorer-api:b66f5dc00b4de9446bd8591f5888497a510f9c2a35a01c3dda1d6616-1655272711166
+    container_name: scan-crawler-migrations
+    networks:
+      - scan
+    depends_on:
+      - postgres
+      - blockchain
+    restart: on-failure
+    environment:
+      - NODE_ENV=production
+      - WS_PROVIDER_URL=ws://blockchain:9944
+      - TYPE_PROVIDER=quartz
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DATABASE=polkastats
+      - PROMETHEUS_PORT=9003
+      - HOST_CRAWLER=0.0.0.0
+    entrypoint: ["npm", "run", "migration"]
+
+
+volumes:
+  scan-pgdata:
+    external: false
