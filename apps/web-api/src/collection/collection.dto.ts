@@ -55,10 +55,10 @@ export class CollectionDTO implements Partial<Collections> {
   limits_sponsore_data_rate?: number;
 
   @Field(() => Boolean)
-  owner_can_transfer: boolean;
+  owner_can_transfer?: boolean;
 
   @Field(() => Boolean)
-  owner_can_destroy: boolean;
+  owner_can_destroy?: boolean;
 
   @Field(() => String, { nullable: true })
   schema_version?: string;

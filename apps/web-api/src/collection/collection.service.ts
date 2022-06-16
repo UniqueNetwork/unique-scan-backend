@@ -6,7 +6,7 @@ import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 
-const entitiesSchema = {
+const relationsFields = {
   tokens_count: 'Statistics',
   actions_count: 'Statistics',
   holders_count: 'Statistics',
@@ -17,7 +17,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   constructor(
     @InjectRepository(Collections) private repo: Repository<Collections>,
   ) {
-    super({ entitiesSchema });
+    super({ relationsFields });
   }
 
   public async find(

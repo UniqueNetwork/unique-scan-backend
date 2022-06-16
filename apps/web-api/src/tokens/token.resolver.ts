@@ -43,6 +43,9 @@ class TokenWhereParams implements TWhereParams<TokenDTO> {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   token_id?: GQLWhereOpsInt;
 
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  token_prefix?: GQLWhereOpsString;
+
   @Field(() => [TokenWhereParams], { nullable: true })
   _and?: TokenWhereParams[];
 
