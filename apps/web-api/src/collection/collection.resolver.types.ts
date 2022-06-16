@@ -41,6 +41,9 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   @Field(() => TokenWhereParams, { nullable: true })
   tokens?: TokenWhereParams;
 
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  token_prefix?: GQLWhereOpsString;
+
   @Field(() => [CollectionWhereParams], { nullable: true })
   _and?: CollectionWhereParams[];
 

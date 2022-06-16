@@ -1,29 +1,11 @@
-import { Equal, ILike, Like, Not, In, FindOperator } from 'typeorm';
+import { IOrderByOperators } from './gql-query-args';
 
-import { IOrderByOperators, IWhereOperators } from './gql-query-args';
-
-export type TWhereCondition =
-  | typeof Equal
-  | typeof Not
-  | typeof Like
-  | typeof ILike
-  | typeof In;
-
-type TOperatorsMap = {
-  [key in keyof IWhereOperators]: TWhereCondition;
-};
-
-export type TWhereValue = (string | FindOperator<string>) &
-  (string[] | FindOperator<string>) &
-  (number | FindOperator<number>) &
-  (number[] | FindOperator<number>);
-
-export const GQLToORMOperatorsMap: TOperatorsMap = {
-  _eq: Equal,
-  _neq: Not,
-  _like: Like,
-  _ilike: ILike,
-  _in: In,
+export const GQLToORMOperatorsDict = {
+  _eq: '=',
+  _neq: '!=',
+  _like: 'LIKE',
+  _ilike: 'ILIKE',
+  _in: 'IN',
 };
 
 type TOrderBy = 'ASC' | 'DESC';
@@ -65,6 +47,8 @@ export interface ISetting {
 }
 
 export interface ISettingsSchema {
-  aliasSchema?: ISetting;
-  entitiesSchema?: ISetting;
+  aliasFields?: ISetting;
+  relationsFields?: ISetting;
 }
+
+export type TParamValue = string | number | Array<string | number>;
