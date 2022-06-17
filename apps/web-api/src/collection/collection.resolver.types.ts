@@ -38,9 +38,6 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   description?: GQLWhereOpsString;
 
-  @Field(() => TokenWhereParams, { nullable: true })
-  tokens?: TokenWhereParams;
-
   @Field(() => GQLWhereOpsString, { nullable: true })
   token_prefix?: GQLWhereOpsString;
 
@@ -49,6 +46,12 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => [CollectionWhereParams], { nullable: true })
   _or?: CollectionWhereParams[];
+}
+
+@InputType()
+export class CollectionWhereParamsWithRelation extends CollectionWhereParams {
+  @Field(() => TokenWhereParams, { nullable: true })
+  tokens?: TokenWhereParams;
 }
 
 @InputType()
@@ -104,8 +107,8 @@ export class QueryArgs
   @Field(() => CollectionEnum, { nullable: true })
   distinct_on?: CollectionEnum;
 
-  @Field(() => CollectionWhereParams, { nullable: true })
-  where?: CollectionWhereParams;
+  @Field(() => CollectionWhereParamsWithRelation, { nullable: true })
+  where?: CollectionWhereParamsWithRelation;
 
   @Field(() => CollectionOrderByParams, { nullable: true })
   order_by?: CollectionOrderByParams;

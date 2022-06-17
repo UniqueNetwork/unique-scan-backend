@@ -35,7 +35,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return { data, count };
   }
 
-  public getByCollectionId(id: number, queryArgs?: IGQLQueryArgs<TokenDTO>) {
+  public getByCollectionId(id: number, queryArgs: IGQLQueryArgs<TokenDTO>) {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, {
@@ -46,6 +46,19 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     });
 
     return qb.getRawMany();
+  }
+
+  public getCollectionIdsSubQuery(queryArgs: IGQLQueryArgs<TokenDTO>) {
+    const qb = this.repo.createQueryBuilder();
+    qb.select('collection_id');
+    qb.distinct();
+    this.applyLimitOffset(qb, queryArgs);
+    this.applyWhereCondition(qb, queryArgs);
+
+    return {
+      query: qb.getQuery(),
+      params: qb.getParameters(),
+    };
   }
 
   private applyFilters(
