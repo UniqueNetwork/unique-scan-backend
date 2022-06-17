@@ -15,9 +15,9 @@ const getAll = async () => {
 
 const getById = async (collectionId: number | string) => {
   const response = await scanApi.post('/', {
-    query: collectionsQuery({
-      where: { collection_id: { _eq: collectionId } },
-    }),
+    query: `query collectionsQuery{collections(where:{collection_id:{_eq:${collectionId}}})
+    {data{collection_id,name,description}}}`,
+    variables: {},
   });
   return handleResponse(response).data.collections[0];
 };

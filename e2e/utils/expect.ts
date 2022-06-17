@@ -9,7 +9,7 @@ export const expectResponseContains = (
   return retry(
     async () => {
       const response = await request();
-      return expect(response).to.include(objContains);
+      return expect(response).to.equals(objContains);
     },
     timeout ? timeout : 5000,
   );
