@@ -81,6 +81,6 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => Int, { nullable: true })
   date_of_creation?: number;
 
-  @Field(() => GraphQLJSONObject, { nullable: true })
+  @Field(() => GraphQLJSON, { nullable: true })
   variable_on_chain_schema?: object;
 }

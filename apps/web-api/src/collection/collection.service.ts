@@ -15,20 +15,21 @@ const relationsFields = {
   holders_count: 'Statistics',
 };
 
+type TCollectionWithTokens = CollectionDTO & { tokens?: TokenDTO[] };
+
 @Injectable()
 export class CollectionService extends BaseService<Collections, CollectionDTO> {
-  private relations: string[];
+  private relations: string[] = [];
 
   constructor(
     @InjectRepository(Collections) private repo: Repository<Collections>,
     @Inject(forwardRef(() => TokenService)) private tokenService: TokenService,
   ) {
     super({ relationsFields });
-    this.relations = [];
 
     const relations = this.repo.metadata.ownRelations;
-    relations.forEach((rel) => {
-      this.relations.push(rel.propertyName);
+    relations.forEach(({ propertyName }) => {
+      this.relations.push(propertyName);
     });
   }
 
@@ -66,35 +67,36 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   ): void {
     this.select(qb);
     this.applyTokensSubQuery(qb, queryArgs);
-    this.filterCommonWhere(queryArgs);
     this.applyLimitOffset(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    this.applyWhereCondition(qb, queryArgs);
+    this.applyWhereCondition(qb, this.getCollectionQueryArgs(queryArgs));
     this.applyDistinctOn(qb, queryArgs);
-  }
-
-  private filterCommonWhere(queryArgs: IGQLQueryArgs<CollectionDTO>) {
-    queryArgs.where = pickBy(
-      queryArgs.where,
-      (_val, key: string) => !this.relations.includes(key),
-    );
   }
 
   private applyTokensSubQuery(
     qb: SelectQueryBuilder<Collections>,
-    queryArgs: IGQLQueryArgs<CollectionDTO>,
+    queryArgs: IGQLQueryArgs<TCollectionWithTokens>,
   ) {
-    const where = queryArgs.where as { tokens?: TokenDTO };
-    if (where.tokens) {
-      const { query, params } = this.tokenService.getCollectionIdsSubQuery({
+    if (queryArgs.where.tokens) {
+      const { query, params } = this.tokenService.getCollectionIdsQuery({
         limit: null,
-        where: where.tokens,
+        where: queryArgs.where.tokens,
       } as IGQLQueryArgs<TokenDTO>);
 
       if (!isEmpty(params)) {
         qb.andWhere(`Collections.collection_id IN ( ${query} )`, params);
       }
     }
+  }
+
+  private getCollectionQueryArgs(queryArgs: IGQLQueryArgs<CollectionDTO>) {
+    return {
+      ...queryArgs,
+      where: pickBy(
+        queryArgs.where,
+        (_val, key: string) => !this.relations.includes(key),
+      ),
+    } as IGQLQueryArgs<CollectionDTO>;
   }
 
   private select(qb: SelectQueryBuilder<Collections>): void {

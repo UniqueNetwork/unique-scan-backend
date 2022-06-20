@@ -48,7 +48,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return qb.getRawMany();
   }
 
-  public getCollectionIdsSubQuery(queryArgs: IGQLQueryArgs<TokenDTO>) {
+  public getCollectionIdsQuery(queryArgs: IGQLQueryArgs<TokenDTO>) {
     const qb = this.repo.createQueryBuilder();
     qb.select('collection_id');
     qb.distinct();

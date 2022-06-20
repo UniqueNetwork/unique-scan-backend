@@ -94,7 +94,6 @@ export class BaseService<T, S> {
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
   ): void {
-    // console.log('this.repo', this.repo);
     if (!isEmpty(args.where)) {
       this.applyConditionTree(qb, args.where);
     }
