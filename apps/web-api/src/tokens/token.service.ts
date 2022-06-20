@@ -79,6 +79,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Collection.name', 'collection_name');
     qb.addSelect('Collection.description', 'collection_description');
     qb.addSelect('"Collection".collection_cover', 'collection_cover');
+    qb.addSelect(
+      `concat(Collection.token_prefix, ' #', Tokens.token_id)`,
+      'token_name',
+    );
     qb.leftJoin('Tokens.collection', 'Collection');
   }
 }
