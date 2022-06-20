@@ -17,6 +17,7 @@ import {
 } from '../utils/gql-query-args';
 import { CollectionDTO, CollectionEnum } from './collection.dto';
 import { TokenDTO } from '../tokens/token.dto';
+import { TokenWhereParams } from '../tokens/token.resolver.types';
 
 registerEnumType(CollectionEnum, { name: 'CollectionEnum' });
 
@@ -45,6 +46,12 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => [CollectionWhereParams], { nullable: true })
   _or?: CollectionWhereParams[];
+}
+
+@InputType()
+export class CollectionWhereParamsWithRelation extends CollectionWhereParams {
+  @Field(() => TokenWhereParams, { nullable: true })
+  tokens?: TokenWhereParams;
 }
 
 @InputType()
@@ -100,8 +107,8 @@ export class QueryArgs
   @Field(() => CollectionEnum, { nullable: true })
   distinct_on?: CollectionEnum;
 
-  @Field(() => CollectionWhereParams, { nullable: true })
-  where?: CollectionWhereParams;
+  @Field(() => CollectionWhereParamsWithRelation, { nullable: true })
+  where?: CollectionWhereParamsWithRelation;
 
   @Field(() => CollectionOrderByParams, { nullable: true })
   order_by?: CollectionOrderByParams;

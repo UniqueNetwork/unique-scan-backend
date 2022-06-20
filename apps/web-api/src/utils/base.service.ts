@@ -1,7 +1,7 @@
 import { Brackets, SelectQueryBuilder } from 'typeorm';
 import { isEmpty, random } from 'lodash';
 
-import { IGQLQueryArgs, IWhereOperators, TWhereParams } from './gql-query-args';
+import { IGQLQueryArgs, IWhereOperators, TWhere } from './gql-query-args';
 import {
   GQLToORMOperationsMap,
   GQLToORMOperatorsDict,
@@ -101,7 +101,7 @@ export class BaseService<T, S> {
 
   private applyConditionTree(
     qb: SelectQueryBuilder<T>,
-    where: TWhereParams<S>,
+    where: TWhere<S>,
     upperOperator = Operator.AND,
   ): void {
     Object.keys(where).forEach((op) => {
@@ -115,7 +115,7 @@ export class BaseService<T, S> {
           ),
         );
       } else {
-        const whereEntity = { [op]: where[op] } as TWhereParams<S>;
+        const whereEntity = { [op]: where[op] } as TWhere<S>;
         this.setWhereConditionExpression(
           qb,
           whereEntity,
@@ -129,7 +129,7 @@ export class BaseService<T, S> {
 
   private setWhereConditionExpression(
     qb: SelectQueryBuilder<T>,
-    where: TWhereParams<S>,
+    where: TWhere<S>,
     method: OperatorMethods,
   ): void {
     for (const [field, operators] of Object.entries<IWhereOperators>(where)) {
@@ -148,7 +148,7 @@ export class BaseService<T, S> {
     }
   }
 
-  private addSubQuery(where: TWhereParams<S>, operator: Operator) {
+  private addSubQuery(where: TWhere<S>, operator: Operator) {
     return new Brackets((qb) =>
       where[operator].map((queryArray) => {
         this.applyConditionTree(
