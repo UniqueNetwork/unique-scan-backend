@@ -6,10 +6,21 @@ import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
 
+const relationsFields = {
+  token_prefix: 'Collection',
+  collection_name: 'Collection',
+  collection_description: 'Collection',
+};
+
+const aliasFields = {
+  collection_name: 'name',
+  collection_description: 'description',
+};
+
 @Injectable()
 export class TokenService extends BaseService<Tokens, TokenDTO> {
   constructor(@InjectRepository(Tokens) private repo: Repository<Tokens>) {
-    super();
+    super({ aliasFields, relationsFields });
   }
 
   public async find(
@@ -67,10 +78,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Collection.token_prefix', 'token_prefix');
     qb.addSelect('Collection.name', 'collection_name');
     qb.addSelect('Collection.description', 'collection_description');
-    qb.addSelect(
-      `"Collection".variable_on_chain_schema::json ->> 'collectionCover'::text`,
-      'collection_cover',
-    );
+    qb.addSelect('"Collection".collection_cover', 'collection_cover');
     qb.leftJoin('Tokens.collection', 'Collection');
   }
 }
