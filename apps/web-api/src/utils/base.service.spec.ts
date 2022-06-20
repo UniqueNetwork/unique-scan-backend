@@ -93,5 +93,34 @@ describe('BaseService', () => {
       expect(orm_param_0).toBe(1);
       expect(orm_param_1).toBe(100);
     });
+
+    it('where with _or', async () => {
+      const service = new ForTests();
+      const qb = service.apply({
+        where: {
+          _or: [
+            {
+              account_id: {
+                _eq: 1,
+              },
+            },
+            {
+              available_balance: {
+                _eq: 100,
+              },
+            },
+          ],
+        },
+      });
+
+      expect(qb.getSql()).toBe(
+        // eslint-disable-next-line max-len
+        'SELECT * FROM "public"."account" "Account" WHERE ("Account"."account_id" = $1 OR "Account"."available_balance" = $2) LIMIT 10',
+      );
+
+      const [orm_param_0, orm_param_1] = Object.values(qb.getParameters());
+      expect(orm_param_0).toBe(1);
+      expect(orm_param_1).toBe(100);
+    });
   });
 });

@@ -26,7 +26,7 @@ type TWhereOperations<T> = {
 };
 
 export type TWhereParams<T> = {
-  [key in keyof T]: IWhereOperations;
+  [key in keyof T]: IWhereOperators;
 };
 
 export type TWhere<T> = TWhereParams<T> & TWhereOperations<T>;
