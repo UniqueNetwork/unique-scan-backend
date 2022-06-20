@@ -12,11 +12,11 @@ describe('Extrinsic (e2e)', () => {
   const graphqlUrl = process.env.GRAPHQL_URL;
 
   beforeAll(async () => {
+    await fixtures.loadFixtures();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-
-    await fixtures.loadFixtures();
 
     app = moduleFixture.createNestApplication();
     await app.init();

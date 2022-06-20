@@ -7,6 +7,7 @@ import {
   Resolver,
 } from 'typeorm-fixtures-cli/dist';
 import { Connection, createConnection, getRepository } from 'typeorm';
+import { createDatabase, dropDatabase } from 'typeorm-extension';
 import typeormConfig from '@common/typeorm.config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
@@ -24,8 +25,10 @@ export class Fixtures {
 
   public async loadFixtures() {
     try {
-      // TODO: need create new test db for all test instance
-      this.connection = await createConnection(this.getTestConnectionOptions());
+      const options = this.getTestConnectionOptions();
+      await this.createTestDatabase();
+
+      this.connection = await createConnection(options);
       await this.connection.synchronize(true);
 
       const loader = new Loader();
@@ -54,30 +57,28 @@ export class Fixtures {
     }
   }
 
-  // clear test db
-  // TODO: need remove test db
+  public async createTestDatabase() {
+    const options = this.getTestConnectionOptions();
+    await createDatabase({
+      options,
+      ifNotExist: true,
+    });
+  }
+
   public async clearFixtures() {
-    this.connection = await createConnection(this.getTestConnectionOptions());
-    const entities = this.connection.entityMetadatas;
-
-    const relatedTables = ['collections', 'tokens', 'collections_stats'];
-    for (const entity of entities) {
-      // dont work with related data
-      if (!relatedTables.includes(entity.tableName)) {
-        const repository = this.connection.getRepository(entity.name);
-        await repository.query(`DELETE FROM ${entity.tableName}`);
-      }
-    }
-
-    if (this.connection) {
-      await this.connection.close();
+    const options = this.getTestConnectionOptions();
+    try {
+      await dropDatabase({ options });
+    } catch {
+      // eslint-disable-next-line no-console
+      console.error('dropDatabase error');
+      process.exit(0);
     }
   }
 
   private getTestConnectionOptions() {
     return {
       ...typeormConfig,
-      name: 'test_connection',
     } as PostgresConnectionOptions;
   }
 }

@@ -19,7 +19,7 @@
     "^@common/(.*)$": "<rootDir>/common/$1"
   },
   "testTimeout": 50000,
-  "maxWorkers": 1,
+  "maxWorkers": 5,
   "setupFilesAfterEnv": [
     "<rootDir>/apps/web-api/test/jest.setup.ts"
   ]
