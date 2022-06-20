@@ -1,6 +1,6 @@
 import { Collections } from '@entities/Collections';
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
-import { GraphQLJSONObject } from 'graphql-type-json';
+import { GraphQLJSON } from 'graphql-type-json';
 
 export enum CollectionEnum {
   collection_id = 'collection_id',
@@ -66,7 +66,7 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => String, { nullable: true })
   sponsorship?: string;
 
-  @Field(() => GraphQLJSONObject, { nullable: true })
+  @Field(() => GraphQLJSON, { nullable: true })
   const_chain_schema?: object;
 
   @Field(() => Int)
