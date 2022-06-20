@@ -84,12 +84,12 @@ describe('BaseService', () => {
         },
       });
 
-      expect(qb.getQuery()).toBe(
+      expect(qb.getSql()).toBe(
         // eslint-disable-next-line max-len
-        'SELECT * FROM "public"."account" "Account" WHERE "Account"."account_id" = :orm_param_0 AND "Account"."available_balance" = :orm_param_1 LIMIT 10',
+        'SELECT * FROM "public"."account" "Account" WHERE "Account"."account_id" = $1 AND "Account"."available_balance" = $2 LIMIT 10',
       );
 
-      const { orm_param_0, orm_param_1 } = qb.getParameters();
+      const [orm_param_0, orm_param_1] = Object.values(qb.getParameters());
       expect(orm_param_0).toBe(1);
       expect(orm_param_1).toBe(100);
     });
