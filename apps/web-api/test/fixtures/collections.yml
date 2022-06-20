@@ -10,15 +10,14 @@ items:
     limits_account_ownership: 0
     limits_sponsore_data_size: null
     limits_sponsore_data_rate: null
-    owner_can_transfer: null
-    owner_can_destroy: null
+    owner_can_transfer: true
+    owner_can_destroy: true
     sponsorship: null
     schema_version: 'ImageURL($current)'
     token_prefix: 'testSTa($current)'
+    mode: 'mode_($current)'
     mint_mode: false
     date_of_creation: 1650354798
     owner_normalized: '5CyiCaXQnFCoNZJVfcUWxKYU8TZqpC7UfDvV1eK3AFwZi5VL'
-    collection_cover: null
+    collection_cover: 'collection_cover_($current)'
     statistic: '@collections_stats($current)'
-    tokens:
-      - 'tokens($current)'

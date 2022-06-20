@@ -33,6 +33,9 @@ export class Tokens {
   collection_id: number;
 
   @ManyToOne(() => Collections, (collections) => collections.tokens)
+  @JoinColumn([
+    { name: 'collection_id', referencedColumnName: 'collection_id' },
+  ])
   collection: Collections;
 
   @Column('bigint', { name: 'date_of_creation', nullable: true })

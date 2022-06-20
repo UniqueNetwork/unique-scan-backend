@@ -7,3 +7,4 @@ items:
     collection_id: ($current)
     date_of_creation: 1650433764
     owner_normalized: "0x2303410dcc766995e70b47beedda828b4486320b($current)"
+    statistic: '@collections($current)'

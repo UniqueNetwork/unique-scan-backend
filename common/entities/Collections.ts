@@ -81,9 +81,6 @@ export class Collections {
   mode: string | null;
 
   @OneToMany(() => Tokens, (tokens) => tokens.collection)
-  @JoinColumn([
-    { name: 'collection_id', referencedColumnName: 'collection_id' },
-  ])
   tokens: Tokens[];
 
   @Column('boolean', { name: 'mint_mode', nullable: true })
@@ -94,6 +91,13 @@ export class Collections {
 
   @Column('text', { name: 'owner_normalized' })
   owner_normalized: string;
+
+  @Column('character varying', {
+    name: 'collection_cover',
+    nullable: true,
+    length: 255,
+  })
+  collection_cover: string | null;
 
   @OneToOne(() => CollectionsStats)
   @JoinColumn([

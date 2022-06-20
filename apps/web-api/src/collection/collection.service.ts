@@ -77,7 +77,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb: SelectQueryBuilder<Collections>,
     queryArgs: IGQLQueryArgs<TCollectionWithTokens>,
   ) {
-    if (queryArgs.where.tokens) {
+    if (queryArgs.where?.tokens) {
       const { query, params } = this.tokenService.getCollectionIdsQuery({
         limit: null,
         where: queryArgs.where.tokens,
