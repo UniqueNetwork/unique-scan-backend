@@ -35,15 +35,30 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return { data, count };
   }
 
-  public getByCollectionId(id: number) {
+  public getByCollectionId(id: number, queryArgs: IGQLQueryArgs<TokenDTO>) {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, {
-      where: { collection_id: { _eq: id } },
-      limit: null, // return all tokens
+      ...queryArgs,
+      where: {
+        _and: [{ collection_id: { _eq: id } }, { ...queryArgs.where }],
+      },
     });
 
     return qb.getRawMany();
+  }
+
+  public getCollectionIdsQuery(queryArgs: IGQLQueryArgs<TokenDTO>) {
+    const qb = this.repo.createQueryBuilder();
+    qb.select('collection_id');
+    qb.distinct();
+    this.applyLimitOffset(qb, queryArgs);
+    this.applyWhereCondition(qb, queryArgs);
+
+    return {
+      query: qb.getQuery(),
+      params: qb.getParameters(),
+    };
   }
 
   private applyFilters(
@@ -79,6 +94,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Collection.name', 'collection_name');
     qb.addSelect('Collection.description', 'collection_description');
     qb.addSelect('"Collection".collection_cover', 'collection_cover');
+    qb.addSelect(
+      `concat(Collection.token_prefix, ' #', Tokens.token_id)`,
+      'token_name',
+    );
     qb.leftJoin('Tokens.collection', 'Collection');
   }
 }
