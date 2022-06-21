@@ -77,7 +77,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb: SelectQueryBuilder<Collections>,
     queryArgs: IGQLQueryArgs<TCollectionWithTokens>,
   ) {
-    if (queryArgs.where.tokens) {
+    if (queryArgs.where?.tokens) {
       const { query, params } = this.tokenService.getCollectionIdsQuery({
         limit: null,
         where: queryArgs.where.tokens,
@@ -108,7 +108,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.offchain_schema', 'offchain_schema');
     qb.addSelect('Collections.token_limit', 'token_limit');
     qb.addSelect('Collections.token_prefix', 'token_prefix');
-    qb.addSelect('"Collections".collection_cover', 'collection_cover');
+    qb.addSelect('Collections.collection_cover', 'collection_cover');
     qb.addSelect('Collections.mode', 'type');
     qb.addSelect('Collections.mint_mode', 'mint_mode');
     qb.addSelect(

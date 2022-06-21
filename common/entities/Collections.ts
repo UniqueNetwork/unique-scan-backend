@@ -92,6 +92,13 @@ export class Collections {
   @Column('text', { name: 'owner_normalized' })
   owner_normalized: string;
 
+  @Column('character varying', {
+    name: 'collection_cover',
+    nullable: true,
+    length: 255,
+  })
+  collection_cover: string | null;
+
   @OneToOne(() => CollectionsStats)
   @JoinColumn([
     { name: 'collection_id', referencedColumnName: 'collection_id' },
