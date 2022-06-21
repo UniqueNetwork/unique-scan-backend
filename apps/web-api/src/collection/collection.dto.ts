@@ -30,7 +30,7 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => String, { nullable: true })
   offchain_schema?: string;
 
-  @Field(() => Int)
+  @Field(() => Float)
   token_limit?: number;
 
   @Field(() => String)
