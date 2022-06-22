@@ -49,10 +49,10 @@ export async function createCollection(
     description,
     tokenPrefix,
     // @ts-ignore
-    properties: {
-      schemaVersion: 'Unique',
-      constOnChainSchema,
-    },
+    // properties: {
+    //   schemaVersion: 'Unique',
+    //   constOnChainSchema,
+    // },
     address,
   };
   const txPayload: UnsignedTxPayload = await sdk.collections.create(createArgs);

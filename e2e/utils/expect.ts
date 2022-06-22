@@ -1,16 +1,23 @@
-import { retry } from './retry';
 import { expect } from 'chai';
 
-export const expectResponseContains = (
+export const expectResponseContains = async (
   request,
   objContains,
-  timeout?: number,
+  timeout = 30000,
 ) => {
-  return retry(
-    async () => {
+  const now = Date.now();
+  while (true) {
+    try {
       const response = await request();
-      return expect(response).to.equals(objContains);
-    },
-    timeout ? timeout : 5000,
-  );
+      return expect(response).to.include(objContains);
+    } catch (error) {
+      if (Date.now() - now >= timeout) {
+        throw Error(
+          `Repetition failed after ${timeout} seconds` +
+            '\nCaused by: ' +
+            error.message,
+        );
+      }
+    }
+  }
 };

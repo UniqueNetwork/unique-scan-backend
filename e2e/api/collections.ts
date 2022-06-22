@@ -19,7 +19,7 @@ const getById = async (collectionId: number | string) => {
     {data{collection_id,name,description}}}`,
     variables: {},
   });
-  return handleResponse(response).data.collections[0];
+  return handleResponse(response).data.collections.data[0];
 };
 
 export const collectionApi = { getAll, getById };

@@ -17,12 +17,10 @@ describe('Collections', function () {
       },
     );
 
-    console.log(collectionId);
     const getActualCollection = async () => collectionApi.getById(collectionId);
-
     const expectedCollection = {
       collection_id: Number(collectionId),
-      name: 'Collection3',
+      name: 'Collection',
       description: 'The one!',
     };
 
