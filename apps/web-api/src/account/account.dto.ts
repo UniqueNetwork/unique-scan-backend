@@ -18,7 +18,7 @@ export class AccountDTO implements Partial<Account> {
   @Field(() => String)
   locked_balance?: string;
 
-  @Field(() => Int)
+  @Field(() => String)
   nonce?: string;
 
   @Field(() => Int)
