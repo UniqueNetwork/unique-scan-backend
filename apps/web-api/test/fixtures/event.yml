@@ -1,0 +1,12 @@
+entity: event
+items:
+  event{1..55}:
+    block_number: 213826($current)
+    event_index: ($current)
+    section: 'balances'
+    method: 'Transfer'
+    phase: 'Initialization($current)'
+    data: ''
+    timestamp: null
+    amount: ($current)
+    block_index: null
