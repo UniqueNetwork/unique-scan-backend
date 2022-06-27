@@ -7,6 +7,9 @@ export class AccountDTO implements Partial<Account> {
   account_id?: string;
 
   @Field(() => String)
+  balances?: string;
+
+  @Field(() => String)
   available_balance?: string;
 
   @Field(() => String)
@@ -18,6 +21,12 @@ export class AccountDTO implements Partial<Account> {
   @Field(() => Int)
   nonce?: string;
 
-  @Field(() => Boolean)
-  is_staking?: boolean;
+  @Field(() => Int)
+  timestamp?: string;
+
+  @Field(() => Int)
+  block_height?: string;
+
+  @Field(() => String)
+  account_id_normalized?: string;
 }

@@ -2,6 +2,7 @@ import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index } from 'typeorm';
 
 @Index('block_pkey', ['block_number'], { unique: true })
+@Index('block_need_rescan_idx', ['need_rescan'], {})
 @Entity('block', { schema: 'public' })
 @ObjectType()
 export class Block {
@@ -10,15 +11,6 @@ export class Block {
     name: 'block_number',
   })
   block_number: number;
-
-  @Column('bigint', { name: 'block_number_finalized' })
-  block_number_finalized: string;
-
-  @Column('text', { name: 'block_author', nullable: true })
-  block_author: string | null;
-
-  @Column('text', { name: 'block_author_name', nullable: true })
-  block_author_name: string | null;
 
   @Column('text', { name: 'block_hash' })
   @Field(() => String, {
@@ -35,35 +27,8 @@ export class Block {
   @Column('text', { name: 'state_root', nullable: true })
   state_root: string | null;
 
-  @Column('bigint', { name: 'current_era', nullable: true })
-  current_era: string | null;
-
-  @Column('bigint', { name: 'current_index', nullable: true })
-  current_index: string | null;
-
-  @Column('bigint', { name: 'era_length', nullable: true })
-  era_length: string | null;
-
-  @Column('bigint', { name: 'era_progress', nullable: true })
-  era_progress: string | null;
-
-  @Column('boolean', { name: 'is_epoch', nullable: true })
-  is_epoch: boolean | null;
-
-  @Column('boolean', { name: 'is_election' })
-  is_election: boolean;
-
   @Column('bigint', { name: 'session_length', nullable: true })
   session_length: string | null;
-
-  @Column('integer', { name: 'session_per_era', nullable: true })
-  session_per_era: number | null;
-
-  @Column('bigint', { name: 'session_progress', nullable: true })
-  session_progress: string | null;
-
-  @Column('integer', { name: 'validator_count' })
-  validator_count: number;
 
   @Column('text', { name: 'spec_name' })
   spec_name: string;
@@ -85,4 +50,7 @@ export class Block {
 
   @Column('bigint', { name: 'timestamp' })
   timestamp: string;
+
+  @Column('boolean', { name: 'need_rescan', default: false })
+  need_rescan: boolean;
 }

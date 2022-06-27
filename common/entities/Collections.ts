@@ -10,6 +10,7 @@ import { CollectionsStats } from './CollectionsStats';
 import { Tokens } from './Tokens';
 
 @Index('collections_pkey', ['collection_id'], { unique: true })
+@Index('collections_owner_normalized_idx', ['owner_normalized'], {})
 @Entity('collections', { schema: 'public' })
 export class Collections {
   @Column('bigint', { primary: true, name: 'collection_id' })
@@ -49,11 +50,11 @@ export class Collections {
   @Column('integer', { name: 'limits_sponsore_data_rate', nullable: true })
   limits_sponsore_data_rate: number | null;
 
-  @Column('boolean', { name: 'owner_can_transfer', nullable: true })
-  owner_can_transfer: boolean | null;
+  @Column('boolean', { name: 'owner_can_transfer', default: false })
+  owner_can_transfer: boolean;
 
-  @Column('boolean', { name: 'owner_can_destroy', nullable: true })
-  owner_can_destroy: boolean | null;
+  @Column('boolean', { name: 'owner_can_destroy', default: false })
+  owner_can_destroy: boolean;
 
   @Column('character varying', {
     name: 'sponsorship',
@@ -87,6 +88,16 @@ export class Collections {
 
   @Column('bigint', { name: 'date_of_creation', nullable: true })
   date_of_creation?: number;
+
+  @Column('text', { name: 'owner_normalized' })
+  owner_normalized: string;
+
+  @Column('character varying', {
+    name: 'collection_cover',
+    nullable: true,
+    length: 255,
+  })
+  collection_cover: string | null;
 
   @OneToOne(() => CollectionsStats)
   @JoinColumn([

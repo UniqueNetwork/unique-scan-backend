@@ -1,6 +1,14 @@
 import { Collections } from '@entities/Collections';
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
-import { GraphQLJSONObject } from 'graphql-type-json';
+import { GraphQLJSON } from 'graphql-type-json';
+
+export enum CollectionEnum {
+  collection_id = 'collection_id',
+  owner = 'owner',
+  owner_normalized = 'owner_normalized',
+  name = 'name',
+  token_prefix = 'token_prefix',
+}
 
 @ObjectType('collection')
 export class CollectionDTO implements Partial<Collections> {
@@ -11,6 +19,9 @@ export class CollectionDTO implements Partial<Collections> {
   owner?: string;
 
   @Field(() => String)
+  owner_normalized?: string;
+
+  @Field(() => String)
   name?: string;
 
   @Field(() => String, { nullable: true })
@@ -19,7 +30,7 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => String, { nullable: true })
   offchain_schema?: string;
 
-  @Field(() => Int)
+  @Field(() => Float)
   token_limit?: number;
 
   @Field(() => String)
@@ -43,10 +54,10 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => Float, { nullable: true })
   limits_sponsore_data_rate?: number;
 
-  @Field(() => Boolean, { nullable: true })
+  @Field(() => Boolean)
   owner_can_transfer?: boolean;
 
-  @Field(() => Boolean, { nullable: true })
+  @Field(() => Boolean)
   owner_can_destroy?: boolean;
 
   @Field(() => String, { nullable: true })
@@ -55,7 +66,7 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => String, { nullable: true })
   sponsorship?: string;
 
-  @Field(() => GraphQLJSONObject, { nullable: true })
+  @Field(() => GraphQLJSON, { nullable: true })
   const_chain_schema?: object;
 
   @Field(() => Int)
@@ -69,4 +80,7 @@ export class CollectionDTO implements Partial<Collections> {
 
   @Field(() => Int, { nullable: true })
   date_of_creation?: number;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  variable_on_chain_schema?: object;
 }
