@@ -5,8 +5,8 @@ import { collectionApi } from '../api';
 import { createCollection } from '../blockchain/collections';
 import { createSdk } from '../blockchain';
 
-describe('Collections', function () {
-  it('are returned after being created in the blockchain', async function () {
+describe('Collections tests', function () {
+  it('Create collection in blockchain and check it in scan', async function () {
     const sdk = await createSdk('//Eve');
     const collectionId = await createCollection(
       sdk,
@@ -28,5 +28,9 @@ describe('Collections', function () {
       getActualCollection,
       expectedCollection,
     );
+  });
+
+  it('Broken test', async function (done) {
+    done(new Error('Test was broken. Error message'));
   });
 });
