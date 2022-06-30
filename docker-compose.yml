@@ -1,8 +1,8 @@
 version: "3"
 
-networks:
-  market:
-    external: true
+#networks:
+#  market:
+#    external: true
 
 services:
   scan-web-api:
@@ -12,8 +12,8 @@ services:
     container_name: scan-web-api
     ports:
       - "3031:3031"
-    networks:
-      - market
+#    networks:
+#      - market
     depends_on:
       - postgres
       - crawler
@@ -29,16 +29,16 @@ services:
   postgres:
     image: postgres:14.2-alpine
     container_name: scan-database
-    networks:
-      - market
+#    networks:
+#      - market
+
+    env_file:
+      - .env
     environment:
-      - POSTGRES_USER=polkastats
-      - POSTGRES_PASSWORD=polkastats
-      - POSTGRES_DB=polkastats
       - TZ=Europe/Moscow
       - PGTZ=Europe/Moscow
     ports:
-      - "3032:5432"
+      - "5432:5432"
     volumes:
       - scan-pgdata:/var/lib/postgresql/data
       - /etc/localtime:/etc/localtime:ro
@@ -46,8 +46,8 @@ services:
   crawler:
     image: polkastats-backend:latest
     container_name: scan-crawler
-    networks:
-      - market
+#    networks:
+#      - market
     depends_on:
       - postgres
     restart: on-failure

@@ -1,13 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 // import { Range } from '@subsquid/substrate-processor/lib/util/range';
 import {
   SubstrateProcessor,
   EventHandlerContext,
   ExtrinsicHandlerContext,
 } from '@subsquid/substrate-processor';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Model } from './model';
+import { Repository } from 'typeorm';
+import { CollectionsProcessor } from './collections-processor';
 
 @Injectable()
 export class CrawlerService {
+
+  constructor(
+    private collectionsProcessor: CollectionsProcessor,
+  ) {
+    this.collectionsProcessor.addEventHandler(
+      'system.ExtrinsicSuccess',
+      this.commonEventHandler,
+    );
+  }
+
   getHello(): string {
     return 'Hello World!';
   }
@@ -18,7 +32,7 @@ export class CrawlerService {
   //     console.log('treasuryBurnt', event);
   //   }
 
-  private async commonEventHandler(ctx: EventHandlerContext): Promise<void> {
+  private commonEventHandler = async (ctx: EventHandlerContext): Promise<void> => {
     console.log('commonEventHandler');
     console.log(ctx.event);
   }
@@ -31,25 +45,29 @@ export class CrawlerService {
   }
 
   subscribe() {
-    const processor = new SubstrateProcessor('subsquid_crawler');
-    processor.setDataSource({
-      archive: 'https://quartz.indexer.gc.subsquid.io/v4/graphql',
-      // archive: 'https://quartz.subsquid.fatcat.ventures/v1/graphql',
-      chain: 'wss://ws-quartz.unique.network',
-    });
-    processor.setBlockRange({ from: 1000000 });
-    processor.setTypesBundle('quartz');
-
-    // processor.addEventHandler('system.ExtrinsicSuccess', systemExtrinsicSuccess);
-    processor.addEventHandler('treasury.Burnt', this.commonEventHandler);
-
-    processor.addExtrinsicHandler(
-      'unique.createCollectionEx',
-      this.commonExtrinsicHandler,
-    );
-
-    processor.run();
+    this.collectionsProcessor.run();
   }
+
+  // subscribe() {
+  //   const processor = new SubstrateProcessor('subsquid_crawler');
+  //   processor.setDataSource({
+  //     archive: 'https://quartz.indexer.gc.subsquid.io/v4/graphql',
+  //     // archive: 'https://quartz.subsquid.fatcat.ventures/v1/graphql',
+  //     chain: 'wss://ws-quartz.unique.network',
+  //   });
+  //   processor.setBlockRange({ from: 1000000 });
+  //   processor.setTypesBundle('quartz');
+  //
+  //   // processor.addEventHandler('system.ExtrinsicSuccess', systemExtrinsicSuccess);
+  //   processor.addEventHandler('treasury.Burnt', this.commonEventHandler);
+  //
+  //   processor.addExtrinsicHandler(
+  //     'unique.createCollectionEx',
+  //     this.commonExtrinsicHandler,
+  //   );
+  //
+  //   processor.run();
+  // }
 
   // rescanBlockRange(range: Range) {}
 }
