@@ -1,16 +1,8 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-
 import { Sdk } from '@unique-nft/sdk';
-import { INamespace } from 'protobufjs';
-import {
-  CreateCollectionArguments,
-  SignTxResult,
-  SubmitTxArguments,
-  UnsignedTxPayload,
-} from '@unique-nft/sdk/types';
-import { ISubmittableResult } from '@polkadot/types/types/extrinsic';
+import { CreateCollectionArguments } from '@unique-nft/sdk/tokens';
 import '@unique-nft/sdk/tokens';
 import '@unique-nft/sdk/extrinsics';
+import { CollectionFields, CollectionFieldTypes } from '@unique-nft/sdk/types';
 
 export async function createCollection(
   sdk: Sdk,
@@ -21,64 +13,29 @@ export async function createCollection(
     tokenPrefix = 'FOO',
   },
 ): Promise<number> {
-  const constOnChainSchema: INamespace = {
-    nested: {
-      onChainMetaData: {
-        nested: {
-          NFTMeta: {
-            fields: {
-              FieldA: {
-                id: 1,
-                rule: 'required',
-                type: 'string',
-              },
-              FieldB: {
-                id: 2,
-                rule: 'required',
-                type: 'string',
-              },
-            },
-          },
-        },
-      },
+  const fields: CollectionFields = [
+    {
+      id: 1,
+      name: 'text_required',
+      type: CollectionFieldTypes.TEXT,
+      required: true,
     },
-  };
+    {
+      id: 2,
+      name: 'text_optional',
+      type: CollectionFieldTypes.TEXT,
+    },
+  ];
 
   const createArgs: CreateCollectionArguments = {
+    address,
     name,
     description,
     tokenPrefix,
-    // @ts-ignore
-    // properties: {
-    //   schemaVersion: 'Unique',
-    //   constOnChainSchema,
-    // },
-    address,
+    properties: { fields },
   };
-  const txPayload: UnsignedTxPayload = await sdk.collections.create(createArgs);
-
-  const signTxResult: SignTxResult = await sdk.extrinsics.sign(txPayload);
-
-  const submitTxArgs: SubmitTxArguments = {
-    signerPayloadJSON: txPayload.signerPayloadJSON,
-    signature: signTxResult.signature,
-  };
-
-  return new Promise((resolve) => {
-    let collectionId = 0;
-    function resultCallback(result: ISubmittableResult) {
-      const createdEvent = result.events.find(
-        (event) => event.event.method === 'CollectionCreated',
-      );
-      if (createdEvent) {
-        collectionId = +createdEvent.event.data[0];
-      }
-      if (result.isCompleted) {
-        resolve(collectionId);
-      }
-    }
-
-    // @ts-ignore
-    sdk.extrinsics.submit(submitTxArgs, resultCallback);
-  });
+  const createResult = await sdk.collections.creation.submitWaitResult(
+    createArgs,
+  );
+  return createResult.parsed.collectionId;
 }

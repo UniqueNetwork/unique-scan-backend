@@ -10,7 +10,7 @@ export const expectResponseContains = async (
   while (true) {
     try {
       const response = await request();
-      return expect(response).to.include(objContains);
+      return expect(response).to.deep.include(objContains);
     } catch (error) {
       if (Date.now() - now >= timeout) {
         throw Error(

@@ -13,3 +13,6 @@ export async function createSdk(seed = '//Alice'): Promise<Sdk> {
     signer,
   });
 }
+
+export { createToken } from './tokens';
+export { createCollection } from './collections';

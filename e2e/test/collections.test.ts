@@ -1,9 +1,8 @@
 /* eslint-disable no-console */
 
 import { expectResponseContains } from '../utils';
-import { collectionApi } from '../api';
-import { createCollection } from '../blockchain/collections';
-import { createSdk } from '../blockchain';
+import { collectionsApi } from '../api';
+import { createSdk, createCollection } from '../blockchain';
 
 describe('Collections tests', function () {
   it('Create collection in blockchain and check it in scan', async function () {
@@ -17,7 +16,8 @@ describe('Collections tests', function () {
       },
     );
 
-    const getActualCollection = async () => collectionApi.getById(collectionId);
+    const getActualCollection = async () =>
+      collectionsApi.getById(collectionId);
     const expectedCollection = {
       collection_id: Number(collectionId),
       name: 'Collection',
@@ -28,9 +28,5 @@ describe('Collections tests', function () {
       getActualCollection,
       expectedCollection,
     );
-  });
-
-  it('Broken test', async function (done) {
-    done(new Error('Test was broken. Error message'));
   });
 });
