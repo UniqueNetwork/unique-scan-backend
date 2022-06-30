@@ -4,6 +4,7 @@ import { Connection, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Collections } from '@entities/Collections';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
+import { SdkService } from './sdk.service';
 
 @Injectable()
 export class CollectionsProcessor extends ScanProcessor {
@@ -12,6 +13,7 @@ export class CollectionsProcessor extends ScanProcessor {
     @InjectRepository(Collections)
     private modelRepository: Repository<Collections>,
     connection: Connection,
+    private sdk: SdkService,
   ) {
     super('collections', connection);
 
@@ -26,6 +28,8 @@ export class CollectionsProcessor extends ScanProcessor {
       'common.CollectionDestroyed',
       this.сollectionDestroyedHandler,
     );
+
+    // todo: Update collection events handler. But first we need to know what fields do we have in db.
   }
 
   private collectionCreatedHandler = async (
@@ -38,6 +42,12 @@ export class CollectionsProcessor extends ScanProcessor {
       blockTimestamp,
       params,
     });
+
+    const collectionId = params[0].value;
+
+    const collectionData = await this.sdk.getCollection(collectionId as number);
+
+    console.log(collectionData);
 
     // todo: Write collection data into db
   };

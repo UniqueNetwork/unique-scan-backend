@@ -19,8 +19,8 @@ export class ScanProcessor extends SubstrateProcessor {
     super(name);
 
     this.setDataSource({
-      archive: process.env.PROCESSOR_ARCHIVE,
-      chain: process.env.PROCESSOR_CHAIN,
+      archive: process.env.ARCHIVE_GQL_URL,
+      chain: process.env.CHAIN_WS,
     });
 
     // todo: move to env & args

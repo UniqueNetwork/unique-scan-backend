@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CrawlerService } from './crawler.service';
 import { CollectionsProcessor } from './collections-processor';
 import { Collections } from '@entities/Collections';
+import { SdkService } from './sdk.service';
 
 @Module({
   imports: [
@@ -13,6 +14,6 @@ import { Collections } from '@entities/Collections';
     TypeOrmModule.forFeature([Collections]),
   ],
   controllers: [],
-  providers: [CollectionsProcessor, CrawlerService],
+  providers: [SdkService, CollectionsProcessor, CrawlerService],
 })
 export class CrawlerModule {}
