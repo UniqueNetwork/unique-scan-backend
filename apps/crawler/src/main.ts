@@ -7,6 +7,6 @@ async function bootstrap() {
 
   const crawlerService = app.get(CrawlerService);
 
-  console.log(crawlerService.getHello());
+  console.log(crawlerService.subscribe());
 }
 bootstrap();

@@ -18,9 +18,15 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@interfaces/*": ["./common/interfaces/*"],
-      "@entities/*": ["./common/entities/*"],
-      "@common/*": ["./common/*"]
+      "@interfaces/*": [
+        "./common/interfaces/*"
+      ],
+      "@entities/*": [
+        "./common/entities/*"
+      ],
+      "@common/*": [
+        "./common/*"
+      ]
     }
   }
 }
