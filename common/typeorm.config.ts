@@ -1,7 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import dotenv = require('dotenv');
 import path = require('path');
-import { Model } from '../apps/crawler/src/model';
 
 dotenv.config();
 const entitiesDir = path.join(__dirname, 'entities');
@@ -14,10 +13,7 @@ const typeormConfig: TypeOrmModuleOptions = {
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DATABASE,
-  entities: [
-    path.join(entitiesDir, '/**/*{.ts,.js}'),
-    Model,
-  ],
+  entities: [path.join(entitiesDir, '/**/*{.ts,.js}')],
   synchronize: true,
   migrationsRun: false,
   migrations: [path.join(migrationsDir, '/**/*{.ts,.js}')],

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { SubstrateProcessor } from '@subsquid/substrate-processor';
 import { ServiceManager } from '@subsquid/substrate-processor/lib/util/sm';
 import { Db } from '@subsquid/substrate-processor/lib/db';
@@ -14,37 +15,37 @@ import { Connection } from 'typeorm';
 import { Prometheus } from '@subsquid/substrate-processor/lib/prometheus';
 
 export class ScanProcessor extends SubstrateProcessor {
-  constructor(
-    private name: string,
-    private connection: Connection,
-  ) {
+  constructor(private name: string, private connection: Connection) {
     super(name);
 
     this.setDataSource({
-      archive: 'https://quartz.indexer.gc.subsquid.io/v4/graphql',
-      // archive: 'https://quartz.subsquid.fatcat.ventures/v1/graphql',
-      chain: 'wss://ws-quartz.unique.network',
+      archive: process.env.PROCESSOR_ARCHIVE,
+      chain: process.env.PROCESSOR_CHAIN,
     });
+
+    // todo: move to env & args
     this.setBlockRange({ from: 1000000 });
+
+    // todo: move to env & args
     this.setTypesBundle('quartz');
   }
 
   private async _run(sm: ServiceManager): Promise<void> {
+    // todo: Initialize Prometheus once (Use DI, Luke!)
     const prometheus = new Prometheus();
     const prometheusServer = sm.add(
       await prometheus.serve(this.getPrometheusPort()),
     );
+
+    // eslint-disable-next-line no-console
     console.log(
       `Prometheus metrics are served at port ${prometheusServer.port}`,
     );
 
-    let db = sm.add(
-      new Db(
-        this.connection,
-        {
-          processorName: this.name,
-        },
-      ),
+    const db = sm.add(
+      new Db(this.connection, {
+        processorName: this.name,
+      }),
     );
 
     const { height: heightAtStart } = await db.init();
