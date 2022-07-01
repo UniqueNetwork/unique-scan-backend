@@ -18,7 +18,7 @@ import { SdkService } from '../sdk.service';
 
 export class ScanProcessor extends SubstrateProcessor {
   constructor(
-    protected name: string,
+    public name: string,
     protected connection: Connection,
     protected sdkService: SdkService,
   ) {

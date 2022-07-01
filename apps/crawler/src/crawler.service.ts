@@ -1,17 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from '@subsquid/substrate-processor';
+import { DataSource as SubscquidDataSource } from '@subsquid/substrate-processor';
 import { Range } from '@subsquid/substrate-processor/lib/util/range';
+import { DataSource } from 'typeorm';
 import { CollectionsProcessor } from './processors/collections-processor';
 
 @Injectable()
 export class CrawlerService {
-  constructor(private collectionsProcessor: CollectionsProcessor) {}
+  constructor(
+    private dataSource: DataSource,
+    private collectionsProcessor: CollectionsProcessor,
+  ) {}
 
   private prepareProcessorsParams() {
     const dataSource = {
       archive: process.env.ARCHIVE_GQL_URL,
       chain: process.env.CHAIN_WS_URL,
-    } as DataSource;
+    } as SubscquidDataSource;
 
     const range = {
       from: Number(process.env.SCAN_RANGE_FROM),
@@ -35,8 +39,13 @@ export class CrawlerService {
   }
 
   async subscribeCollections({ dataSource, range, typesBundle, forceRescan }) {
-    if (forceRescan) {
-      // todo: Set status height to range.from
+    if (forceRescan && !isNaN(range.from)) {
+      const statusDbSchemaName = `${this.collectionsProcessor.name}_status`;
+
+      // Set status height to range.from to rescan old blocks
+      const r = await this.dataSource.query(
+        `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
+      );
     }
 
     this.collectionsProcessor.init(dataSource, range, typesBundle);
