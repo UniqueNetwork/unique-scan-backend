@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { DataSource as SubscquidDataSource } from '@subsquid/substrate-processor';
 import { Range } from '@subsquid/substrate-processor/lib/util/range';
 import { DataSource } from 'typeorm';
@@ -7,9 +7,12 @@ import { CollectionsProcessor } from './processors/collections-processor';
 @Injectable()
 export class CrawlerService {
   constructor(
+    private logger: Logger,
     private dataSource: DataSource,
     private collectionsProcessor: CollectionsProcessor,
-  ) {}
+  ) {
+    this.logger = new Logger('CrawlerService');
+  }
 
   private prepareProcessorsParams() {
     const dataSource = {
@@ -25,11 +28,18 @@ export class CrawlerService {
       range.to = Number(process.env.SCAN_RANGE_TO);
     }
 
-    return {
+    const params = {
       dataSource,
       range,
       typesBundle: process.env.SCAN_TYPES_BUNDLE,
     };
+
+    this.logger.log({
+      msg: 'Start crawler',
+      params,
+    });
+
+    return params;
   }
 
   subscribeAll(forceRescan = false) {
@@ -43,7 +53,7 @@ export class CrawlerService {
       const statusDbSchemaName = `${this.collectionsProcessor.name}_status`;
 
       // Set status height to range.from to rescan old blocks
-      const r = await this.dataSource.query(
+      await this.dataSource.query(
         `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
       );
     }

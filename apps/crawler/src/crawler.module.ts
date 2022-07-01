@@ -1,5 +1,5 @@
 import typeormConfig from '@common/typeorm.config';
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CrawlerService } from './crawler.service';
@@ -12,6 +12,6 @@ import { ProcessorsModule } from './processors/processors.module';
     ProcessorsModule,
   ],
   controllers: [],
-  providers: [CrawlerService],
+  providers: [Logger, CrawlerService],
 })
 export class CrawlerModule {}

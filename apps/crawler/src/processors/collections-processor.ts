@@ -6,6 +6,11 @@ import { Collections } from '@entities/Collections';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 
+type CollectionData = {
+  name: string;
+  tokenPrefix: string;
+  owner: string;
+};
 @Injectable()
 export class CollectionsProcessor extends ScanProcessor {
   private logger: Logger;
@@ -33,10 +38,16 @@ export class CollectionsProcessor extends ScanProcessor {
     // todo: Add update collection events handler. But first we need to know what fields do we have in db.
   }
 
-  private async getCollectionData(collectionId) {
-    const { name, tokenPrefix, owner } = await this.sdkService.getCollection(
-      collectionId as number,
-    );
+  private async getCollectionData(
+    collectionId,
+  ): Promise<CollectionData | null> {
+    const result = await this.sdkService.getCollection(collectionId as number);
+
+    if (!result) {
+      return null;
+    }
+
+    const { name, tokenPrefix, owner } = result;
 
     return {
       name,
@@ -50,20 +61,35 @@ export class CollectionsProcessor extends ScanProcessor {
   ): Promise<void> {
     const { name, blockNumber, blockTimestamp, params } = ctx.event;
 
-    const collectionId = params[0].value;
-
-    const collectionData = await this.getCollectionData(collectionId);
-
-    const result = {
-      ...collectionData,
-      collectionId,
+    const log = {
+      msg: `Event '${name}' processing`,
       blockNumber,
       blockTimestamp,
+      entity: null as null | object,
+      collectionId: null as null | number,
     };
 
-    this.logger.verbose({ msg: `Event '${name}' processing`, ...result });
+    try {
+      const collectionId = params[0].value;
 
-    // todo: Write collection data into db
+      log.collectionId = collectionId as number;
+
+      const collectionData = await this.getCollectionData(collectionId);
+
+      if (collectionData) {
+        log.entity = collectionData;
+
+        // todo: Write collection data into db
+      } else {
+        log.entity = null;
+
+        // todo: Delete db record
+      }
+
+      this.logger.verbose({ ...log });
+    } catch (err) {
+      this.logger.error({ ...log, error: err.message });
+    }
   }
 
   private async collectionDestroyedHandler(
@@ -79,6 +105,6 @@ export class CollectionsProcessor extends ScanProcessor {
       collectionId,
     });
 
-    // todo: Drop collection by id
+    // todo: Delete db record
   }
 }
