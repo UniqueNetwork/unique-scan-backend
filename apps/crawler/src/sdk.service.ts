@@ -7,7 +7,7 @@ export class SdkService {
   private sdk: Sdk;
   constructor() {
     Sdk.create({
-      chainWsUrl: process.env.CHAIN_WS,
+      chainWsUrl: process.env.CHAIN_WS_URL,
       //   signer: await createSigner({
       //     seed: '//Alice', // Signer seed phrase if you want to sign extrinsics
       //   }),
