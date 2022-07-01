@@ -8,6 +8,7 @@ export enum EventName {
   PROPERTY_PERMISSION_SET = 'common.PropertyPermissionSet',
   TOKEN_PROPERTY_SET = 'common.TokenPropertySet',
   TOKEN_PROPERTY_DELETED = 'common.TokenPropertyDeleted',
+  TRANSFER = 'common.Transfer',
 
   ALLOW_LIST_ADDRESS_ADDED = 'unique.AllowListAddressAdded',
   ALLOW_LIST_ADDRESS_REMOVED = 'unique.AllowListAddressRemoved',

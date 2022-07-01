@@ -25,4 +25,10 @@ export class SdkService {
 
     return sdk.collections.get({ collectionId });
   }
+
+  async getToken(collectionId: number, tokenId: number) {
+    const sdk = await this.getSdk();
+
+    return sdk.tokens.get({ collectionId, tokenId });
+  }
 }

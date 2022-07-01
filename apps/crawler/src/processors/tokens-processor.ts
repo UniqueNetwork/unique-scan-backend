@@ -2,77 +2,67 @@ import { ScanProcessor } from './scan-processor';
 import { Injectable, Logger } from '@nestjs/common';
 import { Connection, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Collections } from '@entities/Collections';
+import { Tokens } from '@entities/Tokens';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName } from '@common/constants';
 
-type CollectionData = {
-  name: string;
-  tokenPrefix: string;
-  owner: string;
-};
+type TokenData =
+  | {
+      name: string;
+      tokenPrefix: string;
+      owner: string;
+    }
+  | object; // todo: remove me
 
 @Injectable()
-export class CollectionsProcessor extends ScanProcessor {
+export class TokensProcessor extends ScanProcessor {
   private logger: Logger;
 
   constructor(
-    @InjectRepository(Collections)
-    private modelRepository: Repository<Collections>,
+    @InjectRepository(Tokens)
+    private modelRepository: Repository<Tokens>,
     protected connection: Connection,
     protected sdkService: SdkService,
   ) {
-    super('collections', connection, sdkService);
+    super('tokens', connection, sdkService);
 
-    this.logger = new Logger('CollectionsProcessor');
+    this.logger = new Logger('TokensProcessor');
 
     // todo: Remove some items when models rework is done
-    const EVENTS_TO_UPDATE_COLLECTION = [
+    const EVENTS_TO_UPDATE = [
       // Insert
-      EventName.COLLECTION_CREATED,
+      EventName.ITEM_CREATED,
 
       // Update
-      EventName.COLLECTION_PROPERTY_SET,
-      EventName.COLLECTION_PROPERTY_DELETED,
-      EventName.PROPERTY_PERMISSION_SET,
-      EventName.COLLECTION_SPONSOR_REMOVED,
-      EventName.COLLECTION_ADMIN_ADDED,
-      EventName.COLLECTION_ADMIN_REMOVED,
-      EventName.COLLECTION_OWNED_CHANGED,
-      EventName.SPONSORSHIP_CONFIRMED,
-      // EventName.ALLOW_LIST_ADDRESS_ADDED, // todo: Too many events. Do we really need to process this event?
-      EventName.ALLOW_LIST_ADDRESS_REMOVED,
-      EventName.COLLECTION_LIMIT_SET,
-      EventName.COLLECTION_SPONSOR_SET,
+      EventName.TRANSFER,
+
+      // todo: Or maybe these events are reletad to collection?
+      EventName.TOKEN_PROPERTY_SET,
+      EventName.TOKEN_PROPERTY_DELETED,
     ];
 
-    EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
+    EVENTS_TO_UPDATE.forEach((eventName) =>
       this.addEventHandler(eventName, this.upsertHandler.bind(this)),
     );
 
     this.addEventHandler(
-      EventName.COLLECTION_DESTROYED,
+      EventName.ITEM_DESTROYED,
       this.destroyHandler.bind(this),
     );
   }
 
-  private async getCollectionData(
+  private async getTokenData(
     collectionId: number,
-  ): Promise<CollectionData | null> {
-    const result = await this.sdkService.getCollection(collectionId as number);
+    tokenId: number,
+  ): Promise<TokenData | null> {
+    const result = await this.sdkService.getToken(collectionId, tokenId);
 
     if (!result) {
       return null;
     }
 
-    const { name, tokenPrefix, owner } = result;
-
-    return {
-      name,
-      tokenPrefix,
-      owner,
-    };
+    return result;
   }
 
   private async upsertHandler(ctx: EventHandlerContext): Promise<void> {
@@ -84,18 +74,21 @@ export class CollectionsProcessor extends ScanProcessor {
       blockTimestamp,
       entity: null as null | object | string,
       collectionId: null as null | number,
+      tokenId: null as null | number,
     };
 
     try {
       const collectionId = params[0].value as number;
+      const tokenId = params[1].value as number;
 
       log.collectionId = collectionId;
+      log.tokenId = tokenId;
 
-      const collectionData = await this.getCollectionData(collectionId);
+      const tokenData = await this.getTokenData(collectionId, tokenId);
 
-      if (collectionData) {
+      if (tokenData) {
         // todo: Do not log the full entity because now this object is too big
-        log.entity = collectionData.name;
+        log.entity = tokenData;
 
         // todo: Write collection data into db
       } else {
@@ -118,12 +111,15 @@ export class CollectionsProcessor extends ScanProcessor {
       blockNumber,
       blockTimestamp,
       collectionId: null as null | number,
+      tokenId: null as null | number,
     };
 
     try {
       const collectionId = params[0].value as number;
+      const tokenId = params[1].value as number;
 
       log.collectionId = collectionId;
+      log.tokenId = tokenId;
 
       this.logger.verbose({ ...log });
 

@@ -3,6 +3,7 @@ import { DataSource as SubscquidDataSource } from '@subsquid/substrate-processor
 import { Range } from '@subsquid/substrate-processor/lib/util/range';
 import { DataSource } from 'typeorm';
 import { CollectionsProcessor } from './processors/collections-processor';
+import { TokensProcessor } from './processors/tokens-processor';
 
 @Injectable()
 export class CrawlerService {
@@ -10,6 +11,7 @@ export class CrawlerService {
     private logger: Logger,
     private dataSource: DataSource,
     private collectionsProcessor: CollectionsProcessor,
+    private tokensProcessor: TokensProcessor,
   ) {
     this.logger = new Logger('CrawlerService');
   }
@@ -47,21 +49,47 @@ export class CrawlerService {
   subscribeAll(forceRescan = false) {
     const params = this.prepareProcessorsParams();
 
-    return Promise.all([this.subscribeCollections({ ...params, forceRescan })]);
+    return Promise.all([
+      // this.subscribeCollections({ ...params, forceRescan }),
+      this.subscribeTokens({ ...params, forceRescan }),
+    ]);
   }
 
   async subscribeCollections({ dataSource, range, typesBundle, forceRescan }) {
     if (forceRescan && !isNaN(range.from)) {
-      const statusDbSchemaName = `${this.collectionsProcessor.name}_status`;
+      try {
+        const statusDbSchemaName = `${this.collectionsProcessor.name}_status`;
 
-      // Set status height to range.from to rescan old blocks
-      await this.dataSource.query(
-        `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
-      );
+        // Set status height to range.from to rescan old blocks
+        await this.dataSource.query(
+          `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
+        );
+      } catch (err) {
+        // First run, no schema yet
+      }
     }
 
     this.collectionsProcessor.init(dataSource, range, typesBundle);
 
     this.collectionsProcessor.run();
+  }
+
+  async subscribeTokens({ dataSource, range, typesBundle, forceRescan }) {
+    if (forceRescan && !isNaN(range.from)) {
+      try {
+        const statusDbSchemaName = `${this.tokensProcessor.name}_status`;
+
+        // Set status height to range.from to rescan old blocks
+        await this.dataSource.query(
+          `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
+        );
+      } catch (err) {
+        // First run, no schema yet
+      }
+    }
+
+    this.tokensProcessor.init(dataSource, range, typesBundle);
+
+    this.tokensProcessor.run();
   }
 }
