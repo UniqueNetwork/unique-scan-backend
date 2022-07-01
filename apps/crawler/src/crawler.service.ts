@@ -21,7 +21,9 @@ export class CrawlerService {
     } as SubscquidDataSource;
 
     const range = {
-      from: Number(process.env.SCAN_RANGE_FROM),
+      from:
+        Number(process.env.SCAN_RANGE_FROM) ||
+        Number(process.env.SCAN_RANGE_FROM_DEFAULT),
     } as Range;
 
     if (!isNaN(Number(process.env.SCAN_RANGE_TO))) {

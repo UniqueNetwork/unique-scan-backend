@@ -4,19 +4,25 @@ import '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class SdkService {
-  private sdk: Sdk;
+  private sdkPromise: Promise<Sdk>;
 
   constructor() {
-    (async () => {
-      this.sdk = await Sdk.create({
-        chainWsUrl: process.env.CHAIN_WS_URL,
-      });
-    })();
+    this.sdkPromise = Sdk.create({
+      chainWsUrl: process.env.CHAIN_WS_URL,
+    });
+  }
+
+  private async getSdk() {
+    const sdk = await this.sdkPromise;
+
+    await sdk.api.isReady;
+
+    return sdk;
   }
 
   async getCollection(collectionId: number) {
-    await this.sdk.api.isReady;
+    const sdk = await this.getSdk();
 
-    return this.sdk.collections.get({ collectionId });
+    return sdk.collections.get({ collectionId });
   }
 }
