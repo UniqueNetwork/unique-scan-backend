@@ -4,7 +4,7 @@ import { Connection, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Collections } from '@entities/Collections';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { SdkService } from './sdk.service';
+import { SdkService } from '../sdk.service';
 
 @Injectable()
 export class CollectionsProcessor extends ScanProcessor {
@@ -13,10 +13,10 @@ export class CollectionsProcessor extends ScanProcessor {
   constructor(
     @InjectRepository(Collections)
     private modelRepository: Repository<Collections>,
-    connection: Connection,
-    private sdk: SdkService,
+    protected connection: Connection,
+    protected sdkService: SdkService,
   ) {
-    super('collections', connection);
+    super('collections', connection, sdkService);
 
     this.logger = new Logger('CollectionsProcessor');
 
@@ -27,14 +27,14 @@ export class CollectionsProcessor extends ScanProcessor {
 
     this.addEventHandler(
       'common.CollectionDestroyed',
-      this.сollectionDestroyedHandler.bind(this),
+      this.collectionDestroyedHandler.bind(this),
     );
 
-    // todo: Update collection events handler. But first we need to know what fields do we have in db.
+    // todo: Add update collection events handler. But first we need to know what fields do we have in db.
   }
 
   private async getCollectionData(collectionId) {
-    const { name, tokenPrefix, owner } = await this.sdk.getCollection(
+    const { name, tokenPrefix, owner } = await this.sdkService.getCollection(
       collectionId as number,
     );
 
@@ -66,7 +66,7 @@ export class CollectionsProcessor extends ScanProcessor {
     // todo: Write collection data into db
   }
 
-  private async сollectionDestroyedHandler(
+  private async collectionDestroyedHandler(
     ctx: EventHandlerContext,
   ): Promise<void> {
     const { name, blockNumber, blockTimestamp, params } = ctx.event;
@@ -78,6 +78,7 @@ export class CollectionsProcessor extends ScanProcessor {
       blockTimestamp,
       collectionId,
     });
+
     // todo: Drop collection by id
   }
 }

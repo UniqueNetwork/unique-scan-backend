@@ -17,10 +17,6 @@ const typeormConfig: TypeOrmModuleOptions = {
   synchronize: true,
   migrationsRun: false,
   migrations: [path.join(migrationsDir, '/**/*{.ts,.js}')],
-  // cli: {
-  //   migrationsDir,
-  //   entitiesDir,
-  // },
   logging: process.env.LOGGING === '1',
 };
 

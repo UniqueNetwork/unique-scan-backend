@@ -6,6 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(CrawlerModule);
 
   const crawlerService = app.get(CrawlerService);
-  crawlerService.subscribe();
+
+  crawlerService.subscribeAll(true);
 }
 bootstrap();

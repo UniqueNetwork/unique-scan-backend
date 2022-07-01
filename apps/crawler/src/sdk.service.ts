@@ -5,18 +5,18 @@ import '@unique-nft/sdk/tokens';
 @Injectable()
 export class SdkService {
   private sdk: Sdk;
+
   constructor() {
-    Sdk.create({
-      chainWsUrl: process.env.CHAIN_WS_URL,
-      //   signer: await createSigner({
-      //     seed: '//Alice', // Signer seed phrase if you want to sign extrinsics
-      //   }),
-    }).then((sdk) => {
-      this.sdk = sdk;
-    });
+    (async () => {
+      this.sdk = await Sdk.create({
+        chainWsUrl: process.env.CHAIN_WS_URL,
+      });
+    })();
   }
 
-  getCollection(collectionId: number) {
+  async getCollection(collectionId: number) {
+    await this.sdk.api.isReady;
+
     return this.sdk.collections.get({ collectionId });
   }
 }

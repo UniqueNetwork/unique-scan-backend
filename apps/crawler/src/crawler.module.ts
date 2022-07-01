@@ -3,17 +3,15 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CrawlerService } from './crawler.service';
-import { CollectionsProcessor } from './collections-processor';
-import { Collections } from '@entities/Collections';
-import { SdkService } from './sdk.service';
+import { ProcessorsModule } from './processors/processors.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(typeormConfig),
-    TypeOrmModule.forFeature([Collections]),
+    ProcessorsModule,
   ],
   controllers: [],
-  providers: [SdkService, CollectionsProcessor, CrawlerService],
+  providers: [CrawlerService],
 })
 export class CrawlerModule {}

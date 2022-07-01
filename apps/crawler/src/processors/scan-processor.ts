@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { SubstrateProcessor } from '@subsquid/substrate-processor';
+import { DataSource, SubstrateProcessor } from '@subsquid/substrate-processor';
 import { ServiceManager } from '@subsquid/substrate-processor/lib/util/sm';
 import { Db } from '@subsquid/substrate-processor/lib/db';
 import {
@@ -13,21 +13,24 @@ import { ProgressTracker } from '@subsquid/substrate-processor/lib/progress-trac
 import { ChainManager } from '@subsquid/substrate-processor/lib/chain';
 import { Connection } from 'typeorm';
 import { Prometheus } from '@subsquid/substrate-processor/lib/prometheus';
+import { Range } from '@subsquid/substrate-processor/lib/util/range';
+import { SdkService } from '../sdk.service';
 
 export class ScanProcessor extends SubstrateProcessor {
-  constructor(private name: string, private connection: Connection) {
+  constructor(
+    protected name: string,
+    protected connection: Connection,
+    protected sdkService: SdkService,
+  ) {
     super(name);
+  }
 
-    this.setDataSource({
-      archive: process.env.ARCHIVE_GQL_URL,
-      chain: process.env.CHAIN_WS_URL,
-    });
+  init(dataSource: DataSource, range: Range, typesBundle: string) {
+    this.setDataSource(dataSource);
 
-    // todo: move to env & args
-    this.setBlockRange({ from: 1000000 });
+    this.setBlockRange(range);
 
-    // todo: move to env & args
-    this.setTypesBundle('quartz');
+    this.setTypesBundle(typesBundle);
   }
 
   private async _run(sm: ServiceManager): Promise<void> {
