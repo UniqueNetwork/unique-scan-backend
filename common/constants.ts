@@ -1,0 +1,21 @@
+export enum EventName {
+  COLLECTION_CREATED = 'common.CollectionCreated',
+  COLLECTION_DESTROYED = 'common.CollectionDestroyed',
+  ITEM_CREATED = 'common.ItemCreated',
+  ITEM_DESTROYED = 'common.ItemDestroyed',
+  COLLECTION_PROPERTY_SET = 'common.CollectionPropertySet',
+  COLLECTION_PROPERTY_DELETED = 'common.CollectionPropertyDeleted',
+  PROPERTY_PERMISSION_SET = 'common.PropertyPermissionSet',
+  TOKEN_PROPERTY_SET = 'common.TokenPropertySet',
+  TOKEN_PROPERTY_DELETED = 'common.TokenPropertyDeleted',
+
+  ALLOW_LIST_ADDRESS_ADDED = 'unique.AllowListAddressAdded',
+  ALLOW_LIST_ADDRESS_REMOVED = 'unique.AllowListAddressRemoved',
+  COLLECTION_SPONSOR_REMOVED = 'unique.CollectionSponsorRemoved',
+  COLLECTION_ADMIN_ADDED = 'unique.CollectionAdminAdded',
+  COLLECTION_ADMIN_REMOVED = 'unique.CollectionAdminRemoved',
+  COLLECTION_OWNED_CHANGED = 'unique.CollectionOwnedChanged',
+  COLLECTION_LIMIT_SET = 'unique.CollectionLimitSet',
+  COLLECTION_SPONSOR_SET = 'unique.CollectionSponsorSet',
+  SPONSORSHIP_CONFIRMED = 'unique.SponsorshipConfirmed',
+}

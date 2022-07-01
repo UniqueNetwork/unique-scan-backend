@@ -5,12 +5,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Collections } from '@entities/Collections';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
+import { EventName } from '@common/constants';
 
 type CollectionData = {
   name: string;
   tokenPrefix: string;
   owner: string;
 };
+
 @Injectable()
 export class CollectionsProcessor extends ScanProcessor {
   private logger: Logger;
@@ -25,17 +27,34 @@ export class CollectionsProcessor extends ScanProcessor {
 
     this.logger = new Logger('CollectionsProcessor');
 
-    this.addEventHandler(
-      'common.CollectionCreated',
-      this.collectionCreatedHandler.bind(this),
+    // todo: Remove some items when models rework is done
+    const EVENTS_TO_UPDATE_COLLECTION = [
+      // Insert
+      EventName.COLLECTION_CREATED,
+
+      // Update
+      EventName.COLLECTION_PROPERTY_SET,
+      EventName.COLLECTION_PROPERTY_DELETED,
+      EventName.PROPERTY_PERMISSION_SET,
+      EventName.COLLECTION_SPONSOR_REMOVED,
+      EventName.COLLECTION_ADMIN_ADDED,
+      EventName.COLLECTION_ADMIN_REMOVED,
+      EventName.COLLECTION_OWNED_CHANGED,
+      EventName.SPONSORSHIP_CONFIRMED,
+      // EventName.ALLOW_LIST_ADDRESS_ADDED, // todo: Too many events. Do we really need to process this event?
+      EventName.ALLOW_LIST_ADDRESS_REMOVED,
+      EventName.COLLECTION_LIMIT_SET,
+      EventName.COLLECTION_SPONSOR_SET,
+    ];
+
+    EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
+      this.addEventHandler(eventName, this.collectionUpsertHandler.bind(this)),
     );
 
     this.addEventHandler(
-      'common.CollectionDestroyed',
-      this.collectionDestroyedHandler.bind(this),
+      EventName.COLLECTION_DESTROYED,
+      this.collectionDestroyHandler.bind(this),
     );
-
-    // todo: Add update collection events handler. But first we need to know what fields do we have in db.
   }
 
   private async getCollectionData(
@@ -56,16 +75,16 @@ export class CollectionsProcessor extends ScanProcessor {
     };
   }
 
-  private async collectionCreatedHandler(
+  private async collectionUpsertHandler(
     ctx: EventHandlerContext,
   ): Promise<void> {
     const { name, blockNumber, blockTimestamp, params } = ctx.event;
 
     const log = {
-      msg: `Event '${name}' processing`,
+      msg: `collectionUpsertHandler() for '${name}' event`,
       blockNumber,
       blockTimestamp,
-      entity: null as null | object,
+      entity: null as null | object | string,
       collectionId: null as null | number,
     };
 
@@ -77,7 +96,8 @@ export class CollectionsProcessor extends ScanProcessor {
       const collectionData = await this.getCollectionData(collectionId);
 
       if (collectionData) {
-        log.entity = collectionData;
+        // todo: Do not log the full entity because now this object is too big
+        log.entity = collectionData.name;
 
         // todo: Write collection data into db
       } else {
@@ -92,14 +112,14 @@ export class CollectionsProcessor extends ScanProcessor {
     }
   }
 
-  private async collectionDestroyedHandler(
+  private async collectionDestroyHandler(
     ctx: EventHandlerContext,
   ): Promise<void> {
     const { name, blockNumber, blockTimestamp, params } = ctx.event;
     const collectionId = params[0].value;
 
     this.logger.verbose({
-      msg: `Event '${name}' processing`,
+      msg: `collectionDestroyHandler() for '${name}' event`,
       blockNumber,
       blockTimestamp,
       collectionId,
