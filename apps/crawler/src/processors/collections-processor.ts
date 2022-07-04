@@ -45,6 +45,9 @@ export class CollectionsProcessor extends ScanProcessor {
       EventName.ALLOW_LIST_ADDRESS_REMOVED,
       EventName.COLLECTION_LIMIT_SET,
       EventName.COLLECTION_SPONSOR_SET,
+
+      // todo: debug
+      // 'system.ExtrinsicSuccess',
     ];
 
     EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
@@ -55,6 +58,8 @@ export class CollectionsProcessor extends ScanProcessor {
       EventName.COLLECTION_DESTROYED,
       this.destroyHandler.bind(this),
     );
+
+    this.logger.log('Starting processor...');
   }
 
   private async getCollectionData(

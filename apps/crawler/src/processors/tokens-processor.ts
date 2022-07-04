@@ -50,6 +50,8 @@ export class TokensProcessor extends ScanProcessor {
       EventName.ITEM_DESTROYED,
       this.destroyHandler.bind(this),
     );
+
+    this.logger.log('Starting processor...');
   }
 
   private async getTokenData(

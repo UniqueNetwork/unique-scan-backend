@@ -7,6 +7,6 @@ async function bootstrap() {
 
   const crawlerService = app.get(CrawlerService);
 
-  crawlerService.subscribeAll(true);
+  crawlerService.subscribeAll(process.env.SCAN_FORCE_RESCAN === 'true');
 }
 bootstrap();

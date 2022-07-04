@@ -13,7 +13,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod:web-api": "node dist/apps/web-api/main ",
-    "crawler": "nest build crawler && nest start crawler",
+    "crawler": "nest start crawler",
     "lint": "eslint \"{src,apps,libs,test,migrations}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
