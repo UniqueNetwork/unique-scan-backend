@@ -28,8 +28,6 @@ export class CollectionsProcessor extends ScanProcessor {
 
     this.logger = new Logger('CollectionsProcessor');
 
-    console.log('metadata', this.modelRepository.metadata);
-
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE_COLLECTION = [
       // Insert
@@ -117,7 +115,7 @@ export class CollectionsProcessor extends ScanProcessor {
   }
 
   prepareDataToWrite(sdkEntity) {
-    console.log('sdkEntity', sdkEntity);
+    // console.log('sdkEntity', sdkEntity);
 
     const {
       id: collection_id,
@@ -135,7 +133,7 @@ export class CollectionsProcessor extends ScanProcessor {
       } = {},
       limits: {
         // todo: get effective limits
-        tokenLimit: token_limit = 0,
+        tokenLimit: token_limit,
         accountTokenOwnershipLimit: limits_account_ownership,
         sponsoredDataSize: limits_sponsore_data_size,
         sponsoredDataRateLimit: limits_sponsore_data_rate,
@@ -151,14 +149,15 @@ export class CollectionsProcessor extends ScanProcessor {
       name,
       description,
       offchain_schema,
-      token_limit,
+      token_limit: token_limit || 0,
       const_chain_schema, // todo: stringify?
       variable_on_chain_schema,
       limits_account_ownership,
       limits_sponsore_data_size,
       limits_sponsore_data_rate,
-      owner_can_transfer,
-      owner_can_destroy,
+      owner_can_transfer:
+        owner_can_transfer === null ? true : owner_can_transfer, // todo: get effective limits
+      owner_can_destroy: owner_can_destroy === null ? true : owner_can_destroy, // todo: get effective limits
       sponsorship,
       schema_version,
       token_prefix,

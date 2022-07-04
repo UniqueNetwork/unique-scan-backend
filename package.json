@@ -13,12 +13,8 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod:web-api": "node dist/apps/web-api/main ",
-<<<<<<< HEAD
     "crawler": "nest start crawler",
-    "lint": "eslint \"{src,apps,libs,test,migrations}/**/*.ts\" --fix",
-=======
     "lint": "eslint \"{src,apps,libs,test,tests,migrations}/**/*.ts\" --fix",
->>>>>>> feature/NFTPAR-1491-add-tests-fix
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -35,8 +31,6 @@
     "db:migration:create": "npm run typeorm migration:create -- -n"
   },
   "dependencies": {
-    "@subsquid/substrate-processor": "^0.8.0",
-    "@unique-nft/sdk": "^0.4.7",
     "@nestjs/apollo": "^10.0.16",
     "@nestjs/common": "^8.4.7",
     "@nestjs/config": "^2.1.0",
@@ -44,6 +38,11 @@
     "@nestjs/graphql": "^10.0.16",
     "@nestjs/platform-express": "^8.4.7",
     "@nestjs/typeorm": "^8.1.4",
+    "@polkadot/util-crypto": "^9.7.2",
+    "@subsquid/substrate-processor": "^0.8.0",
+    "@unique-nft/opal-testnet-types": "^0.5.2",
+    "@unique-nft/quartz-mainnet-types": "^0.6.0",
+    "@unique-nft/sdk": "^0.4.7",
     "apollo-server-express": "^3.6.2",
     "graphql": "^15.8.0",
     "graphql-type-json": "^0.3.2",
@@ -67,7 +66,6 @@
     "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
-    "@unique-nft/sdk": "^0.3.16",
     "@unique-nft/types": "^0.6.0-4",
     "chai": "^4.3.6",
     "eslint": "^8.0.1",

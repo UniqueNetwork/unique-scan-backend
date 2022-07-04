@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Sdk } from '@unique-nft/sdk';
 import '@unique-nft/sdk/tokens';
+import { SdkOptions } from '@unique-nft/sdk/types';
 
 @Injectable()
 export class SdkService {
@@ -9,7 +10,7 @@ export class SdkService {
   constructor() {
     this.sdkPromise = Sdk.create({
       chainWsUrl: process.env.CHAIN_WS_URL,
-    });
+    } as SdkOptions);
   }
 
   private async getSdk() {
