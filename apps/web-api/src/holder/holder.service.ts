@@ -38,13 +38,17 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     queryString: string,
     params: IQueryParameters,
   ): Promise<{ count: number }> {
-    const countBuilder = this.repo.createQueryBuilder();
     const query = this.replaceQueryParams(queryString, params);
+    const countQueryResult: [{ count?: string }] = await this.repo.query(
+      `select count(1) as "count" from (${query}) "t1"`,
+    );
 
-    return countBuilder
-      .select('count(true)', 'count')
-      .from('(' + query + ')', 't1')
-      .getRawOne();
+    if (countQueryResult.length === 1) {
+      const count = Number(countQueryResult[0].count);
+      return { count };
+    }
+
+    return { count: 0 };
   }
 
   private replaceQueryParams(queryString: string, params: IQueryParameters) {
