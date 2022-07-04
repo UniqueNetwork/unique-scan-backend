@@ -51,8 +51,12 @@ export class CollectionsProcessor extends ScanProcessor {
       // 'system.ExtrinsicSuccess',
     ];
 
-    EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
-      this.addEventHandler(eventName, this.upsertHandler.bind(this)),
+    EVENTS_TO_UPDATE_COLLECTION.forEach(
+      (eventName) =>
+        this.addEventHandler(eventName, this.upsertHandler.bind(this)),
+
+      // todo: debug
+      // this.addEventHandler(eventName, this.destroyHandler.bind(this)),
     );
 
     this.addEventHandler(
@@ -75,6 +79,7 @@ export class CollectionsProcessor extends ScanProcessor {
    * Creates 'collection_cover' field value from other fields.
    */
   createCollectionCoverValue({
+    collection_id,
     schema_version,
     offchain_schema,
     variable_on_chain_schema,
@@ -93,7 +98,10 @@ export class CollectionsProcessor extends ScanProcessor {
         const plainUrl = match[1];
         result = String(plainUrl).replace('{id}', '1');
       } else if (variable_on_chain_schema) {
-        const parsedSchema = JSON.parse(variable_on_chain_schema);
+        const parsedSchema =
+          typeof variable_on_chain_schema === 'object'
+            ? variable_on_chain_schema
+            : JSON.parse(variable_on_chain_schema);
         const { collectionCover } = parsedSchema;
         if (collectionCover) {
           result = collectionCover;
@@ -102,7 +110,8 @@ export class CollectionsProcessor extends ScanProcessor {
     } catch (error) {
       this.logger.error(
         {
-          error,
+          error: error.message,
+          collection_id,
           schema_version,
           offchain_schema,
           variable_on_chain_schema,
@@ -165,6 +174,7 @@ export class CollectionsProcessor extends ScanProcessor {
       mint_mode,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: this.createCollectionCoverValue({
+        collection_id,
         schema_version,
         offchain_schema,
         variable_on_chain_schema,
@@ -202,7 +212,8 @@ export class CollectionsProcessor extends ScanProcessor {
       } else {
         log.entity = null;
 
-        // todo: Delete db record
+        // Delete db record
+        await this.modelRepository.delete(collectionId);
       }
 
       this.logger.verbose({ ...log });
@@ -226,9 +237,10 @@ export class CollectionsProcessor extends ScanProcessor {
 
       log.collectionId = collectionId;
 
-      this.logger.verbose({ ...log });
+      // Delete db record
+      await this.modelRepository.delete(collectionId);
 
-      // todo: Delete db record
+      this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
       process.exit(1);

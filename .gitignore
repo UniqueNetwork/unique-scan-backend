@@ -33,7 +33,4 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-<<<<<<< HEAD
 .env
-=======
->>>>>>> feature/NFTPAR-1491-add-tests-fix
