@@ -5,7 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Collections } from '@entities/Collections';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
-import { EventName } from '@common/constants';
+import { EventName, SchemaVersion } from '@common/constants';
+import { normalizeSubstrateAddress } from '@common/utils';
 
 type CollectionData = {
   name: string;
@@ -26,6 +27,8 @@ export class CollectionsProcessor extends ScanProcessor {
     super('collections', connection, sdkService);
 
     this.logger = new Logger('CollectionsProcessor');
+
+    console.log('metadata', this.modelRepository.metadata);
 
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE_COLLECTION = [
@@ -67,16 +70,106 @@ export class CollectionsProcessor extends ScanProcessor {
   ): Promise<CollectionData | null> {
     const result = await this.sdkService.getCollection(collectionId as number);
 
-    if (!result) {
-      return null;
+    return result ? result : null;
+  }
+
+  /**
+   * Creates 'collection_cover' field value from other fields.
+   */
+  createCollectionCoverValue({
+    schema_version,
+    offchain_schema,
+    variable_on_chain_schema,
+  }) {
+    let result = null;
+
+    try {
+      const urlPattern = /^["']?(http[s]?:\/\/[^"']+)["']?$/;
+
+      if (
+        schema_version === SchemaVersion.IMAGE_URL &&
+        offchain_schema &&
+        urlPattern.test(offchain_schema)
+      ) {
+        const match = offchain_schema.match(urlPattern);
+        const plainUrl = match[1];
+        result = String(plainUrl).replace('{id}', '1');
+      } else if (variable_on_chain_schema) {
+        const parsedSchema = JSON.parse(variable_on_chain_schema);
+        const { collectionCover } = parsedSchema;
+        if (collectionCover) {
+          result = collectionCover;
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        {
+          error,
+          schema_version,
+          offchain_schema,
+          variable_on_chain_schema,
+        },
+        'Collection cover processing error',
+      );
     }
 
-    const { name, tokenPrefix, owner } = result;
+    return result;
+  }
+
+  prepareDataToWrite(sdkEntity) {
+    console.log('sdkEntity', sdkEntity);
+
+    const {
+      id: collection_id,
+      owner,
+      name,
+      description,
+      sponsorship,
+      tokenPrefix: token_prefix,
+      mode,
+      properties: {
+        offchainSchema: offchain_schema = null,
+        constChainSchema: const_chain_schema = null,
+        variableOnChainSchema: variable_on_chain_schema = null,
+        schemaVersion: schema_version = null,
+      } = {},
+      limits: {
+        // todo: get effective limits
+        tokenLimit: token_limit = 0,
+        accountTokenOwnershipLimit: limits_account_ownership,
+        sponsoredDataSize: limits_sponsore_data_size,
+        sponsoredDataRateLimit: limits_sponsore_data_rate,
+        ownerCanTransfer: owner_can_transfer,
+        ownerCanDestroy: owner_can_destroy,
+      },
+      permissions: { mintMode: mint_mode },
+    } = sdkEntity;
 
     return {
-      name,
-      tokenPrefix,
+      collection_id,
       owner,
+      name,
+      description,
+      offchain_schema,
+      token_limit,
+      const_chain_schema, // todo: stringify?
+      variable_on_chain_schema,
+      limits_account_ownership,
+      limits_sponsore_data_size,
+      limits_sponsore_data_rate,
+      owner_can_transfer,
+      owner_can_destroy,
+      sponsorship,
+      schema_version,
+      token_prefix,
+      mode,
+      mint_mode,
+      owner_normalized: normalizeSubstrateAddress(owner),
+      collection_cover: this.createCollectionCoverValue({
+        schema_version,
+        offchain_schema,
+        variable_on_chain_schema,
+      }),
     };
   }
 
@@ -102,7 +195,11 @@ export class CollectionsProcessor extends ScanProcessor {
         // todo: Do not log the full entity because now this object is too big
         log.entity = collectionData.name;
 
-        // todo: Write collection data into db
+        const dataToWrite = this.prepareDataToWrite(collectionData);
+
+        // console.log('dataToWrite', dataToWrite);
+
+        await this.modelRepository.upsert(dataToWrite, ['collection_id']);
       } else {
         log.entity = null;
 

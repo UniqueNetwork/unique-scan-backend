@@ -20,3 +20,10 @@ export enum EventName {
   COLLECTION_SPONSOR_SET = 'unique.CollectionSponsorSet',
   SPONSORSHIP_CONFIRMED = 'unique.SponsorshipConfirmed',
 }
+
+export enum SchemaVersion {
+  IMAGE_URL = 'ImageUrl',
+  UNIQUE = 'Unique',
+}
+
+export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;

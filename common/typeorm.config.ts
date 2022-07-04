@@ -3,6 +3,10 @@ import dotenv = require('dotenv');
 import path = require('path');
 
 dotenv.config();
+
+const sanitizedDirname = __dirname.replace(/\/apps\/.+$/, '');
+console.log('__dirname', __dirname, sanitizedDirname);
+
 const entitiesDir = path.join(__dirname, 'entities');
 const migrationsDir = path.join(__dirname, '..', 'migrations');
 

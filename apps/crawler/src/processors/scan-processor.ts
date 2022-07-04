@@ -23,6 +23,8 @@ export class ScanProcessor extends SubstrateProcessor {
     protected sdkService: SdkService,
   ) {
     super(name);
+
+    console.log('connection.options', connection.options);
   }
 
   init(dataSource: DataSource, range: Range, typesBundle: string) {
@@ -34,7 +36,6 @@ export class ScanProcessor extends SubstrateProcessor {
   }
 
   private async _run(sm: ServiceManager): Promise<void> {
-    // todo: Initialize Prometheus once (Use DI, Luke!)
     const prometheus = new Prometheus();
     const prometheusServer = sm.add(
       await prometheus.serve(this.getPrometheusPort()),

@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
+import { Column, Entity, Index, OneToOne } from 'typeorm';
 import { Collections } from './Collections';
 
 @Index('collections_stats_pkey', ['collection_id'], { unique: true })
