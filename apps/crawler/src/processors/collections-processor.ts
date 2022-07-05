@@ -6,7 +6,7 @@ import { Collections } from '@entities/Collections';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName, SchemaVersion } from '@common/constants';
-import { normalizeSubstrateAddress } from '@common/utils';
+import { normalizeSubstrateAddress, utf8Encode } from '@common/utils';
 
 type CollectionData = {
   name: string;
@@ -151,8 +151,8 @@ export class CollectionsProcessor extends ScanProcessor {
     return {
       collection_id,
       owner,
-      name,
-      description,
+      name: utf8Encode(name),
+      description: utf8Encode(description),
       offchain_schema,
       token_limit: token_limit || 0,
       const_chain_schema, // todo: stringify?
