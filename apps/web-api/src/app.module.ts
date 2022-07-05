@@ -20,6 +20,7 @@ import { Extrinsic } from '@entities/Extrinsic';
 import { AccountModule } from './account/account.module';
 import { Account } from '@entities/Account';
 import { BlockModule } from './block/block.module';
+import { ApolloDriver } from '@nestjs/apollo';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { BlockModule } from './block/block.module';
       ],
     }),
     GraphQLModule.forRoot({
+      driver: ApolloDriver,
       autoSchemaFile: true,
       debug: true,
       playground: true,

@@ -44,7 +44,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
 
   crawler:
-    image: registry.uniquenetwork.dev/uniquenetwork/unique-explorer-api:b66f5dc00b4de9446bd8591f5888497a510f9c2a35a01c3dda1d6616-1655272711166
+    image: registry.uniquenetwork.dev/uniquenetwork/unique-explorer-api:f32aa292c8f8ddcec9a4053e0bff56c2c0b6dc14a07d45a7b227e5a4-1655819751625
     container_name: scan-crawler
     networks:
       - scan
@@ -53,8 +53,8 @@ services:
     restart: on-failure
     environment:
       - NODE_ENV=production
-      - WS_PROVIDER_URL=ws://blockchain:9944
-      - TYPE_PROVIDER=quartz
+      - WS_PROVIDER_URL=${WS_PROVIDER_URL}
+      - TYPE_PROVIDER=${TYPE_PROVIDER}
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=polkastats
       - POSTGRES_PASSWORD=polkastats
@@ -63,16 +63,16 @@ services:
       - HOST_CRAWLER=0.0.0.0
     entrypoint: ["node", "--enable-source-maps", "-r", "./dist/bundle.js"]
 
-  blockchain:
-    image: uniquenetwork/quartz-node-private:latest
-    container_name: scan-blockchain
-    networks:
-      - scan
-    restart: on-failure
-    ports:
-      - "9933:9933"
-      - "9944:9944"
-      - "9844:9844"
+#  blockchain:
+#    image: uniquenetwork/quartz-node-private:latest
+#    container_name: scan-blockchain
+#    networks:
+#      - scan
+#    restart: on-failure
+#    ports:
+#      - "9933:9933"
+#      - "9944:9944"
+#      - "9844:9844"
 
   crawler-migrations:
     image: registry.uniquenetwork.dev/uniquenetwork/unique-explorer-api:b66f5dc00b4de9446bd8591f5888497a510f9c2a35a01c3dda1d6616-1655272711166
@@ -81,12 +81,12 @@ services:
       - scan
     depends_on:
       - postgres
-      - blockchain
+#      - blockchain
     restart: on-failure
     environment:
       - NODE_ENV=production
-      - WS_PROVIDER_URL=ws://blockchain:9944
-      - TYPE_PROVIDER=quartz
+      - WS_PROVIDER_URL=${WS_PROVIDER_URL}
+      - TYPE_PROVIDER=${TYPE_PROVIDER}
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=polkastats
       - POSTGRES_PASSWORD=polkastats

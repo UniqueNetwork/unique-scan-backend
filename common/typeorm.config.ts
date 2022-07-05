@@ -1,12 +1,12 @@
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import dotenv = require('dotenv');
 import path = require('path');
+import { DataSourceOptions } from 'typeorm';
 
 dotenv.config();
 const entitiesDir = path.join(__dirname, 'entities');
 const migrationsDir = path.join(__dirname, '..', 'migrations');
 
-const typeormConfig: TypeOrmModuleOptions = {
+const typeormConfig: DataSourceOptions = {
   type: 'postgres',
   host: process.env.POSTGRES_HOST,
   port: +process.env.POSTGRES_PORT,
@@ -17,10 +17,6 @@ const typeormConfig: TypeOrmModuleOptions = {
   synchronize: false,
   migrationsRun: false,
   migrations: [path.join(migrationsDir, '/**/*{.ts,.js}')],
-  cli: {
-    migrationsDir,
-    entitiesDir,
-  },
   logging: process.env.LOGGING === '1',
 };
 
