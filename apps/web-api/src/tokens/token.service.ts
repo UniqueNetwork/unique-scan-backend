@@ -78,6 +78,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.owner', 'owner');
     qb.addSelect('Tokens.date_of_creation', 'date_of_creation');
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
+    qb.addSelect('Tokens.parent_id', 'parent_id');
     qb.addSelect(
       `COALESCE(
         "Tokens".data::json ->> 'ipfsJson'::text,

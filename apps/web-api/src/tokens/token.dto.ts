@@ -39,4 +39,7 @@ export class TokenDTO implements Partial<Tokens> {
 
   @Field(() => Int, { nullable: true })
   date_of_creation?: number;
+
+  @Field(() => String, { nullable: true })
+  parent_id?: string;
 }

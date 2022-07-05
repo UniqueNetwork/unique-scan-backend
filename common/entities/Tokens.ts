@@ -43,4 +43,7 @@ export class Tokens {
 
   @Column('text', { name: 'owner_normalized' })
   owner_normalized: string;
+
+  @Column('text', { name: 'parent_id', nullable: true })
+  parent_id: string;
 }
