@@ -13,7 +13,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod:web-api": "node dist/apps/web-api/main ",
-    "lint": "eslint \"{src,apps,libs,test,tests,migrations}/**/*.ts\" --fix",
+    "lint": "eslint \"{src,apps,libs,test,e2e,migrations}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
