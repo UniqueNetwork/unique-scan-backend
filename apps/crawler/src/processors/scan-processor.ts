@@ -23,8 +23,6 @@ export class ScanProcessor extends SubstrateProcessor {
     protected sdkService: SdkService,
   ) {
     super(name);
-
-    console.log('connection.options', connection.options);
   }
 
   init(dataSource: DataSource, range: Range, typesBundle: string) {

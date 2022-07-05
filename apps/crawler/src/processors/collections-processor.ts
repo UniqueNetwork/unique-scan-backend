@@ -51,12 +51,8 @@ export class CollectionsProcessor extends ScanProcessor {
       // 'system.ExtrinsicSuccess',
     ];
 
-    EVENTS_TO_UPDATE_COLLECTION.forEach(
-      (eventName) =>
-        this.addEventHandler(eventName, this.upsertHandler.bind(this)),
-
-      // todo: debug
-      // this.addEventHandler(eventName, this.destroyHandler.bind(this)),
+    EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
+      this.addEventHandler(eventName, this.upsertHandler.bind(this)),
     );
 
     this.addEventHandler(
@@ -124,8 +120,6 @@ export class CollectionsProcessor extends ScanProcessor {
   }
 
   prepareDataToWrite(sdkEntity) {
-    // console.log('sdkEntity', sdkEntity);
-
     const {
       id: collection_id,
       owner,
@@ -157,8 +151,8 @@ export class CollectionsProcessor extends ScanProcessor {
     return {
       collection_id,
       owner,
-      name: String(name).replace('\u0000', ''),
-      description: String(description).replace('\u0000', ''),
+      name,
+      description,
       offchain_schema,
       token_limit: token_limit || 0,
       const_chain_schema, // todo: stringify?
@@ -203,12 +197,12 @@ export class CollectionsProcessor extends ScanProcessor {
       const collectionData = await this.getCollectionData(collectionId);
 
       if (collectionData) {
-        // Do not log the full entity because this object is quite big
-        log.entity = collectionData.name;
+        // console.log('dataToWrite', dataToWrite);
 
         const dataToWrite = this.prepareDataToWrite(collectionData);
 
-        // console.log('dataToWrite', dataToWrite);
+        // Do not log the full entity because this object is quite big
+        log.entity = dataToWrite.name;
 
         await this.modelRepository.upsert(dataToWrite, ['collection_id']);
       } else {
