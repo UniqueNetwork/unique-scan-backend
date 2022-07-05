@@ -1,44 +1,46 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { createQueryBuilder } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Account } from '@entities/Account';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Injectable } from '@nestjs/common';
 import { BaseService } from './base.service';
 import { AccountDTO } from '../account/account.dto';
 import { AppModule } from '../app.module';
 import { GQLOrderByParamsArgs, IGQLQueryArgs } from './gql-query-args';
+import { InjectRepository, TypeOrmModule } from '@nestjs/typeorm';
+
+@Injectable()
+class BaseServiceTest extends BaseService<Account, AccountDTO> {
+  constructor(@InjectRepository(Account) private repo: Repository<Account>) {
+    super();
+  }
+
+  apply(queryArgs: IGQLQueryArgs<AccountDTO>) {
+    const qb = this.repo.createQueryBuilder();
+
+    qb.select('*');
+    this.applyOrderCondition(qb, queryArgs);
+    this.applyLimitOffset(qb, queryArgs);
+    this.applyWhereCondition(qb, queryArgs);
+    this.applyDistinctOn(qb, queryArgs);
+
+    return qb;
+  }
+}
 
 describe('BaseService', () => {
-  let app: INestApplication;
+  let service: BaseServiceTest;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+    const app: TestingModule = await Test.createTestingModule({
+      imports: [AppModule, TypeOrmModule.forFeature([Account])],
+      providers: [BaseServiceTest],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    service = app.get<BaseServiceTest>(BaseServiceTest);
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  describe('base service with Acoount', () => {
-    class ForTests extends BaseService<Account, AccountDTO> {
-      apply(queryArgs: IGQLQueryArgs<AccountDTO>) {
-        const qb = createQueryBuilder().from(Account, 'Account');
-
-        this.applyOrderCondition(qb, queryArgs);
-        this.applyLimitOffset(qb, queryArgs);
-        this.applyWhereCondition(qb, queryArgs);
-        this.applyDistinctOn(qb, queryArgs);
-
-        return qb;
-      }
-    }
-
+  describe('base service with Account', () => {
     it('should return query "ORDER BY account_id DESC LIMIT 10 OFFSET 10"', async () => {
-      const service = new ForTests();
       const qb = service.apply({
         order_by: { account_id: GQLOrderByParamsArgs.desc },
         offset: 10,
@@ -51,7 +53,6 @@ describe('BaseService', () => {
     });
 
     it('should return query "LIMIT 10 OFFSET 10"', async () => {
-      const service = new ForTests();
       const qb = service.apply({ offset: 10, limit: 10 });
 
       expect(qb.getQuery()).toBe(
@@ -60,7 +61,6 @@ describe('BaseService', () => {
     });
 
     it('should return query "DISTINCT ON (account_id) LIMIT 10"', async () => {
-      const service = new ForTests();
       const qb = service.apply({ distinct_on: 'account_id' });
 
       expect(qb.getQuery()).toBe(
@@ -69,14 +69,12 @@ describe('BaseService', () => {
     });
 
     it('should return query without LIMIT', async () => {
-      const service = new ForTests();
       const qb = service.apply({ limit: null });
 
       expect(qb.getQuery()).toBe('SELECT * FROM "public"."account" "Account"');
     });
 
     it('should return correct condition WHERE', async () => {
-      const service = new ForTests();
       const qb = service.apply({
         where: {
           account_id: { _eq: 1 },
@@ -95,7 +93,6 @@ describe('BaseService', () => {
     });
 
     it('where with _or', async () => {
-      const service = new ForTests();
       const qb = service.apply({
         where: {
           _or: [
