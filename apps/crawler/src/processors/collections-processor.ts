@@ -152,11 +152,13 @@ export class CollectionsProcessor extends ScanProcessor {
       permissions: { mintMode: mint_mode },
     } = sdkEntity;
 
+    // console.log(sdkEntity);
+
     return {
       collection_id,
       owner,
-      name,
-      description,
+      name: String(name).replace('\u0000', ''),
+      description: String(description).replace('\u0000', ''),
       offchain_schema,
       token_limit: token_limit || 0,
       const_chain_schema, // todo: stringify?
@@ -201,7 +203,7 @@ export class CollectionsProcessor extends ScanProcessor {
       const collectionData = await this.getCollectionData(collectionId);
 
       if (collectionData) {
-        // todo: Do not log the full entity because now this object is too big
+        // Do not log the full entity because this object is quite big
         log.entity = collectionData.name;
 
         const dataToWrite = this.prepareDataToWrite(collectionData);
