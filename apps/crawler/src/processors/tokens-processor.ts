@@ -6,6 +6,7 @@ import { Tokens } from '@entities/Tokens';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName } from '@common/constants';
+import { normalizeSubstrateAddress } from '@common/utils';
 
 type TokenData =
   | {
@@ -60,11 +61,26 @@ export class TokensProcessor extends ScanProcessor {
   ): Promise<TokenData | null> {
     const result = await this.sdkService.getToken(collectionId, tokenId);
 
-    if (!result) {
-      return null;
-    }
+    return result ? result : null;
+  }
 
-    return result;
+  prepareDataToWrite(sdkEntity) {
+    // console.log('sdkEntity', sdkEntity);
+
+    const {
+      id: token_id,
+      collectionId: collection_id,
+      owner,
+      properties: { constData: data = {} } = {},
+    } = sdkEntity;
+
+    return {
+      token_id,
+      collection_id,
+      owner,
+      owner_normalized: normalizeSubstrateAddress(owner),
+      data,
+    };
   }
 
   private async upsertHandler(ctx: EventHandlerContext): Promise<void> {
@@ -89,14 +105,25 @@ export class TokensProcessor extends ScanProcessor {
       const tokenData = await this.getTokenData(collectionId, tokenId);
 
       if (tokenData) {
-        // todo: Do not log the full entity because now this object is too big
-        log.entity = tokenData;
+        const dataToWrite = this.prepareDataToWrite(tokenData);
+        // console.log('dataToWrite', dataToWrite);
 
-        // todo: Write collection data into db
+        log.entity = dataToWrite;
+
+        // Write collection data into db
+        await this.modelRepository.upsert(
+          {
+            ...dataToWrite,
+            date_of_creation:
+              eventName === EventName.ITEM_CREATED ? blockTimestamp : undefined,
+          },
+          ['collection_id', 'token_id'],
+        );
       } else {
         log.entity = null;
 
         // todo: Delete db record
+        // await this.modelRepository.delete(collectionId, tokenId);
       }
 
       this.logger.verbose({ ...log });
@@ -126,6 +153,7 @@ export class TokensProcessor extends ScanProcessor {
       this.logger.verbose({ ...log });
 
       // todo: Delete db record
+      // await this.modelRepository.delete(collectionId);
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
       process.exit(1);

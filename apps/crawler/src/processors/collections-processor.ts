@@ -197,14 +197,22 @@ export class CollectionsProcessor extends ScanProcessor {
       const collectionData = await this.getCollectionData(collectionId);
 
       if (collectionData) {
-        // console.log('dataToWrite', dataToWrite);
-
         const dataToWrite = this.prepareDataToWrite(collectionData);
+        // console.log('dataToWrite', dataToWrite);
 
         // Do not log the full entity because this object is quite big
         log.entity = dataToWrite.name;
 
-        await this.modelRepository.upsert(dataToWrite, ['collection_id']);
+        await this.modelRepository.upsert(
+          {
+            ...dataToWrite,
+            date_of_creation:
+              eventName === EventName.COLLECTION_CREATED
+                ? blockTimestamp
+                : undefined,
+          },
+          ['collection_id'],
+        );
       } else {
         log.entity = null;
 
