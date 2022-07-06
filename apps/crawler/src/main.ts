@@ -3,7 +3,9 @@ import { CrawlerModule } from './crawler.module';
 import { CrawlerService } from './crawler.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(CrawlerModule);
+  const app = await NestFactory.create(CrawlerModule, {
+    logger: ['log', 'error', 'warn'],
+  });
 
   const crawlerService = app.get(CrawlerService);
 

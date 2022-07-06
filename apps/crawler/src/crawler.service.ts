@@ -50,8 +50,8 @@ export class CrawlerService {
     const params = this.prepareProcessorsParams();
 
     return Promise.all([
-      // this.subscribeCollections({ ...params, forceRescan }),
-      this.subscribeTokens({ ...params, forceRescan }),
+      this.subscribeCollections({ ...params, forceRescan }),
+      // this.subscribeTokens({ ...params, forceRescan }),
     ]);
   }
 

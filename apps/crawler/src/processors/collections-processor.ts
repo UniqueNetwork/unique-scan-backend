@@ -6,7 +6,7 @@ import { Collections } from '@entities/Collections';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName, SchemaVersion } from '@common/constants';
-import { normalizeSubstrateAddress, utf8Encode } from '@common/utils';
+import { normalizeSubstrateAddress } from '@common/utils';
 
 type CollectionData = {
   name: string;
@@ -93,27 +93,18 @@ export class CollectionsProcessor extends ScanProcessor {
         const match = offchain_schema.match(urlPattern);
         const plainUrl = match[1];
         result = String(plainUrl).replace('{id}', '1');
-      } else if (variable_on_chain_schema) {
-        const parsedSchema =
-          typeof variable_on_chain_schema === 'object'
-            ? variable_on_chain_schema
-            : JSON.parse(variable_on_chain_schema);
-        const { collectionCover } = parsedSchema;
-        if (collectionCover) {
-          result = collectionCover;
-        }
+      } else if (variable_on_chain_schema?.collectionCover) {
+        result = variable_on_chain_schema.collectionCover;
       }
     } catch (error) {
-      this.logger.error(
-        {
-          error: error.message,
-          collection_id,
-          schema_version,
-          offchain_schema,
-          variable_on_chain_schema,
-        },
-        'Collection cover processing error',
-      );
+      this.logger.error({
+        error: 'Collection cover processing error',
+        message: error.message,
+        collection_id,
+        schema_version,
+        offchain_schema,
+        variable_on_chain_schema,
+      });
     }
 
     return result;
@@ -148,15 +139,25 @@ export class CollectionsProcessor extends ScanProcessor {
 
     // console.log(sdkEntity);
 
+    let processedVariableOnChainSchema = variable_on_chain_schema;
+    try {
+      processedVariableOnChainSchema =
+        typeof variable_on_chain_schema === 'object'
+          ? variable_on_chain_schema
+          : JSON.parse(variable_on_chain_schema);
+    } catch (err) {
+      // Bad value, try to write as it is
+    }
+
     return {
       collection_id,
       owner,
-      name: utf8Encode(name),
-      description: utf8Encode(description),
+      name,
+      description,
       offchain_schema,
       token_limit: token_limit || 0,
-      const_chain_schema, // todo: stringify?
-      variable_on_chain_schema,
+      const_chain_schema,
+      variable_on_chain_schema: processedVariableOnChainSchema,
       limits_account_ownership,
       limits_sponsore_data_size,
       limits_sponsore_data_rate,
@@ -173,7 +174,7 @@ export class CollectionsProcessor extends ScanProcessor {
         collection_id,
         schema_version,
         offchain_schema,
-        variable_on_chain_schema,
+        variable_on_chain_schema: processedVariableOnChainSchema,
       }),
     };
   }
