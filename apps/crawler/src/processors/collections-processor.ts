@@ -138,8 +138,6 @@ export class CollectionsProcessor extends ScanProcessor {
       ownerCanDestroy: owner_can_destroy,
     } = collectionLimits;
 
-    // console.log(collection_id, !!collectionInfo, !!collectionLimits);
-
     let processedVariableOnChainSchema: object | null = null;
     try {
       processedVariableOnChainSchema =
@@ -163,9 +161,8 @@ export class CollectionsProcessor extends ScanProcessor {
       limits_account_ownership,
       limits_sponsore_data_size,
       limits_sponsore_data_rate,
-      owner_can_transfer:
-        owner_can_transfer === null ? false : owner_can_transfer, // todo: Remove when sdk is ready
-      owner_can_destroy: owner_can_destroy === null ? true : owner_can_destroy, // todo: Remove when sdk is ready,
+      owner_can_transfer,
+      owner_can_destroy,
       sponsorship: sponsorship?.isConfirmed ? sponsorship.address : null,
       schema_version,
       token_prefix,
