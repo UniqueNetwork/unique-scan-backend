@@ -7,12 +7,7 @@ import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName, SchemaVersion } from '@common/constants';
 import { normalizeSubstrateAddress } from '@common/utils';
-
-type CollectionData = {
-  name: string;
-  tokenPrefix: string;
-  owner: string;
-};
+import { CollectionInfo, CollectionLimits } from '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class CollectionsProcessor extends ScanProcessor {
@@ -65,10 +60,13 @@ export class CollectionsProcessor extends ScanProcessor {
 
   private async getCollectionData(
     collectionId: number,
-  ): Promise<CollectionData | null> {
-    const result = await this.sdkService.getCollection(collectionId as number);
+  ): Promise<[CollectionInfo, CollectionLimits] | null> {
+    const result = await Promise.all([
+      this.sdkService.getCollection(collectionId),
+      this.sdkService.getCollectionLimits(collectionId),
+    ]).catch();
 
-    return result ? result : null;
+    return result;
   }
 
   /**
@@ -110,7 +108,10 @@ export class CollectionsProcessor extends ScanProcessor {
     return result;
   }
 
-  prepareDataToWrite(sdkEntity) {
+  prepareDataToWrite(
+    collectionInfo: CollectionInfo,
+    collectionLimits: CollectionLimits,
+  ) {
     const {
       id: collection_id,
       owner,
@@ -120,33 +121,34 @@ export class CollectionsProcessor extends ScanProcessor {
       tokenPrefix: token_prefix,
       mode,
       properties: {
-        offchainSchema: offchain_schema = null,
-        constChainSchema: const_chain_schema = null,
-        variableOnChainSchema: variable_on_chain_schema = null,
-        schemaVersion: schema_version = null,
+        offchainSchema: offchain_schema,
+        constOnChainSchema: const_chain_schema,
+        variableOnChainSchema: rawVariableOnChainSchema,
+        schemaVersion: schema_version,
       } = {},
-      limits: {
-        // todo: get effective limits
-        tokenLimit: token_limit,
-        accountTokenOwnershipLimit: limits_account_ownership,
-        sponsoredDataSize: limits_sponsore_data_size,
-        sponsoredDataRateLimit: limits_sponsore_data_rate,
-        ownerCanTransfer: owner_can_transfer,
-        ownerCanDestroy: owner_can_destroy,
-      },
       permissions: { mintMode: mint_mode },
-    } = sdkEntity;
+    } = collectionInfo;
 
-    // console.log(sdkEntity);
+    const {
+      tokenLimit: token_limit,
+      accountTokenOwnershipLimit: limits_account_ownership,
+      sponsoredDataSize: limits_sponsore_data_size,
+      sponsoredDataRateLimit: limits_sponsore_data_rate,
+      ownerCanTransfer: owner_can_transfer,
+      ownerCanDestroy: owner_can_destroy,
+    } = collectionLimits;
 
-    let processedVariableOnChainSchema = variable_on_chain_schema;
+    // console.log(collection_id, !!collectionInfo, !!collectionLimits);
+
+    let processedVariableOnChainSchema: object | null = null;
     try {
       processedVariableOnChainSchema =
-        typeof variable_on_chain_schema === 'object'
-          ? variable_on_chain_schema
-          : JSON.parse(variable_on_chain_schema);
+        typeof rawVariableOnChainSchema === 'object'
+          ? rawVariableOnChainSchema
+          : JSON.parse(rawVariableOnChainSchema);
     } catch (err) {
-      // Bad value, try to write as it is
+      // Bad value, log it
+      processedVariableOnChainSchema = { raw: rawVariableOnChainSchema };
     }
 
     return {
@@ -162,9 +164,9 @@ export class CollectionsProcessor extends ScanProcessor {
       limits_sponsore_data_size,
       limits_sponsore_data_rate,
       owner_can_transfer:
-        owner_can_transfer === null ? true : owner_can_transfer, // todo: get effective limits
-      owner_can_destroy: owner_can_destroy === null ? true : owner_can_destroy, // todo: get effective limits
-      sponsorship,
+        owner_can_transfer === null ? false : owner_can_transfer, // todo: Remove when sdk is ready
+      owner_can_destroy: owner_can_destroy === null ? true : owner_can_destroy, // todo: Remove when sdk is ready,
+      sponsorship: sponsorship?.isConfirmed ? sponsorship.address : null,
       schema_version,
       token_prefix,
       mode,
@@ -195,10 +197,16 @@ export class CollectionsProcessor extends ScanProcessor {
 
       log.collectionId = collectionId;
 
-      const collectionData = await this.getCollectionData(collectionId);
+      const [collectionInfo, collectionLimits] = await this.getCollectionData(
+        collectionId,
+      );
 
-      if (collectionData) {
-        const dataToWrite = this.prepareDataToWrite(collectionData);
+      if (collectionInfo) {
+        const dataToWrite = this.prepareDataToWrite(
+          collectionInfo,
+          collectionLimits,
+        );
+
         // console.log('dataToWrite', dataToWrite);
 
         // Do not log the full entity because this object is quite big

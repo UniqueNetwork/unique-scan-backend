@@ -27,6 +27,14 @@ export class SdkService {
     return sdk.collections.get({ collectionId });
   }
 
+  async getCollectionLimits(collectionId: number) {
+    const sdk = await this.getSdk();
+
+    const result = await sdk.collections.getLimits({ collectionId });
+
+    return result?.limits;
+  }
+
   async getToken(collectionId: number, tokenId: number) {
     const sdk = await this.getSdk();
 
