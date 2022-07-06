@@ -67,6 +67,7 @@ describe('Tokens (e2e)', () => {
               token_id
               token_name
               token_prefix
+              parent_id
             }
           }
         }
@@ -217,6 +218,62 @@ describe('Tokens (e2e)', () => {
           expect(res.body.data.tokens.data[0].token_id).toBe(1);
           expect(res.body.data.tokens.data[1].token_id).toBe(2);
           expect(res.body.data.tokens.data[2].token_id).toBe(9);
+        });
+    });
+
+    it('fiter by parent_id', async () => {
+      const args = {
+        limit: 10,
+        orderBy: {
+          token_id: 'desc',
+        },
+        where: {
+          parent_id: { _eq: '46_46' },
+        },
+      };
+
+      return request(app.getHttpServer())
+        .post(graphqlUrl)
+        .send({ query, variables: { ...args } })
+        .expect((res) => {
+          expect(res.body.data.tokens.count).toBe(3);
+          expect(res.body.data.tokens.data.length).toBe(3);
+
+          expect(res.body.data.tokens.data[0].token_id).toBe(47);
+          expect(res.body.data.tokens.data[0].parent_id).toBe('46_46');
+          expect(res.body.data.tokens.data[1].token_id).toBe(48);
+          expect(res.body.data.tokens.data[1].parent_id).toBe('46_46');
+          expect(res.body.data.tokens.data[2].token_id).toBe(49);
+          expect(res.body.data.tokens.data[2].parent_id).toBe('46_46');
+        });
+    });
+
+    it('fiter by parent_id', async () => {
+      const args = {
+        limit: 10,
+        orderBy: {
+          token_id: 'desc',
+        },
+        where: {
+          parent_id: { _ilike: '4%' },
+        },
+      };
+
+      return request(app.getHttpServer())
+        .post(graphqlUrl)
+        .send({ query, variables: { ...args } })
+        .expect((res) => {
+          expect(res.body.data.tokens.count).toBe(4);
+          expect(res.body.data.tokens.data.length).toBe(4);
+
+          expect(res.body.data.tokens.data[0].token_id).toBe(47);
+          expect(res.body.data.tokens.data[0].parent_id).toBe('46_46');
+          expect(res.body.data.tokens.data[1].token_id).toBe(48);
+          expect(res.body.data.tokens.data[1].parent_id).toBe('46_46');
+          expect(res.body.data.tokens.data[2].token_id).toBe(49);
+          expect(res.body.data.tokens.data[2].parent_id).toBe('46_46');
+          expect(res.body.data.tokens.data[3].token_id).toBe(50);
+          expect(res.body.data.tokens.data[3].parent_id).toBe('47_47');
         });
     });
   });

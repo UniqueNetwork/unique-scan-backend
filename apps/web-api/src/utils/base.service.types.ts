@@ -49,6 +49,7 @@ export interface ISetting {
 export interface ISettingsSchema {
   aliasFields?: ISetting;
   relationsFields?: ISetting;
+  relations?: string[];
 }
 
 export type TParamValue = string | number | Array<string | number>;

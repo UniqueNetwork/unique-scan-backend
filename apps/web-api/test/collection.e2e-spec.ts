@@ -37,7 +37,7 @@ describe('Collections (e2e)', () => {
           $limit: Int
           $offset: Int
           $order_by: CollectionOrderByParams
-          $where: CollectionWhereParamsWithRelation
+          $where: CollectionWhereParams
         ) {
           collections(
             limit: $limit
