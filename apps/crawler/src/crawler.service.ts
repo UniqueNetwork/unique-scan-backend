@@ -51,7 +51,7 @@ export class CrawlerService {
 
     return Promise.all([
       this.subscribeCollections({ ...params, forceRescan }),
-      // this.subscribeTokens({ ...params, forceRescan }),
+      this.subscribeTokens({ ...params, forceRescan }),
     ]);
   }
 

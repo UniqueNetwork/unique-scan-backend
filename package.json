@@ -42,7 +42,7 @@
     "@subsquid/substrate-processor": "^0.8.0",
     "@unique-nft/opal-testnet-types": "^0.5.2",
     "@unique-nft/quartz-mainnet-types": "^0.6.0",
-    "@unique-nft/sdk": "^0.4.10",
+    "@unique-nft/sdk": "^0.4.12",
     "apollo-server-express": "^3.6.2",
     "graphql": "^15.8.0",
     "graphql-type-json": "^0.3.2",
