@@ -31,8 +31,6 @@ export class CollectionsProcessor extends ScanProcessor {
       EventName.COLLECTION_PROPERTY_DELETED,
       EventName.PROPERTY_PERMISSION_SET,
       EventName.COLLECTION_SPONSOR_REMOVED,
-      EventName.COLLECTION_ADMIN_ADDED,
-      EventName.COLLECTION_ADMIN_REMOVED,
       EventName.COLLECTION_OWNED_CHANGED,
       EventName.SPONSORSHIP_CONFIRMED,
       // EventName.ALLOW_LIST_ADDRESS_ADDED, // todo: Too many events. Do we really need to process this event?
