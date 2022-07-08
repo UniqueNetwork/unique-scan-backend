@@ -11,7 +11,7 @@ import { CollectionInfo, CollectionLimits } from '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class CollectionsProcessor extends ScanProcessor {
-  private logger: Logger;
+  private readonly logger = new Logger(CollectionsProcessor.name);
 
   constructor(
     @InjectRepository(Collections)
@@ -20,8 +20,6 @@ export class CollectionsProcessor extends ScanProcessor {
     protected sdkService: SdkService,
   ) {
     super('collections', connection, sdkService);
-
-    this.logger = new Logger('CollectionsProcessor');
 
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE_COLLECTION = [

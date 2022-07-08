@@ -18,7 +18,7 @@ type TokenData =
 
 @Injectable()
 export class TokensProcessor extends ScanProcessor {
-  private logger: Logger;
+  private readonly logger = new Logger(TokensProcessor.name);
 
   constructor(
     @InjectRepository(Tokens)
@@ -27,8 +27,6 @@ export class TokensProcessor extends ScanProcessor {
     protected sdkService: SdkService,
   ) {
     super('tokens', connection, sdkService);
-
-    this.logger = new Logger('TokensProcessor');
 
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE = [

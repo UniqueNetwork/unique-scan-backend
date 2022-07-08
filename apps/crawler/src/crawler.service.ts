@@ -7,14 +7,13 @@ import { TokensProcessor } from './processors/tokens-processor';
 
 @Injectable()
 export class CrawlerService {
+  private readonly logger = new Logger(CrawlerService.name);
+
   constructor(
-    private logger: Logger,
     private dataSource: DataSource,
     private collectionsProcessor: CollectionsProcessor,
     private tokensProcessor: TokensProcessor,
-  ) {
-    this.logger = new Logger('CrawlerService');
-  }
+  ) {}
 
   private prepareProcessorsParams() {
     const dataSource = {

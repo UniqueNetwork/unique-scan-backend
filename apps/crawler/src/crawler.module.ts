@@ -1,6 +1,4 @@
 import typeormConfig from '@common/typeorm.config';
-// import { Collections } from '@entities/Collections';
-// import { Tokens } from '@entities/Tokens';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,7 +9,6 @@ import { ProcessorsModule } from './processors/processors.module';
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(typeormConfig),
-    // TypeOrmModule.forFeature([Collections, Tokens]),
     ProcessorsModule,
   ],
   controllers: [],
