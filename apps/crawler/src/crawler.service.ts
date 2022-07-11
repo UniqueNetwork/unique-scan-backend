@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DataSource as SubscquidDataSource } from '@subsquid/substrate-processor';
 import { Range } from '@subsquid/substrate-processor/lib/util/range';
 import { DataSource } from 'typeorm';
+import { BlockProcessor } from './processors/block-processor';
 import { CollectionsProcessor } from './processors/collections-processor';
 import { TokensProcessor } from './processors/tokens-processor';
 
@@ -12,6 +13,7 @@ export class CrawlerService {
     private dataSource: DataSource,
     private collectionsProcessor: CollectionsProcessor,
     private tokensProcessor: TokensProcessor,
+    private blockProcessor: BlockProcessor,
   ) {
     this.logger = new Logger('CrawlerService');
   }
@@ -48,10 +50,10 @@ export class CrawlerService {
 
   subscribeAll(forceRescan = false) {
     const params = this.prepareProcessorsParams();
-
     return Promise.all([
-      this.subscribeCollections({ ...params, forceRescan }),
-      this.subscribeTokens({ ...params, forceRescan }),
+      // this.subscribeCollections({ ...params, forceRescan }),
+      // this.subscribeTokens({ ...params, forceRescan }),
+      this.subscribeBlock({ ...params, forceRescan }),
     ]);
   }
 
@@ -91,5 +93,24 @@ export class CrawlerService {
     this.tokensProcessor.init(dataSource, range, typesBundle);
 
     this.tokensProcessor.run();
+  }
+
+  async subscribeBlock({ dataSource, range, typesBundle, forceRescan }) {
+    if (forceRescan) {
+      try {
+        const statusDbSchemaName = `${this.blockProcessor.name}_status`;
+
+        // Set status height to range.from to rescan old blocks
+        await this.dataSource.query(
+          `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
+        );
+      } catch (err) {
+        // First run, no schema yet
+      }
+    }
+
+    this.blockProcessor.init(dataSource, range, typesBundle);
+
+    this.blockProcessor.run();
   }
 }

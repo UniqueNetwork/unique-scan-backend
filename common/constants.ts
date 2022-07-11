@@ -19,11 +19,45 @@ export enum EventName {
   COLLECTION_LIMIT_SET = 'unique.CollectionLimitSet',
   COLLECTION_SPONSOR_SET = 'unique.CollectionSponsorSet',
   SPONSORSHIP_CONFIRMED = 'unique.SponsorshipConfirmed',
+
+  EXTRINSIC_SUCCESS = 'system.ExtrinsicSuccess',
+}
+
+export enum ExtrinsicsName {
+  TIMESTAMP_SET = 'timestamp.set',
+  UNIQUE_SET_TOKEN_PROPERTIES = 'unique.setTokenProperties',
+  PARACHAINSYSTEM_SET_VALIDATION_DATA = 'parachainSystem.setValidationData',
+  UNIQUE_BURNI_TEM = 'unique.burnItem',
+  UNIQUE_CREATE_ITEM = 'unique.createItem',
+  UNIQUE_CONFIRM_SPONSOR_SHIP = 'unique.confirmSponsorship',
+  UNIQUE_SET_COLLECTION_LIMITS = 'unique.setCollectionLimits',
+  BALANCES_TRANSFER_KEEP_ALIVE = 'balances.transferKeepAlive',
+  ETHEREUM_TRANSACT = 'ethereum.transact',
+  BALANCES_TRANSFER_ALL = 'balances.transferAll',
+  UNIQUE_TRANSFER = 'unique.transfer',
+  UNIQUE_SET_COLLECTION_SPONSOR = 'unique.setCollectionSponsor',
+  UNIQUE_CREATE_MULTIPLE_ITEM_SEX = 'unique.createMultipleItemsEx',
+  BALANCES_TRANSFER = 'balances.transfer',
+  UNIQUE_CREATE_COLLECTION_EX = 'unique.createCollectionEx',
 }
 
 export enum SchemaVersion {
   IMAGE_URL = 'ImageUrl',
   UNIQUE = 'Unique',
+}
+
+export enum EventMethod {
+  TRANSFER = 'Transfer',
+  DEPOSIT = 'Deposit',
+  WITHDRAW = 'Withdraw',
+  ENDOWED = 'Endowed',
+  EXTRINSIC_SUCCESS = 'ExtrinsicSuccess',
+}
+
+export enum EventSection {
+  SYSTEM = 'system',
+  BALANCES = 'balances',
+  TREASURY = 'treasury',
 }
 
 export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
