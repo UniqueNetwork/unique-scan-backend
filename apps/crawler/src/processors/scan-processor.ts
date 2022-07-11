@@ -14,22 +14,19 @@ import { ChainManager } from '@subsquid/substrate-processor/lib/chain';
 import { Connection } from 'typeorm';
 import { Prometheus } from '@subsquid/substrate-processor/lib/prometheus';
 import { Range } from '@subsquid/substrate-processor/lib/util/range';
-import { SdkService } from '../sdk.service';
 
 export class ScanProcessor extends SubstrateProcessor {
   constructor(
     public name: string,
     protected connection: Connection,
-    protected sdkService: SdkService,
+    dataSource: DataSource,
+    range: Range,
+    typesBundle: string,
   ) {
     super(name);
-  }
 
-  init(dataSource: DataSource, range: Range, typesBundle: string) {
     this.setDataSource(dataSource);
-
     this.setBlockRange(range);
-
     this.setTypesBundle(typesBundle);
   }
 
