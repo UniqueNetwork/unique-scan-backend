@@ -1,8 +1,8 @@
 version: "3"
 
 networks:
-  market:
-    external: true
+ scan-api:
+   external: true
 
 services:
   scan-web-api:
@@ -13,7 +13,7 @@ services:
     ports:
       - "3031:3031"
     networks:
-      - market
+      - scan-api
     depends_on:
       - postgres
       - crawler
@@ -30,37 +30,19 @@ services:
     image: postgres:14.2-alpine
     container_name: scan-database
     networks:
-      - market
+      - scan-api
+    env_file:
+      - .env
     environment:
-      - POSTGRES_USER=polkastats
-      - POSTGRES_PASSWORD=polkastats
-      - POSTGRES_DB=polkastats
       - TZ=Europe/Moscow
       - PGTZ=Europe/Moscow
     ports:
-      - "3032:5432"
+      - "5432:5432"
     volumes:
       - scan-pgdata:/var/lib/postgresql/data
       - /etc/localtime:/etc/localtime:ro
 
-  crawler:
-    image: polkastats-backend:latest
-    container_name: scan-crawler
-    networks:
-      - market
-    depends_on:
-      - postgres
-    restart: on-failure
-    environment:
-      - NODE_ENV=production
-      - WS_PROVIDER_URL=${WS_PROVIDER_URL}
-      - TYPE_PROVIDER=${TYPE_PROVIDER}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_USER=polkastats
-      - POSTGRES_PASSWORD=polkastats
-      - POSTGRES_DATABASE=polkastats
-      - PROMETHEUS_PORT=9003
-      - HOST_CRAWLER=0.0.0.0
+# TODO: Add definitions for Squid Archive
 
 volumes:
   scan-pgdata:

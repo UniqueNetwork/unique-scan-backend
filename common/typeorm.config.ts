@@ -1,9 +1,19 @@
+import { Account } from '@entities/Account';
+import { Block } from '@entities/Block';
+import { Chain } from '@entities/Chain';
+import { Collections } from '@entities/Collections';
+import { CollectionsStats } from '@entities/CollectionsStats';
+import { Event } from '@entities/Event';
+import { Extrinsic } from '@entities/Extrinsic';
+import { HarvesterError } from '@entities/HarvesterError';
+import { System } from '@entities/System';
+import { Tokens } from '@entities/Tokens';
+import { Total } from '@entities/Total';
 import dotenv = require('dotenv');
 import path = require('path');
 import { DataSourceOptions } from 'typeorm';
 
 dotenv.config();
-const entitiesDir = path.join(__dirname, 'entities');
 const migrationsDir = path.join(__dirname, '..', 'migrations');
 
 const typeormConfig: DataSourceOptions = {
@@ -13,7 +23,19 @@ const typeormConfig: DataSourceOptions = {
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DATABASE,
-  entities: [path.join(entitiesDir, '/**/*{.ts,.js}')],
+  entities: [
+    Account,
+    Block,
+    Chain,
+    Collections,
+    CollectionsStats,
+    Event,
+    Extrinsic,
+    HarvesterError,
+    System,
+    Tokens,
+    Total,
+  ],
   synchronize: false,
   migrationsRun: false,
   migrations: [path.join(migrationsDir, '/**/*{.ts,.js}')],
