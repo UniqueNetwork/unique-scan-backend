@@ -73,8 +73,6 @@ export class TokensProcessor {
   }
 
   prepareDataToWrite(sdkEntity) {
-    // console.log('sdkEntity', sdkEntity);
-
     const {
       id: token_id,
       collectionId: collection_id,
