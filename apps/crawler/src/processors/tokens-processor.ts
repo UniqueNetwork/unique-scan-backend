@@ -114,7 +114,6 @@ export class TokensProcessor {
 
       if (tokenData) {
         const dataToWrite = this.prepareDataToWrite(tokenData);
-        // console.log('dataToWrite', dataToWrite);
 
         log.entity = dataToWrite;
 
@@ -129,9 +128,6 @@ export class TokensProcessor {
         );
       } else {
         log.entity = null;
-
-        // todo: Delete db record
-        // await this.modelRepository.delete(collectionId, tokenId);
       }
 
       this.logger.verbose({ ...log });
