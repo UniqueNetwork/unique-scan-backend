@@ -8,18 +8,28 @@ import { SdkService } from '../sdk.service';
 import { EventName, SchemaVersion } from '@common/constants';
 import { normalizeSubstrateAddress } from '@common/utils';
 import { CollectionInfo, CollectionLimits } from '@unique-nft/sdk/tokens';
+import { ProcessorConfigService } from '../processor.config.service';
 
 @Injectable()
-export class CollectionsProcessor extends ScanProcessor {
+export class CollectionsProcessor {
+  name = 'collections';
   private readonly logger = new Logger(CollectionsProcessor.name);
+  private processor: ScanProcessor;
 
   constructor(
     @InjectRepository(Collections)
     private modelRepository: Repository<Collections>,
     protected connection: Connection,
     protected sdkService: SdkService,
+    private processorConfigService: ProcessorConfigService,
   ) {
-    super('collections', connection, sdkService);
+    this.processor = new ScanProcessor(
+      this.name,
+      this.connection,
+      processorConfigService.getDataSource(),
+      processorConfigService.getRange(),
+      processorConfigService.getTypesBundle(),
+    );
 
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE_COLLECTION = [
@@ -43,10 +53,10 @@ export class CollectionsProcessor extends ScanProcessor {
     ];
 
     EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
-      this.addEventHandler(eventName, this.upsertHandler.bind(this)),
+      this.processor.addEventHandler(eventName, this.upsertHandler.bind(this)),
     );
 
-    this.addEventHandler(
+    this.processor.addEventHandler(
       EventName.COLLECTION_DESTROYED,
       this.destroyHandler.bind(this),
     );
@@ -251,5 +261,16 @@ export class CollectionsProcessor extends ScanProcessor {
       this.logger.error({ ...log, error: err.message });
       process.exit(1);
     }
+  }
+
+  public run(): void {
+    const params = this.processorConfigService.getAllParams();
+
+    this.logger.log({
+      msg: `Starting ${this.name} crawler...`,
+      params,
+    });
+
+    this.processor.run();
   }
 }
