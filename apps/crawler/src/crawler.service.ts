@@ -5,6 +5,8 @@ import { DataSource } from 'typeorm';
 import { BlockProcessor } from './processors/block-processor';
 import { CollectionsProcessor } from './processors/collections-processor';
 import { TokensProcessor } from './processors/tokens-processor';
+import { ExtrinsicProcessor } from './processors/extrinsic-processor';
+import { EventProcessor } from './processors/events-processor';
 
 @Injectable()
 export class CrawlerService {
@@ -14,6 +16,8 @@ export class CrawlerService {
     private collectionsProcessor: CollectionsProcessor,
     private tokensProcessor: TokensProcessor,
     private blockProcessor: BlockProcessor,
+    private extrinsicProcessor: ExtrinsicProcessor,
+    private eventProcessor: EventProcessor,
   ) {
     this.logger = new Logger('CrawlerService');
   }
@@ -51,9 +55,11 @@ export class CrawlerService {
   subscribeAll(forceRescan = false) {
     const params = this.prepareProcessorsParams();
     return Promise.all([
-      // this.subscribeCollections({ ...params, forceRescan }),
-      // this.subscribeTokens({ ...params, forceRescan }),
+      this.subscribeCollections({ ...params, forceRescan }),
+      this.subscribeTokens({ ...params, forceRescan }),
       this.subscribeBlock({ ...params, forceRescan }),
+      // this.subscribeExtrinsic({ ...params, forceRescan }),
+      this.subscribeEvent({ ...params, forceRescan }),
     ]);
   }
 
@@ -112,5 +118,43 @@ export class CrawlerService {
     this.blockProcessor.init(dataSource, range, typesBundle);
 
     this.blockProcessor.run();
+  }
+
+  async subscribeExtrinsic({ dataSource, range, typesBundle, forceRescan }) {
+    if (forceRescan) {
+      try {
+        const statusDbSchemaName = `${this.extrinsicProcessor.name}_status`;
+
+        // Set status height to range.from to rescan old blocks
+        await this.dataSource.query(
+          `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
+        );
+      } catch (err) {
+        // First run, no schema yet
+      }
+    }
+
+    this.extrinsicProcessor.init(dataSource, range, typesBundle);
+
+    this.extrinsicProcessor.run();
+  }
+
+  async subscribeEvent({ dataSource, range, typesBundle, forceRescan }) {
+    if (forceRescan) {
+      try {
+        const statusDbSchemaName = `${this.eventProcessor.name}_status`;
+
+        // Set status height to range.from to rescan old blocks
+        await this.dataSource.query(
+          `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
+        );
+      } catch (err) {
+        // First run, no schema yet
+      }
+    }
+
+    this.eventProcessor.init(dataSource, range, typesBundle);
+
+    this.eventProcessor.run();
   }
 }

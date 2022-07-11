@@ -44,6 +44,7 @@
     "@unique-nft/quartz-mainnet-types": "^0.6.0",
     "@unique-nft/sdk": "^0.4.13",
     "apollo-server-express": "^3.6.2",
+    "bignumber.js": "^9.0.2",
     "graphql": "^15.8.0",
     "graphql-type-json": "^0.3.2",
     "lodash": "^4.17.21",
@@ -106,7 +107,8 @@
     "moduleNameMapper": {
       "^@interfaces/(.*)$": "<rootDir>/common/interfaces/$1",
       "^@entities/(.*)$": "<rootDir>/common/entities/$1",
-      "^@common/(.*)$": "<rootDir>/common/$1"
+      "^@common/(.*)$": "<rootDir>/common/$1",
+      "^@utils/(.*)$": "<rootDir>/utils/$1"
     }
   }
 }

@@ -20,13 +20,22 @@ export enum EventName {
   COLLECTION_SPONSOR_SET = 'unique.CollectionSponsorSet',
   SPONSORSHIP_CONFIRMED = 'unique.SponsorshipConfirmed',
 
-  EXTRINSIC_SUCCESS = 'system.ExtrinsicSuccess',
+  BALANCES_TRANSFER = 'balances.Transfer',
+  BALANCES_BALANCESET = 'balances.BalanceSet',
+  BALANCES_DEPOSIT = 'balances.Deposit',
+  BALANCES_ENDOWED = 'balances.Endowed',
+  BALANCES_WITHDRAW = 'balances.Withdraw',
+
+  TREASURY_SPENDING = 'treasury.Spending',
+  TREASURY_ROLLOVER = 'treasury.Rollover',
+  TREASURY_BURNT = 'treasury.Burnt',
+  TREASURY_DEPOSIT = 'treasury.Deposit',
 }
 
-export enum ExtrinsicsName {
+export enum ExtrinsicNames {
   TIMESTAMP_SET = 'timestamp.set',
   UNIQUE_SET_TOKEN_PROPERTIES = 'unique.setTokenProperties',
-  PARACHAINSYSTEM_SET_VALIDATION_DATA = 'parachainSystem.setValidationData',
+  PARACHAIN_SYSTEM_SET_VALIDATION_DATA = 'parachainSystem.setValidationData',
   UNIQUE_BURNI_TEM = 'unique.burnItem',
   UNIQUE_CREATE_ITEM = 'unique.createItem',
   UNIQUE_CONFIRM_SPONSOR_SHIP = 'unique.confirmSponsorship',
@@ -61,3 +70,7 @@ export enum EventSection {
 }
 
 export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
+
+export enum EventPhase {
+  INITIALIZATION = 'Initialization',
+}

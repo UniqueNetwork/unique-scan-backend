@@ -7,7 +7,7 @@ import { Column, Entity, Index } from 'typeorm';
 @Entity('event', { schema: 'public' })
 export class Event {
   @Column('bigint', { primary: true, name: 'block_number' })
-  block_number: string;
+  block_number: number;
 
   @Column('integer', { primary: true, name: 'event_index' })
   event_index: number;

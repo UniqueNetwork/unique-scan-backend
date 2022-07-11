@@ -6,7 +6,7 @@ import {
   SubstrateBlock,
 } from '@subsquid/substrate-processor';
 import { Block } from '@entities/Block';
-import { EventMethod, EventSection, ExtrinsicsName } from '@common/constants';
+import { EventMethod, EventSection, ExtrinsicNames } from '@common/constants';
 import { ScanProcessor } from './scan-processor';
 import { SdkService } from '../sdk.service';
 
@@ -27,7 +27,7 @@ export class BlockProcessor extends ScanProcessor {
 
     this.logger = new Logger('BlockProcessor');
 
-    this.addExtrinsicHandler(ExtrinsicsName.TIMESTAMP_SET, async (ctx) => {
+    this.addExtrinsicHandler(ExtrinsicNames.TIMESTAMP_SET, async (ctx) => {
       await this.upsertHandler(ctx);
     });
 
@@ -38,7 +38,7 @@ export class BlockProcessor extends ScanProcessor {
     const { height, timestamp } = ctx.block;
 
     const log = {
-      eventName: ExtrinsicsName.TIMESTAMP_SET,
+      eventName: ExtrinsicNames.TIMESTAMP_SET,
       blockNumber: height,
       blockTimestamp: timestamp,
     };
