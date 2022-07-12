@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Connection, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Collections } from '@entities/Collections';
+import { Tokens } from '@entities/Tokens';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName, SchemaVersion } from '@common/constants';
@@ -18,7 +19,9 @@ export class CollectionsProcessor {
 
   constructor(
     @InjectRepository(Collections)
-    private modelRepository: Repository<Collections>,
+    private collectionsRepository: Repository<Collections>,
+    @InjectRepository(Tokens)
+    private tokensRepository: Repository<Tokens>,
     protected connection: Connection,
     protected sdkService: SdkService,
     private processorConfigService: ProcessorConfigService,
@@ -60,8 +63,6 @@ export class CollectionsProcessor {
       EventName.COLLECTION_DESTROYED,
       this.destroyHandler.bind(this),
     );
-
-    this.logger.log('Starting processor...');
   }
 
   private async getCollectionData(
@@ -215,7 +216,7 @@ export class CollectionsProcessor {
         // Do not log the full entity because this object is quite big
         log.entity = dataToWrite.name;
 
-        await this.modelRepository.upsert(
+        await this.collectionsRepository.upsert(
           {
             ...dataToWrite,
             date_of_creation:
@@ -226,10 +227,10 @@ export class CollectionsProcessor {
           ['collection_id'],
         );
       } else {
+        // No entity returned from sdk. Most likely it was destroyed in a future block.
         log.entity = null;
 
-        // Delete db record
-        await this.modelRepository.delete(collectionId);
+        await this.deleteCollection(collectionId);
       }
 
       this.logger.verbose({ ...log });
@@ -253,14 +254,21 @@ export class CollectionsProcessor {
 
       log.collectionId = collectionId;
 
-      // Delete db record
-      await this.modelRepository.delete(collectionId);
+      await this.deleteCollection(collectionId);
 
       this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
       process.exit(1);
     }
+  }
+
+  // Delete db collection record and related tokens
+  private deleteCollection(collectionId) {
+    return Promise.all([
+      this.collectionsRepository.delete(collectionId),
+      this.tokensRepository.delete({ collection_id: collectionId }),
+    ]);
   }
 
   public run(): void {

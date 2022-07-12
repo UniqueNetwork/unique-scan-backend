@@ -59,8 +59,6 @@ export class TokensProcessor {
       EventName.ITEM_DESTROYED,
       this.destroyHandler.bind(this),
     );
-
-    this.logger.log('Starting processor...');
   }
 
   private async getTokenData(
@@ -125,7 +123,14 @@ export class TokensProcessor {
           ['collection_id', 'token_id'],
         );
       } else {
+        // No entity returned from sdk. Most likely it was destroyed in a future block.
         log.entity = null;
+
+        // Delete db record
+        await this.modelRepository.delete({
+          collection_id: collectionId,
+          token_id: tokenId,
+        });
       }
 
       this.logger.verbose({ ...log });
@@ -152,10 +157,13 @@ export class TokensProcessor {
       log.collectionId = collectionId;
       log.tokenId = tokenId;
 
-      this.logger.verbose({ ...log });
+      // Delete db record
+      await this.modelRepository.delete({
+        collection_id: collectionId,
+        token_id: tokenId,
+      });
 
-      // todo: Delete db record
-      // await this.modelRepository.delete(collectionId);
+      this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
       process.exit(1);
