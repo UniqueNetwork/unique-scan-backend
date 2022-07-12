@@ -25,15 +25,15 @@ export class CrawlerService {
     const params = this.processorConfigService.getAllParams();
 
     return Promise.all([
-      // this.subscribeCollections({ ...params, forceRescan }),
-      // this.subscribeTokens({ ...params, forceRescan }),
-      // this.subscribeBlock({ ...params, forceRescan }),
-      // this.subscribeExtrinsic({ ...params, forceRescan }),
+      this.subscribeCollections({ ...params, forceRescan }),
+      this.subscribeTokens({ ...params, forceRescan }),
+      this.subscribeBlock({ ...params, forceRescan }),
+      this.subscribeExtrinsic({ ...params, forceRescan }),
       this.subscribeEvent({ ...params, forceRescan }),
     ]);
   }
 
-  async subscribeCollections({ dataSource, range, typesBundle, forceRescan }) {
+  async subscribeCollections({ range, forceRescan }) {
     if (forceRescan && !isNaN(range.from)) {
       try {
         const statusDbSchemaName = `${this.collectionsProcessor.name}_status`;
@@ -50,7 +50,7 @@ export class CrawlerService {
     this.collectionsProcessor.run();
   }
 
-  async subscribeTokens({ dataSource, range, typesBundle, forceRescan }) {
+  async subscribeTokens({ range, forceRescan }) {
     if (forceRescan && !isNaN(range.from)) {
       try {
         const statusDbSchemaName = `${this.tokensProcessor.name}_status`;
@@ -67,7 +67,7 @@ export class CrawlerService {
     this.tokensProcessor.run();
   }
 
-  async subscribeBlock({ dataSource, range, typesBundle, forceRescan }) {
+  async subscribeBlock({ range, forceRescan }) {
     if (forceRescan) {
       try {
         const statusDbSchemaName = `${this.blockProcessor.name}_status`;
@@ -84,7 +84,7 @@ export class CrawlerService {
     this.blockProcessor.run();
   }
 
-  async subscribeExtrinsic({ dataSource, range, typesBundle, forceRescan }) {
+  async subscribeExtrinsic({ range, forceRescan }) {
     if (forceRescan) {
       try {
         const statusDbSchemaName = `${this.extrinsicProcessor.name}_status`;
@@ -101,7 +101,7 @@ export class CrawlerService {
     this.extrinsicProcessor.run();
   }
 
-  async subscribeEvent({ dataSource, range, typesBundle, forceRescan }) {
+  async subscribeEvent({ range, forceRescan }) {
     if (forceRescan) {
       try {
         const statusDbSchemaName = `${this.eventProcessor.name}_status`;

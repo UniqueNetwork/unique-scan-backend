@@ -10,7 +10,7 @@ import { Column, Entity, Index } from 'typeorm';
 @Entity('extrinsic', { schema: 'public' })
 export class Extrinsic {
   @Column('bigint', { primary: true, name: 'block_number' })
-  block_number: string;
+  block_number: number;
 
   @Column('integer', { primary: true, name: 'extrinsic_index' })
   extrinsic_index: number;

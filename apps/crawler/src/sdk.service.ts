@@ -13,7 +13,7 @@ export class SdkService {
     } as SdkOptions);
   }
 
-  private async getSdk() {
+  async getSdk() {
     const sdk = await this.sdkPromise;
 
     await sdk.api.isReady;

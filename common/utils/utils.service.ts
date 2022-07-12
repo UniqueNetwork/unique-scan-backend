@@ -1,7 +1,9 @@
+import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import { Event } from '@entities/Event';
 import { Injectable } from '@nestjs/common';
 import { EventMethod, EventPhase, EventSection } from '@common/constants';
+import { ETHEREUM_ADDRESS_MAX_LENGTH } from '../constants';
 
 @Injectable()
 export class UtilsService {
@@ -76,10 +78,25 @@ export class UtilsService {
       }
 
       if (amountIndex !== null) {
-        result = this.getAmount(JSON.parse(data)[amountIndex].value.toString());
+        const value = (JSON.parse(data)[amountIndex]?.value ||
+          JSON.parse(data)[amountIndex]) as string;
+
+        result = this.getAmount(value.toString());
       }
     }
 
     return result;
+  }
+
+  normalizeSubstrateAddress(address?: string) {
+    if (!address) {
+      return null;
+    }
+
+    if (address?.length <= ETHEREUM_ADDRESS_MAX_LENGTH) {
+      return address;
+    }
+
+    return encodeAddress(decodeAddress(address));
   }
 }

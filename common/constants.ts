@@ -30,24 +30,39 @@ export enum EventName {
   TREASURY_ROLLOVER = 'treasury.Rollover',
   TREASURY_BURNT = 'treasury.Burnt',
   TREASURY_DEPOSIT = 'treasury.Deposit',
+
+  SYSTEM_NEW_ACCOUNT = 'system.NewAccount',
+  SYSTEM_EXTRINSIC_FAILED = 'system.ExtrinsicFailed',
+  SYSTEM_EXTRINSIC_SUCCESS = 'system.ExtrinsicSuccess',
 }
 
 export enum ExtrinsicNames {
   TIMESTAMP_SET = 'timestamp.set',
+
   UNIQUE_SET_TOKEN_PROPERTIES = 'unique.setTokenProperties',
-  PARACHAIN_SYSTEM_SET_VALIDATION_DATA = 'parachainSystem.setValidationData',
   UNIQUE_BURNI_TEM = 'unique.burnItem',
   UNIQUE_CREATE_ITEM = 'unique.createItem',
   UNIQUE_CONFIRM_SPONSOR_SHIP = 'unique.confirmSponsorship',
   UNIQUE_SET_COLLECTION_LIMITS = 'unique.setCollectionLimits',
-  BALANCES_TRANSFER_KEEP_ALIVE = 'balances.transferKeepAlive',
-  ETHEREUM_TRANSACT = 'ethereum.transact',
-  BALANCES_TRANSFER_ALL = 'balances.transferAll',
   UNIQUE_TRANSFER = 'unique.transfer',
   UNIQUE_SET_COLLECTION_SPONSOR = 'unique.setCollectionSponsor',
   UNIQUE_CREATE_MULTIPLE_ITEM_SEX = 'unique.createMultipleItemsEx',
-  BALANCES_TRANSFER = 'balances.transfer',
   UNIQUE_CREATE_COLLECTION_EX = 'unique.createCollectionEx',
+  UNIQUE_DESTROY_COLLECTION = 'unique.destroyCollection',
+  UNIQUE_TRANSFER_FROM = 'unique.transferFrom',
+  UNIQUE_SET_TOKEN_PROPERTY_PERMISSIONS = 'unique.setTokenPropertyPermissions',
+
+  BALANCES_TRANSFER = 'balances.transfer',
+  BALANCES_TRANSFER_ALL = 'balances.transferAll',
+  BALANCES_TRANSFER_KEEP_ALIVE = 'balances.transferKeepAlive',
+
+  PARACHAIN_SYSTEM_SET_VALIDATION_DATA = 'parachainSystem.setValidationData',
+
+  ETHEREUM_TRANSACT = 'ethereum.transact',
+
+  EVM_CALL = 'evm.call',
+  SUDO_SET_KEY = 'sudo.setKey',
+  SUDO_SUDO = 'sudo.sudo',
 }
 
 export enum SchemaVersion {
