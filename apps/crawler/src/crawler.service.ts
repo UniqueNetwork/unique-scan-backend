@@ -25,9 +25,9 @@ export class CrawlerService {
     const params = this.processorConfigService.getAllParams();
 
     return Promise.all([
-      this.subscribeCollections({ ...params, forceRescan }),
-      this.subscribeTokens({ ...params, forceRescan }),
-      this.subscribeBlock({ ...params, forceRescan }),
+      // this.subscribeCollections({ ...params, forceRescan }),
+      // this.subscribeTokens({ ...params, forceRescan }),
+      // this.subscribeBlock({ ...params, forceRescan }),
       // this.subscribeExtrinsic({ ...params, forceRescan }),
       this.subscribeEvent({ ...params, forceRescan }),
     ]);
@@ -81,8 +81,6 @@ export class CrawlerService {
       }
     }
 
-    this.blockProcessor.init(dataSource, range, typesBundle);
-
     this.blockProcessor.run();
   }
 
@@ -100,8 +98,6 @@ export class CrawlerService {
       }
     }
 
-    this.extrinsicProcessor.init(dataSource, range, typesBundle);
-
     this.extrinsicProcessor.run();
   }
 
@@ -118,8 +114,6 @@ export class CrawlerService {
         // First run, no schema yet
       }
     }
-
-    this.eventProcessor.init(dataSource, range, typesBundle);
 
     this.eventProcessor.run();
   }

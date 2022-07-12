@@ -7,10 +7,13 @@ import { EventName, EventPhase } from '@common/constants';
 import { ScanProcessor } from './scan-processor';
 import { SdkService } from '../sdk.service';
 import { UtilsService } from '@common/utils/utils.service';
+import { ProcessorConfigService } from '../processor.config.service';
 
 @Injectable()
-export class EventProcessor extends ScanProcessor {
+export class EventProcessor {
+  name = 'event';
   private logger: Logger;
+  private processor: ScanProcessor;
 
   constructor(
     @InjectRepository(Event)
@@ -18,13 +21,20 @@ export class EventProcessor extends ScanProcessor {
     private utils: UtilsService,
     protected connection: Connection,
     protected sdkService: SdkService,
+    private processorConfigService: ProcessorConfigService,
   ) {
-    super('extrinsic', connection, sdkService);
+    this.processor = new ScanProcessor(
+      this.name,
+      this.connection,
+      processorConfigService.getDataSource(),
+      processorConfigService.getRange(),
+      processorConfigService.getTypesBundle(),
+    );
 
     this.logger = new Logger('EventProcessor');
 
     Object.values(EventName).forEach((name) => {
-      this.addEventHandler(name, async (ctx) => {
+      this.processor.addEventHandler(name, async (ctx) => {
         await this.upsertHandler(ctx, name);
       });
     });
@@ -80,5 +90,16 @@ export class EventProcessor extends ScanProcessor {
     result.amount = this.utils.parseAmount(result);
 
     return result;
+  }
+
+  public run(): void {
+    const params = this.processorConfigService.getAllParams();
+
+    this.logger.log({
+      msg: `Starting ${this.name} crawler...`,
+      params,
+    });
+
+    this.processor.run();
   }
 }

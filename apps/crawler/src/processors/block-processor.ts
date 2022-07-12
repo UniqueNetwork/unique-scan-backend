@@ -9,29 +9,53 @@ import { Block } from '@entities/Block';
 import { EventMethod, EventSection, ExtrinsicNames } from '@common/constants';
 import { ScanProcessor } from './scan-processor';
 import { SdkService } from '../sdk.service';
+import { ProcessorConfigService } from '../processor.config.service';
 
 const TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
 const ENDOWED = `${EventSection.BALANCES}.${EventMethod.ENDOWED}`;
 
 @Injectable()
-export class BlockProcessor extends ScanProcessor {
+export class BlockProcessor {
+  name = 'block';
   private logger: Logger;
+  private processor: ScanProcessor;
 
   constructor(
     @InjectRepository(Block)
     private modelRepository: Repository<Block>,
     protected connection: Connection,
     protected sdkService: SdkService,
+    private processorConfigService: ProcessorConfigService,
   ) {
-    super('block', connection, sdkService);
+    this.processor = new ScanProcessor(
+      this.name,
+      this.connection,
+      processorConfigService.getDataSource(),
+      processorConfigService.getRange(),
+      processorConfigService.getTypesBundle(),
+    );
 
     this.logger = new Logger('BlockProcessor');
 
-    this.addExtrinsicHandler(ExtrinsicNames.TIMESTAMP_SET, async (ctx) => {
-      await this.upsertHandler(ctx);
-    });
+    this.processor.addExtrinsicHandler(
+      ExtrinsicNames.TIMESTAMP_SET,
+      async (ctx) => {
+        await this.upsertHandler(ctx);
+      },
+    );
 
     this.logger.log('Starting processor...');
+  }
+
+  public run(): void {
+    const params = this.processorConfigService.getAllParams();
+
+    this.logger.log({
+      msg: `Starting ${this.name} crawler...`,
+      params,
+    });
+
+    this.processor.run();
   }
 
   private async upsertHandler(ctx: EventHandlerContext): Promise<void> {

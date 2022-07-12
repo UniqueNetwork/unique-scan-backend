@@ -1,18 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Connection, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  ExtrinsicHandlerContext,
-} from '@subsquid/substrate-processor';
+import { ExtrinsicHandlerContext } from '@subsquid/substrate-processor';
 import { Extrinsic } from '@entities/Extrinsic';
 import { ExtrinsicNames } from '@common/constants';
 import { ScanProcessor } from './scan-processor';
 import { SdkService } from '../sdk.service';
 import { UtilsService } from '@common/utils/utils.service';
-
+import { ProcessorConfigService } from '../processor.config.service';
 @Injectable()
-export class ExtrinsicProcessor extends ScanProcessor {
+export class ExtrinsicProcessor {
+  name = 'extrinsic';
   private logger: Logger;
+  private processor: ScanProcessor;
 
   constructor(
     @InjectRepository(Extrinsic)
@@ -20,13 +20,20 @@ export class ExtrinsicProcessor extends ScanProcessor {
     private utils: UtilsService,
     protected connection: Connection,
     protected sdkService: SdkService,
+    private processorConfigService: ProcessorConfigService,
   ) {
-    super('extrinsic', connection, sdkService);
+    this.processor = new ScanProcessor(
+      this.name,
+      this.connection,
+      processorConfigService.getDataSource(),
+      processorConfigService.getRange(),
+      processorConfigService.getTypesBundle(),
+    );
 
     this.logger = new Logger('ExtrinsicProcessor');
 
     Object.values(ExtrinsicNames).forEach((name) => {
-      this.addExtrinsicHandler(name, async (ctx) => {
+      this.processor.addExtrinsicHandler(name, async (ctx) => {
         await this.upsertHandler(ctx, name);
       });
     });
@@ -81,5 +88,16 @@ export class ExtrinsicProcessor extends ScanProcessor {
       signer_normalized: null,
       to_owner_normalized: null,
     };
+  }
+
+  public run(): void {
+    const params = this.processorConfigService.getAllParams();
+
+    this.logger.log({
+      msg: `Starting ${this.name} crawler...`,
+      params,
+    });
+
+    this.processor.run();
   }
 }
