@@ -7,6 +7,7 @@ import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName } from '@common/constants';
 import { normalizeSubstrateAddress } from '@common/utils';
+import { ProcessorConfigService } from '../processor.config.service';
 
 type TokenData =
   | {
@@ -17,18 +18,25 @@ type TokenData =
   | object; // todo: remove me
 
 @Injectable()
-export class TokensProcessor extends ScanProcessor {
-  private logger: Logger;
+export class TokensProcessor {
+  private readonly logger = new Logger(TokensProcessor.name);
+  private processor: ScanProcessor;
+  public name = 'tokens';
 
   constructor(
     @InjectRepository(Tokens)
     private modelRepository: Repository<Tokens>,
     protected connection: Connection,
     protected sdkService: SdkService,
+    private processorConfigService: ProcessorConfigService,
   ) {
-    super('tokens', connection, sdkService);
-
-    this.logger = new Logger('TokensProcessor');
+    this.processor = new ScanProcessor(
+      this.name,
+      this.connection,
+      processorConfigService.getDataSource(),
+      processorConfigService.getRange(),
+      processorConfigService.getTypesBundle(),
+    );
 
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE = [
@@ -44,10 +52,10 @@ export class TokensProcessor extends ScanProcessor {
     ];
 
     EVENTS_TO_UPDATE.forEach((eventName) =>
-      this.addEventHandler(eventName, this.upsertHandler.bind(this)),
+      this.processor.addEventHandler(eventName, this.upsertHandler.bind(this)),
     );
 
-    this.addEventHandler(
+    this.processor.addEventHandler(
       EventName.ITEM_DESTROYED,
       this.destroyHandler.bind(this),
     );
@@ -65,8 +73,6 @@ export class TokensProcessor extends ScanProcessor {
   }
 
   prepareDataToWrite(sdkEntity) {
-    // console.log('sdkEntity', sdkEntity);
-
     const {
       id: token_id,
       collectionId: collection_id,
@@ -106,7 +112,6 @@ export class TokensProcessor extends ScanProcessor {
 
       if (tokenData) {
         const dataToWrite = this.prepareDataToWrite(tokenData);
-        // console.log('dataToWrite', dataToWrite);
 
         log.entity = dataToWrite;
 
@@ -121,9 +126,6 @@ export class TokensProcessor extends ScanProcessor {
         );
       } else {
         log.entity = null;
-
-        // todo: Delete db record
-        // await this.modelRepository.delete(collectionId, tokenId);
       }
 
       this.logger.verbose({ ...log });
@@ -158,5 +160,16 @@ export class TokensProcessor extends ScanProcessor {
       this.logger.error({ ...log, error: err.message });
       process.exit(1);
     }
+  }
+
+  public run(): void {
+    const params = this.processorConfigService.getAllParams();
+
+    this.logger.log({
+      msg: `Starting ${this.name} crawler...`,
+      params,
+    });
+
+    this.processor.run();
   }
 }

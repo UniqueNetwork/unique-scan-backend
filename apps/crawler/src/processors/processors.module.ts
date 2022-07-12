@@ -5,6 +5,10 @@ import { Extrinsic } from '@entities/Extrinsic';
 import { Block } from '@entities/Block';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProcessorConfigService } from '../processor.config.service';
 import { Event } from '@entities/Event';
 import { ExtrinsicProcessor } from './extrinsic-processor';
 import { SdkService } from '../sdk.service';
@@ -16,6 +20,7 @@ import { EventProcessor } from './events-processor';
 @Module({
   imports: [
     UtilsModule,
+    ConfigModule,
     TypeOrmModule.forFeature([Collections, Tokens, Block, Extrinsic, Event]),
   ],
   providers: [

@@ -1,10 +1,9 @@
 import typeormConfig from '@common/typeorm.config';
 import { UtilsModule } from '@common/utils/utils.module';
-// import { Collections } from '@entities/Collections';
-// import { Tokens } from '@entities/Tokens';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProcessorConfigService } from './processor.config.service';
 import { CrawlerService } from './crawler.service';
 import { ProcessorsModule } from './processors/processors.module';
 
@@ -12,11 +11,10 @@ import { ProcessorsModule } from './processors/processors.module';
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(typeormConfig),
-    // TypeOrmModule.forFeature([Collections, Tokens]),
     ProcessorsModule,
     UtilsModule,
   ],
   controllers: [],
-  providers: [Logger, CrawlerService],
+  providers: [Logger, CrawlerService, ProcessorConfigService],
 })
 export class CrawlerModule {}

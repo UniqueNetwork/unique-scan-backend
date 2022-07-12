@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DataSource as SubscquidDataSource } from '@subsquid/substrate-processor';
-import { Range } from '@subsquid/substrate-processor/lib/util/range';
 import { DataSource } from 'typeorm';
+import { ProcessorConfigService } from './processor.config.service';
 import { BlockProcessor } from './processors/block-processor';
 import { CollectionsProcessor } from './processors/collections-processor';
 import { TokensProcessor } from './processors/tokens-processor';
@@ -10,50 +9,21 @@ import { EventProcessor } from './processors/events-processor';
 
 @Injectable()
 export class CrawlerService {
+  private readonly logger = new Logger(CrawlerService.name);
+
   constructor(
-    private logger: Logger,
     private dataSource: DataSource,
     private collectionsProcessor: CollectionsProcessor,
     private tokensProcessor: TokensProcessor,
     private blockProcessor: BlockProcessor,
     private extrinsicProcessor: ExtrinsicProcessor,
     private eventProcessor: EventProcessor,
-  ) {
-    this.logger = new Logger('CrawlerService');
-  }
-
-  private prepareProcessorsParams() {
-    const dataSource = {
-      archive: process.env.ARCHIVE_GQL_URL,
-      chain: process.env.CHAIN_WS_URL,
-    } as SubscquidDataSource;
-
-    const range = {
-      from:
-        Number(process.env.SCAN_RANGE_FROM) ||
-        Number(process.env.SCAN_RANGE_FROM_DEFAULT),
-    } as Range;
-
-    if (!isNaN(Number(process.env.SCAN_RANGE_TO))) {
-      range.to = Number(process.env.SCAN_RANGE_TO);
-    }
-
-    const params = {
-      dataSource,
-      range,
-      typesBundle: process.env.SCAN_TYPES_BUNDLE,
-    };
-
-    this.logger.log({
-      msg: 'Start crawler',
-      params,
-    });
-
-    return params;
-  }
+    private processorConfigService: ProcessorConfigService,
+  ) {}
 
   subscribeAll(forceRescan = false) {
-    const params = this.prepareProcessorsParams();
+    const params = this.processorConfigService.getAllParams();
+
     return Promise.all([
       this.subscribeCollections({ ...params, forceRescan }),
       this.subscribeTokens({ ...params, forceRescan }),
@@ -77,8 +47,6 @@ export class CrawlerService {
       }
     }
 
-    this.collectionsProcessor.init(dataSource, range, typesBundle);
-
     this.collectionsProcessor.run();
   }
 
@@ -95,8 +63,6 @@ export class CrawlerService {
         // First run, no schema yet
       }
     }
-
-    this.tokensProcessor.init(dataSource, range, typesBundle);
 
     this.tokensProcessor.run();
   }
