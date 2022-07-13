@@ -6,7 +6,7 @@ import { Tokens } from '@entities/Tokens';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress } from '@common/utils';
+import { normalizeSubstrateAddress, parseNestingAddress } from '@common/utils';
 import { ProcessorConfigService } from '../processor.config.service';
 
 type TokenData =
@@ -78,12 +78,18 @@ export class TokensProcessor {
       properties: { constData: data = {} } = {},
     } = sdkEntity;
 
+    const parsedNestingAddress = parseNestingAddress(owner);
+    const parent_id = parsedNestingAddress
+      ? `${parsedNestingAddress.collectionId}_${parsedNestingAddress.tokenId}`
+      : null;
+
     return {
       token_id,
       collection_id,
       owner,
       owner_normalized: normalizeSubstrateAddress(owner),
       data,
+      parent_id,
     };
   }
 

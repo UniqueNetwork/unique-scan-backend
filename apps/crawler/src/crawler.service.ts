@@ -16,15 +16,15 @@ export class CrawlerService {
   ) {}
 
   subscribeAll(forceRescan = false) {
-    const params = this.processorConfigService.getAllParams();
+    const range = this.processorConfigService.getRange();
 
     return Promise.all([
-      this.subscribeCollections({ ...params, forceRescan }),
-      this.subscribeTokens({ ...params, forceRescan }),
+      // this.subscribeCollections({ range, forceRescan }),
+      this.subscribeTokens({ range, forceRescan }),
     ]);
   }
 
-  async subscribeCollections({ dataSource, range, typesBundle, forceRescan }) {
+  async subscribeCollections({ range, forceRescan }) {
     if (forceRescan && !isNaN(range.from)) {
       try {
         const statusDbSchemaName = `${this.collectionsProcessor.name}_status`;
@@ -41,7 +41,7 @@ export class CrawlerService {
     this.collectionsProcessor.run();
   }
 
-  async subscribeTokens({ dataSource, range, typesBundle, forceRescan }) {
+  async subscribeTokens({ range, forceRescan }) {
     if (forceRescan && !isNaN(range.from)) {
       try {
         const statusDbSchemaName = `${this.tokensProcessor.name}_status`;
