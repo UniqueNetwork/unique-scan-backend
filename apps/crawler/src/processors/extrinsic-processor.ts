@@ -3,7 +3,7 @@ import { Connection, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExtrinsicHandlerContext } from '@subsquid/substrate-processor';
 import { Extrinsic } from '@entities/Extrinsic';
-import { ExtrinsicNames } from '@common/constants';
+import { ExtrinsicNames, TransferMethods } from '@common/constants';
 import { ScanProcessor } from './scan-processor';
 import { SdkService } from '../sdk.service';
 import { UtilsService } from '@common/utils/utils.service';
@@ -13,13 +13,6 @@ import { Event } from '@entities/Event';
 interface IExtrinsicOwner {
   value: { id?: string; substrate?: string; ethereum?: string };
 }
-
-const transferMethods = [
-  'transfer',
-  'transferAll',
-  'transferKeepAlive',
-  'vestedTransfer',
-];
 
 @Injectable()
 export class ExtrinsicProcessor {
@@ -68,14 +61,10 @@ export class ExtrinsicProcessor {
 
     try {
       const data = await this.getData(ctx);
-
-      if (data) {
-        await this.modelRepository.upsert(data, [
-          'block_number',
-          'extrinsic_index',
-        ]);
-      }
-
+      await this.modelRepository.upsert(data, [
+        'block_number',
+        'extrinsic_index',
+      ]);
       this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
@@ -84,10 +73,11 @@ export class ExtrinsicProcessor {
 
   private async getData(ctx: ExtrinsicHandlerContext) {
     const { block, extrinsic } = ctx;
-    const events = await this.getExtrinsicEvents(ctx);
+    const events = await this.getEvents(ctx);
 
     let to_owner: null | string = null;
-    if (transferMethods.includes(extrinsic.method)) {
+    const methods = Object.values(TransferMethods) as string[];
+    if (methods.includes(extrinsic.method)) {
       const args = extrinsic.args;
       const ownerData = args[0] as IExtrinsicOwner;
       if (ownerData) {
@@ -102,13 +92,12 @@ export class ExtrinsicProcessor {
     return {
       block_number: block.height,
       extrinsic_index: extrinsic.indexInBlock,
-      is_signed: true,
+      is_signed: !!extrinsic.signature,
       signer: extrinsic.signer,
       section: extrinsic.section,
       method: extrinsic.method,
       args: JSON.stringify(extrinsic.args),
       hash: extrinsic.hash,
-      doc: JSON.stringify(extrinsic.args),
       success: this.utils.getExtrinsicSuccess(events),
       timestamp: `${Math.floor(block.timestamp / 1000)}`,
       amount: String(this.utils.getExtrinsicAmount(events)),
@@ -120,15 +109,13 @@ export class ExtrinsicProcessor {
     };
   }
 
-  private async getExtrinsicEvents(ctx: ExtrinsicHandlerContext) {
+  private async getEvents(ctx: ExtrinsicHandlerContext) {
     const { block, extrinsic } = ctx;
-    const sdkApi = await this.sdkService.getSdk();
 
-    const { hash } = block;
-    const eventsFromApi = await sdkApi.api.query.system.events.at(hash);
+    const chainEvents = await this.sdkService.getEvents(block.hash);
     const events: Event[] = [];
 
-    for (const [, record] of Object.entries(eventsFromApi)) {
+    for (const [, record] of Object.entries(chainEvents)) {
       const { event, phase } = record;
 
       if (!event) {

@@ -8,7 +8,6 @@ import {
 import { Block } from '@entities/Block';
 import { EventMethod, EventSection, ExtrinsicNames } from '@common/constants';
 import { ScanProcessor } from './scan-processor';
-import { SdkService } from '../sdk.service';
 import { ProcessorConfigService } from '../processor.config.service';
 
 const TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
@@ -24,7 +23,6 @@ export class BlockProcessor {
     @InjectRepository(Block)
     private modelRepository: Repository<Block>,
     protected connection: Connection,
-    protected sdkService: SdkService,
     private processorConfigService: ProcessorConfigService,
   ) {
     this.processor = new ScanProcessor(
@@ -68,19 +66,15 @@ export class BlockProcessor {
     };
 
     try {
-      const blockData = await this.getBlockData(ctx.block);
-
-      if (blockData) {
-        await this.modelRepository.upsert(blockData, ['block_number']);
-      }
-
+      const data = this.getData(ctx.block);
+      await this.modelRepository.upsert(data, ['block_number']);
       this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
     }
   }
 
-  private getBlockData(block: SubstrateBlock) {
+  private getData(block: SubstrateBlock) {
     return {
       block_number: block.height,
       block_hash: block.hash,
@@ -94,7 +88,7 @@ export class BlockProcessor {
       num_transfers: block.events.filter(({ name }) => name === TRANSFER)
         .length,
       new_accounts: block.events.filter(({ name }) => name === ENDOWED).length,
-      total_issuance: 'block.total_issuance',
+      total_issuance: '', // TODO: no need. may be
       timestamp: `${Math.floor(block.timestamp / 1000)}`,
       need_rescan: false,
       total_extrinsics: block.extrinsics.length,

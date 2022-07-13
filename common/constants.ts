@@ -89,3 +89,10 @@ export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
 export enum EventPhase {
   INITIALIZATION = 'Initialization',
 }
+
+export enum TransferMethods {
+  TRANSFER = 'transfer',
+  TRANSFER_ALL = 'transferAll',
+  TRANSFER_KEEP_ALIVE = 'transferKeepAlive',
+  VESTED_TRANSFER = 'vestedTransfer',
+}

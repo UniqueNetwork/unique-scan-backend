@@ -5,7 +5,6 @@ import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Event } from '@entities/Event';
 import { EventName, EventPhase } from '@common/constants';
 import { ScanProcessor } from './scan-processor';
-import { SdkService } from '../sdk.service';
 import { UtilsService } from '@common/utils/utils.service';
 import { ProcessorConfigService } from '../processor.config.service';
 
@@ -20,7 +19,6 @@ export class EventProcessor {
     private modelRepository: Repository<Event>,
     private utils: UtilsService,
     protected connection: Connection,
-    protected sdkService: SdkService,
     private processorConfigService: ProcessorConfigService,
   ) {
     this.processor = new ScanProcessor(
@@ -55,15 +53,8 @@ export class EventProcessor {
     };
 
     try {
-      const data = await this.getData(ctx);
-
-      if (data) {
-        await this.modelRepository.upsert(data, [
-          'block_number',
-          'event_index',
-        ]);
-      }
-
+      const data = this.getData(ctx);
+      await this.modelRepository.upsert(data, ['block_number', 'event_index']);
       this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
@@ -79,7 +70,7 @@ export class EventProcessor {
       section: event.section,
       method: event.method,
       phase: event.extrinsic
-        ? JSON.stringify(`applyExtrinsic: ${event.extrinsic.indexInBlock}`)
+        ? JSON.stringify({ applyExtrinsic: event.extrinsic.indexInBlock })
         : EventPhase.INITIALIZATION,
       data: JSON.stringify(event.params),
       timestamp: `${Math.floor(block.timestamp / 1000)}`,

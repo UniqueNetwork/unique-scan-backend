@@ -22,14 +22,14 @@ export class CrawlerService {
   ) {}
 
   subscribeAll(forceRescan = false) {
-    const params = this.processorConfigService.getAllParams();
+    const { range } = this.processorConfigService.getAllParams();
 
     return Promise.all([
-      this.subscribeCollections({ ...params, forceRescan }),
-      this.subscribeTokens({ ...params, forceRescan }),
-      this.subscribeBlock({ ...params, forceRescan }),
-      this.subscribeExtrinsic({ ...params, forceRescan }),
-      this.subscribeEvent({ ...params, forceRescan }),
+      this.subscribeCollections({ range, forceRescan }),
+      this.subscribeTokens({ range, forceRescan }),
+      this.subscribeBlock({ range, forceRescan }),
+      this.subscribeExtrinsic({ range, forceRescan }),
+      this.subscribeEvent({ range, forceRescan }),
     ]);
   }
 

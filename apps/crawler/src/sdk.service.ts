@@ -35,6 +35,12 @@ export class SdkService {
     return result?.limits;
   }
 
+  async getEvents(blockHash: string) {
+    const sdk = await this.getSdk();
+
+    return sdk.api.query.system.events.at(blockHash);
+  }
+
   async getToken(collectionId: number, tokenId: number) {
     const sdk = await this.getSdk();
 
