@@ -30,7 +30,12 @@
     "typeorm": "node --require ts-node/register ./node_modules/typeorm/cli.js -d common/postgresql.datasource.ts",
     "db:migration:generate": "npm run typeorm migration:generate --",
     "db:migration:run": "npm run typeorm migration:run",
-    "db:migration:create": "npm run typeorm migration:create -- -n"
+    "db:migration:create": "npm run typeorm migration:create -- -n",
+    "gen-types": "ts-node gen-types.ts",
+    "environment:dev:init": "docker-compose --env-file .env up -d",
+    "environment:dev:start": "docker-compose --env-file .env start",
+    "environment:dev:stop": "docker-compose --env-file .env stop",
+    "environment:dev:ps": "docker-compose --env-file .env ps"
   },
   "dependencies": {
     "@nestjs/apollo": "^10.0.16",
