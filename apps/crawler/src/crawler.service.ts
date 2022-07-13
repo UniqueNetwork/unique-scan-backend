@@ -19,7 +19,7 @@ export class CrawlerService {
     const range = this.processorConfigService.getRange();
 
     return Promise.all([
-      // this.subscribeCollections({ range, forceRescan }),
+      this.subscribeCollections({ range, forceRescan }),
       this.subscribeTokens({ range, forceRescan }),
     ]);
   }
