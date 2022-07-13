@@ -2,7 +2,7 @@ version: "3"
 
 networks:
  scan-api:
-   external: true
+   external: false
 
 services:
   scan-web-api:
@@ -16,7 +16,6 @@ services:
       - scan-api
     depends_on:
       - postgres
-      - crawler
     restart: on-failure
     environment:
       - PORT=3031
@@ -42,7 +41,74 @@ services:
       - scan-pgdata:/var/lib/postgresql/data
       - /etc/localtime:/etc/localtime:ro
 
-# TODO: Add definitions for Squid Archive
+  indexer:
+    image: subsquid/hydra-indexer:5
+    restart: unless-stopped
+    environment:
+      - WORKERS_NUMBER=50
+      - DB_NAME=indexer
+      - DB_HOST=postgres
+      - DB_USER=polkastats
+      - DB_PASS=polkastats
+      - DB_PORT=5432
+      - REDIS_URI=redis://redis:6379/0
+      - FORCE_HEIGHT=${SCAN_FORCE_RESCAN}
+      - BLOCK_HEIGHT=${SCAN_RANGE_FROM}
+      - WS_PROVIDER_ENDPOINT_URI=${CHAIN_WS_URL}
+      - BUNDLE_TYPES=/configs/typesBundle.json
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - "./typesBundle.json:/configs/typesBundle.json"
+    command: >
+      sh -c "yarn db:bootstrap && yarn start:prod"
+    ports:
+      - 9090:9090
+    networks:
+      - scan-api
+
+  indexer-gateway:
+    image: subsquid/hydra-indexer-gateway:5
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - postgres
+      - indexer-status-service
+      - indexer
+    ports:
+      - "4010:8080"
+    networks:
+      - scan-api
+    environment:
+      - DEV_MODE=true
+      - DB_NAME=indexer
+      - DB_HOST=postgres
+      - DB_USER=polkastats
+      - DB_PASS=polkastats
+      - DB_PORT=5432
+      # - FORCE_HEIGHT=true
+      # - BLOCK_HEIGHT=1000000 # starting block height
+      - HYDRA_INDEXER_STATUS_SERVICE=http://indexer-status-service:8081/status
+
+  indexer-status-service:
+    image: subsquid/hydra-indexer-status-service:5
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      REDIS_URI: redis://redis:6379/0
+      PORT: 8081
+    networks:
+      - scan-api
+
+  redis:
+    image: redis:6.0-alpine
+    restart: always
+    ports:
+      - "6379"
+    networks:
+      - scan-api
 
 volumes:
   scan-pgdata:
