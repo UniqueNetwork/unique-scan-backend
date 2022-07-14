@@ -1,6 +1,7 @@
 import {
   ArgsType,
   Field,
+  Float,
   InputType,
   Int,
   ObjectType,
@@ -113,16 +114,20 @@ export class GQLQueryPaginationArgs {
 export interface IDataListResponse<T> {
   data: T[];
   count: number;
+  timestamp?: number;
 }
 
 export function ListDataType<T>(classRef: Type<T>): Type<IDataListResponse<T>> {
   @ObjectType({ isAbstract: true })
-  abstract class ListDataType implements IDataListResponse<T> {
+  class ListDataType implements IDataListResponse<T> {
     @Field(() => [classRef], { nullable: true })
     data: T[];
 
     @Field(() => Int)
     count: number;
+
+    @Field(() => Float, { nullable: true })
+    timestamp?: number;
   }
 
   return ListDataType as Type<IDataListResponse<T>>;
