@@ -7,7 +7,7 @@ export class EventDTO implements Partial<Event> {
   block_index?: string;
 
   @Field(() => String)
-  block_number?: string;
+  block_number?: number;
 
   @Field(() => Float, { nullable: true })
   amount?: string;

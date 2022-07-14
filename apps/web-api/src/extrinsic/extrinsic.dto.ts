@@ -7,7 +7,7 @@ export class ExtrinsicDTO implements Partial<Extrinsic> {
   block_index?: string;
 
   @Field(() => String)
-  block_number?: string;
+  block_number?: number;
 
   @Field(() => String, { nullable: true })
   from_owner?: string;
