@@ -126,8 +126,8 @@ export function ListDataType<T>(classRef: Type<T>): Type<IDataListResponse<T>> {
     @Field(() => Int)
     count: number;
 
-    @Field(() => Float, { nullable: true })
-    timestamp?: number;
+    @Field(() => Float)
+    timestamp: number;
   }
 
   return ListDataType as Type<IDataListResponse<T>>;
