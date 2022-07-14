@@ -112,6 +112,10 @@ export class TokensProcessor {
       log.collectionId = collectionId;
       log.tokenId = tokenId;
 
+      if (tokenId === 0) {
+        throw new Error('Bad tokenId');
+      }
+
       const tokenData = await this.getTokenData(collectionId, tokenId);
 
       if (tokenData) {
