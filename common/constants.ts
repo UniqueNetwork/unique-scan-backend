@@ -86,6 +86,10 @@ export enum EventSection {
 
 export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
 
+export const NESTING_ADDRESS_PREFIX = '0xf8238ccfff8ed887463fd5e0';
+export const NESTING_ADDRESS_COLLECTION_ID_LENGTH = 8;
+export const NESTING_ADDRESS_TOKEN_ID_LENGTH = 8;
+
 export enum EventPhase {
   INITIALIZATION = 'Initialization',
 }

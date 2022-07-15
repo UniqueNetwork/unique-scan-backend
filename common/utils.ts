@@ -1,5 +1,10 @@
 import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
-import { ETHEREUM_ADDRESS_MAX_LENGTH } from './constants';
+import {
+  ETHEREUM_ADDRESS_MAX_LENGTH,
+  NESTING_ADDRESS_COLLECTION_ID_LENGTH,
+  NESTING_ADDRESS_PREFIX,
+  NESTING_ADDRESS_TOKEN_ID_LENGTH,
+} from './constants';
 
 export function normalizeSubstrateAddress(address) {
   if (address?.length <= ETHEREUM_ADDRESS_MAX_LENGTH) {
@@ -9,27 +14,21 @@ export function normalizeSubstrateAddress(address) {
   return encodeAddress(decodeAddress(address));
 }
 
-export function utf8Encode(unicodeString) {
-  const utf8String = unicodeString.replace(/\u0000/g, '');
-  // todo: waiting for sdk update. Remove when unicode problem is resolved.
-  // .replace(
-  //   /[\u0080-\u07ff]/g, // U+0080 - U+07FF => 2 bytes 110yyyyy, 10zzzzzz
-  //   function (c) {
-  //     const cc = c.charCodeAt(0);
-  //     return String.fromCharCode(0xc0 | (cc >> 6), 0x80 | (cc & 0x3f));
-  //   },
-  // )
-  // .replace(
-  //   /[\u0800-\uffff]/g, // U+0800 - U+FFFF => 3 bytes 1110xxxx, 10yyyyyy, 10zzzzzz
-  //   function (c) {
-  //     const cc = c.charCodeAt(0);
-  //     return String.fromCharCode(
-  //       0xe0 | (cc >> 12),
-  //       0x80 | ((cc >> 6) & 0x3f),
-  //       0x80 | (cc & 0x3f),
-  //     );
-  //   },
-  // );
+export function parseNestingAddress(address) {
+  const match = address.match(
+    RegExp(
+      `^${NESTING_ADDRESS_PREFIX}(.{${NESTING_ADDRESS_COLLECTION_ID_LENGTH}})(.{${NESTING_ADDRESS_TOKEN_ID_LENGTH}})$`,
+    ),
+  );
 
-  return utf8String;
+  if (!match) {
+    return null;
+  }
+
+  const [, collectionIdString, tokenIdString] = match;
+
+  return {
+    collectionId: parseInt(collectionIdString, 16) || null,
+    tokenId: parseInt(tokenIdString, 16) || null,
+  };
 }

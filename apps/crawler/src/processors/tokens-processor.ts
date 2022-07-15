@@ -6,7 +6,7 @@ import { Tokens } from '@entities/Tokens';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress } from '@common/utils';
+import { normalizeSubstrateAddress, parseNestingAddress } from '@common/utils';
 import { ProcessorConfigService } from '../processor.config.service';
 
 type TokenData =
@@ -59,8 +59,6 @@ export class TokensProcessor {
       EventName.ITEM_DESTROYED,
       this.destroyHandler.bind(this),
     );
-
-    this.logger.log('Starting processor...');
   }
 
   private async getTokenData(
@@ -80,12 +78,18 @@ export class TokensProcessor {
       properties: { constData: data = {} } = {},
     } = sdkEntity;
 
+    const parsedNestingAddress = parseNestingAddress(owner);
+    const parent_id = parsedNestingAddress
+      ? `${parsedNestingAddress.collectionId}_${parsedNestingAddress.tokenId}`
+      : null;
+
     return {
       token_id,
       collection_id,
       owner,
       owner_normalized: normalizeSubstrateAddress(owner),
       data,
+      parent_id,
     };
   }
 
@@ -108,6 +112,10 @@ export class TokensProcessor {
       log.collectionId = collectionId;
       log.tokenId = tokenId;
 
+      if (tokenId === 0) {
+        throw new Error('Bad tokenId');
+      }
+
       const tokenData = await this.getTokenData(collectionId, tokenId);
 
       if (tokenData) {
@@ -125,7 +133,14 @@ export class TokensProcessor {
           ['collection_id', 'token_id'],
         );
       } else {
+        // No entity returned from sdk. Most likely it was destroyed in a future block.
         log.entity = null;
+
+        // Delete db record
+        await this.modelRepository.delete({
+          collection_id: collectionId,
+          token_id: tokenId,
+        });
       }
 
       this.logger.verbose({ ...log });
@@ -152,10 +167,13 @@ export class TokensProcessor {
       log.collectionId = collectionId;
       log.tokenId = tokenId;
 
-      this.logger.verbose({ ...log });
+      // Delete db record
+      await this.modelRepository.delete({
+        collection_id: collectionId,
+        token_id: tokenId,
+      });
 
-      // todo: Delete db record
-      // await this.modelRepository.delete(collectionId);
+      this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
       process.exit(1);

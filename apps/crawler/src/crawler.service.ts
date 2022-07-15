@@ -22,7 +22,7 @@ export class CrawlerService {
   ) {}
 
   subscribeAll(forceRescan = false) {
-    const { range } = this.processorConfigService.getAllParams();
+    const range = this.processorConfigService.getRange();
 
     return Promise.all([
       this.subscribeCollections({ range, forceRescan }),
