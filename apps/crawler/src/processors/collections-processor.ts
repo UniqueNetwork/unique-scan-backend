@@ -1,15 +1,65 @@
 import { ScanProcessor } from './scan-processor';
 import { Injectable, Logger } from '@nestjs/common';
-import { Connection, Repository } from 'typeorm';
+import { Connection, DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
-import { EventHandlerContext } from '@subsquid/substrate-processor';
+import {
+  EventHandlerContext,
+  SubstrateProcessor,
+} from '@subsquid/substrate-processor';
 import { SdkService } from '../sdk.service';
 import { EventName, SchemaVersion } from '@common/constants';
 import { normalizeSubstrateAddress } from '@common/utils';
 import { CollectionInfo, CollectionLimits } from '@unique-nft/sdk/tokens';
 import { ProcessorConfigService } from '../processor.config.service';
+import {
+  TypeormDatabase,
+  TypeormDatabaseOptions,
+} from '@subsquid/typeorm-store';
+import { Database } from '@subsquid/substrate-processor/lib/interfaces/db';
+
+interface IDatabaseTestOptions extends TypeormDatabaseOptions {
+  stateSchema: string;
+  con: DataSource;
+}
+
+class DatabaseTest extends TypeormDatabase {
+  constructor(options: IDatabaseTestOptions) {
+    const { con, ...typeormDatabaseOptions } = options;
+    super(typeormDatabaseOptions);
+    this.con = con;
+  }
+
+  async connect(): Promise<number> {
+    try {
+      const height = await this.con.transaction('SERIALIZABLE', async (em) => {
+        await em.query(`CREATE SCHEMA IF NOT EXISTS ${this.statusSchema}`);
+        await em.query(`
+                    CREATE TABLE IF NOT EXISTS ${this.statusSchema}.status (
+                        id int primary key,
+                        height int not null
+                    )
+                `);
+        const status: { height: number }[] = await em.query(
+          `SELECT height FROM ${this.statusSchema}.status WHERE id = 0`,
+        );
+        if (status.length == 0) {
+          await em.query(
+            `INSERT INTO ${this.statusSchema}.status (id, height) VALUES (0, -1)`,
+          );
+          return -1;
+        } else {
+          return status[0].height;
+        }
+      });
+      return height;
+    } catch (e: any) {
+      await this.con.destroy().catch(() => { }); // ignore error
+      throw e;
+    }
+  }
+}
 
 @Injectable()
 export class CollectionsProcessor {
@@ -26,13 +76,27 @@ export class CollectionsProcessor {
     protected sdkService: SdkService,
     private processorConfigService: ProcessorConfigService,
   ) {
-    this.processor = new ScanProcessor(
-      this.name,
-      this.connection,
-      processorConfigService.getDataSource(),
-      processorConfigService.getRange(),
-      processorConfigService.getTypesBundle(),
-    );
+    // const db = new TypeormDatabase({
+    //   stateSchema: 'blockchain_state',
+    //   co
+    // });
+
+    const stateSchema = `${this.name}_status`;
+    const db = new DatabaseTest({
+      stateSchema,
+      con: this.connection,
+    });
+    // const db = new DatabaseTest();
+    const proc = new SubstrateProcessor(db);
+    proc.setDataSource(processorConfigService.getDataSource());
+
+    // this.processor = new ScanProcessor(
+    //   this.name,
+    //   this.connection,
+    //   processorConfigService.getDataSource(),
+    //   processorConfigService.getRange(),
+    //   processorConfigService.getTypesBundle(),
+    // );
 
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE_COLLECTION = [
@@ -56,13 +120,21 @@ export class CollectionsProcessor {
     ];
 
     EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
-      this.processor.addEventHandler(eventName, this.upsertHandler.bind(this)),
+      proc.addEventHandler(eventName, async (ctx) => {
+        console.log('debug: ', ctx.event);
+        return;
+      }),
     );
+    proc.run();
 
-    this.processor.addEventHandler(
-      EventName.COLLECTION_DESTROYED,
-      this.destroyHandler.bind(this),
-    );
+    // EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
+    //   this.processor.addEventHandler(eventName, this.upsertHandler.bind(this)),
+    // );
+
+    // this.processor.addEventHandler(
+    //   EventName.COLLECTION_DESTROYED,
+    //   this.destroyHandler.bind(this),
+    // );
   }
 
   private async getCollectionData(
@@ -185,83 +257,83 @@ export class CollectionsProcessor {
     };
   }
 
-  private async upsertHandler(ctx: EventHandlerContext): Promise<void> {
-    const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
+  // private async upsertHandler(ctx: EventHandlerContext): Promise<void> {
+  //   const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
 
-    const log = {
-      eventName,
-      blockNumber,
-      blockTimestamp,
-      entity: null as null | object | string,
-      collectionId: null as null | number,
-    };
+  //   const log = {
+  //     eventName,
+  //     blockNumber,
+  //     blockTimestamp,
+  //     entity: null as null | object | string,
+  //     collectionId: null as null | number,
+  //   };
 
-    try {
-      const collectionId = params[0].value as number;
+  //   try {
+  //     const collectionId = params[0].value as number;
 
-      log.collectionId = collectionId;
+  //     log.collectionId = collectionId;
 
-      const [collectionInfo, collectionLimits] = await this.getCollectionData(
-        collectionId,
-      );
+  //     const [collectionInfo, collectionLimits] = await this.getCollectionData(
+  //       collectionId,
+  //     );
 
-      if (collectionInfo) {
-        const dataToWrite = this.prepareDataToWrite(
-          collectionInfo,
-          collectionLimits,
-        );
+  //     if (collectionInfo) {
+  //       const dataToWrite = this.prepareDataToWrite(
+  //         collectionInfo,
+  //         collectionLimits,
+  //       );
 
-        // console.log('dataToWrite', dataToWrite);
+  //       // console.log('dataToWrite', dataToWrite);
 
-        // Do not log the full entity because this object is quite big
-        log.entity = dataToWrite.name;
+  //       // Do not log the full entity because this object is quite big
+  //       log.entity = dataToWrite.name;
 
-        await this.collectionsRepository.upsert(
-          {
-            ...dataToWrite,
-            date_of_creation:
-              eventName === EventName.COLLECTION_CREATED
-                ? blockTimestamp
-                : undefined,
-          },
-          ['collection_id'],
-        );
-      } else {
-        // No entity returned from sdk. Most likely it was destroyed in a future block.
-        log.entity = null;
+  //       await this.collectionsRepository.upsert(
+  //         {
+  //           ...dataToWrite,
+  //           date_of_creation:
+  //             eventName === EventName.COLLECTION_CREATED
+  //               ? blockTimestamp
+  //               : undefined,
+  //         },
+  //         ['collection_id'],
+  //       );
+  //     } else {
+  //       // No entity returned from sdk. Most likely it was destroyed in a future block.
+  //       log.entity = null;
 
-        await this.deleteCollection(collectionId);
-      }
+  //       await this.deleteCollection(collectionId);
+  //     }
 
-      this.logger.verbose({ ...log });
-    } catch (err) {
-      this.logger.error({ ...log, error: err.message });
-    }
-  }
+  //     this.logger.verbose({ ...log });
+  //   } catch (err) {
+  //     this.logger.error({ ...log, error: err.message });
+  //   }
+  // }
 
-  private async destroyHandler(ctx: EventHandlerContext): Promise<void> {
-    const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
+  // private async destroyHandler(ctx: EventHandlerContext): Promise<void> {
+  //   const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
 
-    const log = {
-      eventName,
-      blockNumber,
-      blockTimestamp,
-      collectionId: null as null | number,
-    };
+  //   const log = {
+  //     eventName,
+  //     blockNumber,
+  //     blockTimestamp,
+  //     collectionId: null as null | number,
+  //   };
 
-    try {
-      const collectionId = params[0].value as number;
+  //   try {
+  //     const collectionId = params[0].value as number;
 
-      log.collectionId = collectionId;
+  //     log.collectionId = collectionId;
 
-      await this.deleteCollection(collectionId);
+  //     await this.deleteCollection(collectionId);
 
-      this.logger.verbose({ ...log });
-    } catch (err) {
-      this.logger.error({ ...log, error: err.message });
-      process.exit(1);
-    }
-  }
+  //     this.logger.verbose({ ...log });
+  //   } catch (err) {
+  //     this.logger.error({ ...log, error: err.message });
+  //     process.exit(1);
+  //   }
+  // }
 
   // Delete db collection record and related tokens
   private deleteCollection(collectionId) {
@@ -279,6 +351,6 @@ export class CollectionsProcessor {
       params,
     });
 
-    this.processor.run();
+    // this.processor.run();
   }
 }

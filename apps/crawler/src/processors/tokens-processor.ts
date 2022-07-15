@@ -30,13 +30,13 @@ export class TokensProcessor {
     protected sdkService: SdkService,
     private processorConfigService: ProcessorConfigService,
   ) {
-    this.processor = new ScanProcessor(
-      this.name,
-      this.connection,
-      processorConfigService.getDataSource(),
-      processorConfigService.getRange(),
-      processorConfigService.getTypesBundle(),
-    );
+    // this.processor = new ScanProcessor(
+    //   this.name,
+    //   this.connection,
+    //   processorConfigService.getDataSource(),
+    //   processorConfigService.getRange(),
+    //   processorConfigService.getTypesBundle(),
+    // );
 
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE = [
@@ -51,14 +51,14 @@ export class TokensProcessor {
       EventName.TOKEN_PROPERTY_DELETED,
     ];
 
-    EVENTS_TO_UPDATE.forEach((eventName) =>
-      this.processor.addEventHandler(eventName, this.upsertHandler.bind(this)),
-    );
+    // EVENTS_TO_UPDATE.forEach((eventName) =>
+    //   this.processor.addEventHandler(eventName, this.upsertHandler.bind(this)),
+    // );
 
-    this.processor.addEventHandler(
-      EventName.ITEM_DESTROYED,
-      this.destroyHandler.bind(this),
-    );
+    // this.processor.addEventHandler(
+    //   EventName.ITEM_DESTROYED,
+    //   this.destroyHandler.bind(this),
+    // );
   }
 
   private async getTokenData(
@@ -93,92 +93,92 @@ export class TokensProcessor {
     };
   }
 
-  private async upsertHandler(ctx: EventHandlerContext): Promise<void> {
-    const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
+  // private async upsertHandler(ctx: EventHandlerContext): Promise<void> {
+  //   const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
 
-    const log = {
-      eventName,
-      blockNumber,
-      blockTimestamp,
-      entity: null as null | object | string,
-      collectionId: null as null | number,
-      tokenId: null as null | number,
-    };
+  //   const log = {
+  //     eventName,
+  //     blockNumber,
+  //     blockTimestamp,
+  //     entity: null as null | object | string,
+  //     collectionId: null as null | number,
+  //     tokenId: null as null | number,
+  //   };
 
-    try {
-      const collectionId = params[0].value as number;
-      const tokenId = params[1].value as number;
+  //   try {
+  //     const collectionId = params[0].value as number;
+  //     const tokenId = params[1].value as number;
 
-      log.collectionId = collectionId;
-      log.tokenId = tokenId;
+  //     log.collectionId = collectionId;
+  //     log.tokenId = tokenId;
 
-      if (tokenId === 0) {
-        throw new Error('Bad tokenId');
-      }
+  //     if (tokenId === 0) {
+  //       throw new Error('Bad tokenId');
+  //     }
 
-      const tokenData = await this.getTokenData(collectionId, tokenId);
+  //     const tokenData = await this.getTokenData(collectionId, tokenId);
 
-      if (tokenData) {
-        const dataToWrite = this.prepareDataToWrite(tokenData);
+  //     if (tokenData) {
+  //       const dataToWrite = this.prepareDataToWrite(tokenData);
 
-        log.entity = dataToWrite;
+  //       log.entity = dataToWrite;
 
-        // Write collection data into db
-        await this.modelRepository.upsert(
-          {
-            ...dataToWrite,
-            date_of_creation:
-              eventName === EventName.ITEM_CREATED ? blockTimestamp : undefined,
-          },
-          ['collection_id', 'token_id'],
-        );
-      } else {
-        // No entity returned from sdk. Most likely it was destroyed in a future block.
-        log.entity = null;
+  //       // Write collection data into db
+  //       await this.modelRepository.upsert(
+  //         {
+  //           ...dataToWrite,
+  //           date_of_creation:
+  //             eventName === EventName.ITEM_CREATED ? blockTimestamp : undefined,
+  //         },
+  //         ['collection_id', 'token_id'],
+  //       );
+  //     } else {
+  //       // No entity returned from sdk. Most likely it was destroyed in a future block.
+  //       log.entity = null;
 
-        // Delete db record
-        await this.modelRepository.delete({
-          collection_id: collectionId,
-          token_id: tokenId,
-        });
-      }
+  //       // Delete db record
+  //       await this.modelRepository.delete({
+  //         collection_id: collectionId,
+  //         token_id: tokenId,
+  //       });
+  //     }
 
-      this.logger.verbose({ ...log });
-    } catch (err) {
-      this.logger.error({ ...log, error: err.message });
-    }
-  }
+  //     this.logger.verbose({ ...log });
+  //   } catch (err) {
+  //     this.logger.error({ ...log, error: err.message });
+  //   }
+  // }
 
-  private async destroyHandler(ctx: EventHandlerContext): Promise<void> {
-    const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
+  // private async destroyHandler(ctx: EventHandlerContext): Promise<void> {
+  //   const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
 
-    const log = {
-      eventName,
-      blockNumber,
-      blockTimestamp,
-      collectionId: null as null | number,
-      tokenId: null as null | number,
-    };
+  //   const log = {
+  //     eventName,
+  //     blockNumber,
+  //     blockTimestamp,
+  //     collectionId: null as null | number,
+  //     tokenId: null as null | number,
+  //   };
 
-    try {
-      const collectionId = params[0].value as number;
-      const tokenId = params[1].value as number;
+  //   try {
+  //     const collectionId = params[0].value as number;
+  //     const tokenId = params[1].value as number;
 
-      log.collectionId = collectionId;
-      log.tokenId = tokenId;
+  //     log.collectionId = collectionId;
+  //     log.tokenId = tokenId;
 
-      // Delete db record
-      await this.modelRepository.delete({
-        collection_id: collectionId,
-        token_id: tokenId,
-      });
+  //     // Delete db record
+  //     await this.modelRepository.delete({
+  //       collection_id: collectionId,
+  //       token_id: tokenId,
+  //     });
 
-      this.logger.verbose({ ...log });
-    } catch (err) {
-      this.logger.error({ ...log, error: err.message });
-      process.exit(1);
-    }
-  }
+  //     this.logger.verbose({ ...log });
+  //   } catch (err) {
+  //     this.logger.error({ ...log, error: err.message });
+  //     process.exit(1);
+  //   }
+  // }
 
   public run(): void {
     const params = this.processorConfigService.getAllParams();
@@ -188,6 +188,6 @@ export class TokensProcessor {
       params,
     });
 
-    this.processor.run();
+    // this.processor.run();
   }
 }
