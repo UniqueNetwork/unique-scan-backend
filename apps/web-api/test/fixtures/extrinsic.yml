@@ -9,7 +9,6 @@ items:
     method: 'transfer'
     args: ''
     hash: '0xb43c353f3745b5450dd76d29729721a7f91c023f1648872b448a71e179ca7c8b($current)'
-    doc: '[Transfer some liquid free balance to another account.,'
     success: true
     timestamp: 1639688886
     amount: '($current)'
@@ -18,4 +17,3 @@ items:
     to_owner: 'yGCjr31X6CRM3PZWyE8x4WyZRXhdg9gV1bjuog8SYGwhZekfV($current)'
     signer_normalized: '5FZJJ7YzbX8WxmwwLkbDwNkuFFeoqMF3on3LVvcqPGEeUAYo($current)'
     to_owner_normalized: '5C53RFCVKh9J6L7LEbYHA3CABJwRXiQeYKZNwanTALRDVkP6($current)'
-
