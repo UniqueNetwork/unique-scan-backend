@@ -46,7 +46,7 @@
     "@nestjs/platform-express": "^8.4.7",
     "@nestjs/typeorm": "^8.1.4",
     "@polkadot/util-crypto": "^9.7.2",
-    "@subsquid/substrate-processor": "^0.8.0",
+    "@subsquid/substrate-processor": "^1.4.1",
     "@unique-nft/opal-testnet-types": "^0.5.2",
     "@unique-nft/quartz-mainnet-types": "^0.6.0",
     "@unique-nft/sdk": "^0.4.13",
