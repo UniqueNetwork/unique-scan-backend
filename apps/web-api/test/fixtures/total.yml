@@ -1,0 +1,20 @@
+entity: total
+items:
+  transfers:
+    name: 'transfers'
+    count: 10000
+  events:
+    name: 'events'
+    count: 600000
+  extrinsics:
+    name: 'extrinsics'
+    count: 400000
+  blocks:
+    name: 'blocks'
+    count: 200000
+  collections:
+    name: 'collections'
+    count: 150
+  tokens:
+    name: 'tokens'
+    count: 10000
