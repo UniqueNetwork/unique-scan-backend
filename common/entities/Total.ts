@@ -7,5 +7,5 @@ export class Total {
   name: string;
 
   @Column('bigint', { name: 'count' })
-  count: string;
+  count: number;
 }
