@@ -4,11 +4,21 @@ import { CrawlerService } from './crawler.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(CrawlerModule, {
-    logger: ['log', 'error', 'warn', 'verbose'],
+    logger: [
+      'log',
+      'error',
+      'warn',
+      // 'verbose'
+    ],
   });
 
-  const crawlerService = app.get(CrawlerService);
+  try {
+    const crawlerService = app.get(CrawlerService);
 
-  crawlerService.subscribeAll(process.env.SCAN_FORCE_RESCAN === 'true');
+    await crawlerService.subscribe(process.env.SCAN_FORCE_RESCAN === 'true');
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(err);
+  }
 }
 bootstrap();
