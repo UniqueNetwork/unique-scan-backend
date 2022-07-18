@@ -10,6 +10,7 @@ import {
 import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
+  GQLWhereOpsInt,
   GQLWhereOpsString,
   IDataListResponse,
   IGQLQueryArgs,
@@ -25,8 +26,8 @@ class StatisticsWhereParams implements TWhereParams<StatisticsDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   name?: GQLWhereOpsString;
 
-  @Field(() => GQLWhereOpsString, { nullable: true })
-  count?: GQLWhereOpsString;
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  count?: GQLWhereOpsInt;
 
   @Field(() => [StatisticsWhereParams], { nullable: true })
   _and?: StatisticsWhereParams[];

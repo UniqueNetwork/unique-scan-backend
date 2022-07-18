@@ -23,6 +23,8 @@ import { ExtrinsicModule } from './extrinsic/extrinsic.module';
 import { AccountModule } from './account/account.module';
 import { BlockModule } from './block/block.module';
 import { TimestampTransformInterceptor } from './timestamp.interceptor';
+import { Total } from '@entities/Total';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { TimestampTransformInterceptor } from './timestamp.interceptor';
         Event,
         Extrinsic,
         Account,
+        Total,
       ],
     }),
     GraphQLModule.forRoot({
@@ -55,6 +58,7 @@ import { TimestampTransformInterceptor } from './timestamp.interceptor';
     ExtrinsicModule,
     AccountModule,
     BlockModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [
