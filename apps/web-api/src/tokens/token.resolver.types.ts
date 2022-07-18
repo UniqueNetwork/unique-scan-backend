@@ -1,4 +1,10 @@
-import { ArgsType, Field, InputType, ObjectType } from '@nestjs/graphql';
+import {
+  ArgsType,
+  Field,
+  InputType,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
@@ -9,8 +15,10 @@ import {
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
-import { TokenDTO } from './token.dto';
+import { TokenDTO, TokenEnum } from './token.dto';
 import { CollectionDTO } from '../collection/collection.dto';
+
+registerEnumType(TokenEnum, { name: 'TokenEnum' });
 
 @InputType()
 export class TokenWhereParams implements TWhereParams<TokenDTO> {
@@ -71,6 +79,9 @@ export class QueryArgs
   extends GQLQueryPaginationArgs
   implements IGQLQueryArgs<TokenDTO>
 {
+  @Field(() => TokenEnum, { nullable: true })
+  distinct_on?: TokenEnum;
+
   @Field(() => TokenWhereParams, { nullable: true })
   where?: TokenWhereParams;
 

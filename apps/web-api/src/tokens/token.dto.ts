@@ -2,6 +2,16 @@ import { Tokens } from '@entities/Tokens';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSONObject } from 'graphql-type-json';
 
+export enum TokenEnum {
+  token_id = 'token_id',
+  collection_id = 'collection_id',
+  owner = 'owner',
+  owner_normalized = 'owner_normalized',
+  token_prefix = 'token_prefix',
+  collection_name = 'collection_name',
+  token_name = 'token_name',
+}
+
 @ObjectType('token')
 export class TokenDTO implements Partial<Tokens> {
   @Field(() => Int)
