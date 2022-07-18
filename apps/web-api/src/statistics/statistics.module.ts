@@ -1,11 +1,11 @@
 import { Total } from '@entities/Total';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BlockResolver } from './statistics.resolver';
-import { BlockService } from './block.service';
+import { StatisticsResolver } from './statistics.resolver';
+import { StatisticsService } from './statistics.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Total])],
-  providers: [BlockResolver, BlockService],
+  providers: [StatisticsResolver, StatisticsService],
 })
-export class BlockModule {}
+export class StatisticsModule {}
