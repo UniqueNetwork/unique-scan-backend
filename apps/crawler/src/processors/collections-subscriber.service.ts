@@ -10,9 +10,10 @@ import { normalizeSubstrateAddress } from '@common/utils';
 import { CollectionInfo, CollectionLimits } from '@unique-nft/sdk/tokens';
 import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
+import ISubscriberService from './subscriber.interface';
 
 @Injectable()
-export class CollectionsSubscriberService {
+export class CollectionsSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(CollectionsSubscriberService.name);
 
   constructor(
@@ -22,7 +23,9 @@ export class CollectionsSubscriberService {
     private tokensRepository: Repository<Tokens>,
     private processorService: ProcessorService,
     private sdkService: SdkService,
-  ) {
+  ) {}
+
+  subscribe() {
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE_COLLECTION = [
       // Insert
@@ -78,8 +81,9 @@ export class CollectionsSubscriberService {
       const urlPattern = /^["']?(http[s]?:\/\/[^"']+)["']?$/;
 
       if (
-        schema_version === SchemaVersion.IMAGE_URL &&
         offchain_schema &&
+        schema_version.toLocaleLowerCase() ===
+          SchemaVersion.IMAGE_URL.toLocaleLowerCase() &&
         urlPattern.test(offchain_schema)
       ) {
         const match = offchain_schema.match(urlPattern);

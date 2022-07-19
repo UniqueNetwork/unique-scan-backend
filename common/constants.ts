@@ -22,7 +22,7 @@ export enum EventName {
 }
 
 export enum SchemaVersion {
-  IMAGE_URL = 'ImageUrl',
+  IMAGE_URL = 'ImageURL',
   UNIQUE = 'Unique',
 }
 

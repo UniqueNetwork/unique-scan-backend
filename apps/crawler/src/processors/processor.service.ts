@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { SubstrateProcessor } from '@subsquid/substrate-processor';
 import {
   TypeormDatabase,
@@ -57,6 +57,8 @@ export class ProcessorService {
 
   private substrateProcessor: SubstrateProcessor<Store>;
 
+  private readonly logger = new Logger(ProcessorService.name);
+
   constructor(
     private dataSource: DataSource,
     private connection: Connection,
@@ -75,6 +77,12 @@ export class ProcessorService {
   }
 
   async run(forceRescan) {
+    this.logger.log({
+      msg: 'Run processor service...',
+      forceRescan,
+      ...this.processorConfigService.getAllParams(),
+    });
+
     const range = this.processorConfigService.getRange();
 
     if (forceRescan && !isNaN(range.from)) {

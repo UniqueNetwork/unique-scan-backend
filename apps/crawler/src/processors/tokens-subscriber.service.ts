@@ -9,9 +9,10 @@ import { ProcessorService } from './processor.service';
 import { TokenInfo } from '@unique-nft/sdk/types';
 import { EventName } from '@common/constants';
 import { normalizeSubstrateAddress, parseNestingAddress } from '@common/utils';
+import ISubscriberService from './subscriber.interface';
 
 @Injectable()
-export class TokensSubscriberService {
+export class TokensSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(TokensSubscriberService.name);
 
   constructor(
@@ -19,7 +20,9 @@ export class TokensSubscriberService {
     private tokensRepository: Repository<Tokens>,
     private processorService: ProcessorService,
     private sdkService: SdkService,
-  ) {
+  ) {}
+
+  subscribe() {
     const EVENTS_TO_UPDATE = [
       // Insert
       EventName.ITEM_CREATED,
