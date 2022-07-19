@@ -2,7 +2,7 @@ import { Tokens } from '@entities/Tokens';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSONObject } from 'graphql-type-json';
 
-export enum TokenEnum {
+export enum TokenDistinctFieldsEnum {
   token_id = 'token_id',
   collection_id = 'collection_id',
   owner = 'owner',

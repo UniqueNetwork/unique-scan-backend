@@ -15,10 +15,10 @@ import {
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
-import { TokenDTO, TokenEnum } from './token.dto';
+import { TokenDistinctFieldsEnum, TokenDTO } from './token.dto';
 import { CollectionDTO } from '../collection/collection.dto';
 
-registerEnumType(TokenEnum, { name: 'TokenEnum' });
+registerEnumType(TokenDistinctFieldsEnum, { name: 'TokenEnum' });
 
 @InputType()
 export class TokenWhereParams implements TWhereParams<TokenDTO> {
@@ -79,8 +79,8 @@ export class QueryArgs
   extends GQLQueryPaginationArgs
   implements IGQLQueryArgs<TokenDTO>
 {
-  @Field(() => TokenEnum, { nullable: true })
-  distinct_on?: TokenEnum;
+  @Field(() => TokenDistinctFieldsEnum, { nullable: true })
+  distinct_on?: TokenDistinctFieldsEnum;
 
   @Field(() => TokenWhereParams, { nullable: true })
   where?: TokenWhereParams;
