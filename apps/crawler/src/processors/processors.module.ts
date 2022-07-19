@@ -1,3 +1,4 @@
+import { Block } from '@entities/Block';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
 import { Module } from '@nestjs/common';
@@ -9,19 +10,25 @@ import { ProcessorService } from './processor.service';
 import { SubstrateProcessor } from '@subsquid/substrate-processor';
 import { CollectionsSubscriberService } from './collections-subscriber.service';
 import { TokensSubscriberService } from './tokens-subscriber.service';
+import { BlocksSubscriberService } from './blocks-subscriber.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Collections, Tokens]), ConfigModule],
+  imports: [
+    TypeOrmModule.forFeature([Block, Collections, Tokens]),
+    ConfigModule,
+  ],
   providers: [
     SubstrateProcessor,
     ProcessorService,
     SdkService,
     ProcessorConfigService,
+    BlocksSubscriberService,
     CollectionsSubscriberService,
     TokensSubscriberService,
   ],
   exports: [
     ProcessorService,
+    BlocksSubscriberService,
     CollectionsSubscriberService,
     TokensSubscriberService,
   ],
