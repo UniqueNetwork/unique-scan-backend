@@ -56,18 +56,11 @@ export class CollectionsSubscriberService {
 
   private async getCollectionData(
     collectionId: number,
-  ): Promise<[CollectionInfo | undefined, CollectionLimits | undefined]> {
-    try {
-      const result = await Promise.all([
-        this.sdkService.getCollection(collectionId),
-        this.sdkService.getCollectionLimits(collectionId),
-      ]);
-      return result;
-    } catch (err) {
-      console.log(err);
-    }
-
-    return Promise.resolve([undefined, undefined]);
+  ): Promise<[CollectionInfo | null, CollectionLimits | null]> {
+    return Promise.all([
+      this.sdkService.getCollection(collectionId),
+      this.sdkService.getCollectionLimits(collectionId),
+    ]);
   }
 
   /**
@@ -197,7 +190,6 @@ export class CollectionsSubscriberService {
       const collectionId = this.getCollectionIdFromArgs(args);
 
       log.collectionId = collectionId;
-      console.log(blockNumber, eventName, collectionId);
 
       const [collectionInfo, collectionLimits] = await this.getCollectionData(
         collectionId,
@@ -233,7 +225,6 @@ export class CollectionsSubscriberService {
 
       this.logger.verbose({ ...log });
     } catch (err) {
-      console.log('ERROR', err);
       this.logger.error({ ...log, error: err.message });
     }
   }
