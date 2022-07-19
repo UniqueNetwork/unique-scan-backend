@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Tokens } from '@entities/Tokens';
 import { SdkService } from '../sdk.service';
@@ -74,5 +75,105 @@ export class TokensSubscriberService {
       data,
       parent_id,
     };
+  }
+
+  private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
+    // const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
+
+    const {
+      block: { height: blockNumber, timestamp: blockTimestamp },
+      event: { name: eventName, args },
+    } = ctx;
+
+    // console.log('ctx.event', ctx.event);
+    // console.log('eventName', eventName);
+    // console.log('args', args);
+
+    const log = {
+      eventName,
+      blockNumber,
+      blockTimestamp,
+      entity: null as null | object | string,
+      collectionId: null as null | number,
+      tokenId: null as null | number,
+    };
+
+    try {
+      const [collectionId, tokenId] = args as [number, number];
+
+      log.collectionId = collectionId;
+      log.tokenId = tokenId;
+
+      if (tokenId === 0) {
+        throw new Error('Bad tokenId');
+      }
+
+      const tokenData = await this.getTokenData(collectionId, tokenId);
+
+      if (tokenData) {
+        const dataToWrite = this.prepareDataToWrite(tokenData);
+
+        log.entity = dataToWrite;
+
+        // Write collection data into db
+        await this.tokensRepository.upsert(
+          {
+            ...dataToWrite,
+            date_of_creation:
+              eventName === EventName.ITEM_CREATED ? blockTimestamp : undefined,
+          },
+          ['collection_id', 'token_id'],
+        );
+      } else {
+        // No entity returned from sdk. Most likely it was destroyed in a future block.
+        log.entity = null;
+
+        // Delete db record
+        await this.tokensRepository.delete({
+          collection_id: collectionId,
+          token_id: tokenId,
+        });
+      }
+
+      this.logger.verbose({ ...log });
+    } catch (err) {
+      this.logger.error({ ...log, error: err.message });
+    }
+  }
+
+  private async destroyHandler(ctx: EventHandlerContext<Store>): Promise<void> {
+    const {
+      block: { height: blockNumber, timestamp: blockTimestamp },
+      event: { name: eventName, args },
+    } = ctx;
+
+    // console.log('ctx.event', ctx.event);
+    // console.log('eventName', eventName);
+    // console.log('args', args);
+
+    const log = {
+      eventName,
+      blockNumber,
+      blockTimestamp,
+      collectionId: null as null | number,
+      tokenId: null as null | number,
+    };
+
+    try {
+      const [collectionId, tokenId] = args as [number, number];
+
+      log.collectionId = collectionId;
+      log.tokenId = tokenId;
+
+      // Delete db record
+      await this.tokensRepository.delete({
+        collection_id: collectionId,
+        token_id: tokenId,
+      });
+
+      this.logger.verbose({ ...log });
+    } catch (err) {
+      this.logger.error({ ...log, error: err.message });
+    }
   }
 }

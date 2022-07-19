@@ -8,6 +8,7 @@ import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
 import { SubstrateProcessor } from '@subsquid/substrate-processor';
 import { CollectionsSubscriberService } from './collections-subscriber.service';
+import { TokensSubscriberService } from './tokens-subscriber.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Collections, Tokens]), ConfigModule],
@@ -17,7 +18,12 @@ import { CollectionsSubscriberService } from './collections-subscriber.service';
     SdkService,
     ProcessorConfigService,
     CollectionsSubscriberService,
+    TokensSubscriberService,
   ],
-  exports: [ProcessorService, CollectionsSubscriberService],
+  exports: [
+    ProcessorService,
+    CollectionsSubscriberService,
+    TokensSubscriberService,
+  ],
 })
 export class ProcessorsModule {}

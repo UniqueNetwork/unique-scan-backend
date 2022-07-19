@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ProcessorService } from './processors/processor.service';
 import { CollectionsSubscriberService } from './processors/collections-subscriber.service';
+import { TokensSubscriberService } from './processors/tokens-subscriber.service';
 import { ProcessorConfigService } from './processor.config.service';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class CrawlerService {
     private processorConfigService: ProcessorConfigService,
     private processorService: ProcessorService,
     private collectionsSubscriberService: CollectionsSubscriberService,
+    private tokensSubscriberService: TokensSubscriberService,
   ) {}
 
   async subscribe(forceRescan = false) {
