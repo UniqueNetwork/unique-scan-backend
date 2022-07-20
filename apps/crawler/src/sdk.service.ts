@@ -24,7 +24,7 @@ export class SdkService {
   async getCollection(collectionId: number) {
     const sdk = await this.getSdk();
 
-    const result = await sdk.collections.get({ collectionId });
+    const result = await sdk.collections.get_new({ collectionId });
 
     return result;
   }
@@ -40,6 +40,11 @@ export class SdkService {
   async getToken(collectionId: number, tokenId: number) {
     const sdk = await this.getSdk();
 
-    return sdk.tokens.get({ collectionId, tokenId });
+    const result = await sdk.tokens.get({ collectionId, tokenId });
+
+    const result1 = await sdk.tokens.get_new({ collectionId, tokenId });
+    console.log(result1);
+
+    return result;
   }
 }

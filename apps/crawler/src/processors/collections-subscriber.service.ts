@@ -5,9 +5,13 @@ import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Store } from '@subsquid/typeorm-store';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
-import { EventName, SchemaVersion } from '@common/constants';
+import { EventName } from '@common/constants';
 import { normalizeSubstrateAddress } from '@common/utils';
-import { CollectionInfo, CollectionLimits } from '@unique-nft/sdk/tokens';
+import {
+  CollectionInfoWithSchema,
+  CollectionLimits,
+  UniqueCollectionSchemaDecoded,
+} from '@unique-nft/sdk/tokens';
 import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
 import ISubscriberService from './subscriber.interface';
@@ -59,55 +63,61 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
   private async getCollectionData(
     collectionId: number,
-  ): Promise<[CollectionInfo | null, CollectionLimits | null]> {
+  ): Promise<[CollectionInfoWithSchema | null, CollectionLimits | null]> {
     return Promise.all([
       this.sdkService.getCollection(collectionId),
       this.sdkService.getCollectionLimits(collectionId),
     ]);
   }
 
-  /**
-   * Creates 'collection_cover' field value from other fields.
-   */
-  createCollectionCoverValue({
-    collection_id,
-    schema_version,
-    offchain_schema,
-    variable_on_chain_schema,
-  }) {
-    let result = null;
-
+  private processJsonStringifiedValue(rawValue) {
+    let result: object | null = null;
     try {
-      const urlPattern = /^["']?(http[s]?:\/\/[^"']+)["']?$/;
+      result = typeof rawValue === 'object' ? rawValue : JSON.parse(rawValue);
+    } catch (err) {
+      // Bad value, log it
+      result = { raw: rawValue };
+    }
 
-      if (
-        offchain_schema &&
-        schema_version.toLocaleLowerCase() ===
-          SchemaVersion.IMAGE_URL.toLocaleLowerCase() &&
-        urlPattern.test(offchain_schema)
-      ) {
-        const match = offchain_schema.match(urlPattern);
-        const plainUrl = match[1];
-        result = String(plainUrl).replace('{id}', '1');
-      } else if (variable_on_chain_schema?.collectionCover) {
-        result = variable_on_chain_schema.collectionCover;
-      }
-    } catch (error) {
-      this.logger.error({
-        error: 'Collection cover processing error',
-        message: error.message,
-        collection_id,
-        schema_version,
-        offchain_schema,
-        variable_on_chain_schema,
-      });
+    return result;
+  }
+
+  private processSchema(schema: UniqueCollectionSchemaDecoded) {
+    const { schemaName } = schema;
+
+    let result = null;
+    if (schemaName == '_old_') {
+      const {
+        coverPicture: { fullUrl, ipfsCid },
+        oldProperties: {
+          _old_schemaVersion: schemaVersion,
+          _old_offchainSchema: offchainSchema,
+          _old_constOnChainSchema: rawConstOnChainSchema,
+          _old_variableOnChainSchema: rawVariableOnChainSchema,
+        },
+      } = schema;
+
+      result = {
+        collectionCover: ipfsCid || fullUrl,
+        schemaVersion,
+        offchainSchema,
+        constOnChainSchema: this.processJsonStringifiedValue(
+          rawConstOnChainSchema,
+        ),
+        variableOnChainSchema: this.processJsonStringifiedValue(
+          rawVariableOnChainSchema,
+        ),
+      };
+    } else {
+      // todo: Process 'unique' schema when ready
+      this.logger.warn(`Unknown schema name ${schemaName}`);
     }
 
     return result;
   }
 
   prepareDataToWrite(
-    collectionInfo: CollectionInfo,
+    collectionInfo: CollectionInfoWithSchema,
     collectionLimits: CollectionLimits,
   ) {
     const {
@@ -118,14 +128,17 @@ export class CollectionsSubscriberService implements ISubscriberService {
       sponsorship,
       tokenPrefix: token_prefix,
       mode,
-      properties: {
-        offchainSchema: offchain_schema,
-        constOnChainSchema: const_chain_schema,
-        variableOnChainSchema: rawVariableOnChainSchema,
-        schemaVersion: schema_version,
-      } = {},
+      schema,
       permissions: { mintMode: mint_mode },
     } = collectionInfo;
+
+    const {
+      collectionCover = null,
+      schemaVersion = null,
+      offchainSchema = null,
+      constOnChainSchema = null,
+      variableOnChainSchema = null,
+    } = this.processSchema(schema);
 
     const {
       tokenLimit: token_limit,
@@ -136,43 +149,27 @@ export class CollectionsSubscriberService implements ISubscriberService {
       ownerCanDestroy: owner_can_destroy,
     } = collectionLimits;
 
-    let processedVariableOnChainSchema: object | null = null;
-    try {
-      processedVariableOnChainSchema =
-        typeof rawVariableOnChainSchema === 'object'
-          ? rawVariableOnChainSchema
-          : JSON.parse(rawVariableOnChainSchema);
-    } catch (err) {
-      // Bad value, log it
-      processedVariableOnChainSchema = { raw: rawVariableOnChainSchema };
-    }
-
     return {
       collection_id,
       owner,
       name,
       description,
-      offchain_schema,
+      offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
-      const_chain_schema,
-      variable_on_chain_schema: processedVariableOnChainSchema,
+      const_chain_schema: constOnChainSchema,
+      variable_on_chain_schema: variableOnChainSchema,
       limits_account_ownership,
       limits_sponsore_data_size,
       limits_sponsore_data_rate,
       owner_can_transfer,
       owner_can_destroy,
       sponsorship: sponsorship?.isConfirmed ? sponsorship.address : null,
-      schema_version,
+      schema_version: schemaVersion,
       token_prefix,
       mode,
       mint_mode,
       owner_normalized: normalizeSubstrateAddress(owner),
-      collection_cover: this.createCollectionCoverValue({
-        collection_id,
-        schema_version,
-        offchain_schema,
-        variable_on_chain_schema: processedVariableOnChainSchema,
-      }),
+      collection_cover: collectionCover,
     };
   }
 
