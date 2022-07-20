@@ -30,7 +30,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     this.applyFilters(qb, queryArgs);
     const data = await qb.getRawMany();
-    const count = await qb.getCount();
+    const count = await this.getCountByFilters(qb, queryArgs);
 
     return { data, count };
   }
@@ -69,6 +69,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
+    this.applyDistinctOn(qb, queryArgs);
   }
 
   private select(qb: SelectQueryBuilder<Tokens>): void {
