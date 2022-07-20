@@ -6,10 +6,10 @@ import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Tokens } from '@entities/Tokens';
 import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
-import { TokenInfo } from '@unique-nft/sdk/types';
 import { EventName } from '@common/constants';
 import { normalizeSubstrateAddress, parseNestingAddress } from '@common/utils';
 import ISubscriberService from './subscriber.interface';
+import { UniqueTokenDecoded } from '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
@@ -51,38 +51,48 @@ export class TokensSubscriberService implements ISubscriberService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
-  ): Promise<TokenInfo | null> {
+  ): Promise<UniqueTokenDecoded | null> {
     const result = await this.sdkService.getToken(collectionId, tokenId);
 
     return result ? result : null;
   }
 
-  prepareDataToWrite(sdkEntity) {
+  prepareDataToWrite(sdkEntity: UniqueTokenDecoded) {
     const {
-      id: token_id,
+      tokenId: token_id,
       collectionId: collection_id,
-      owner,
-      properties: { constData: data = {} } = {},
+      owner: rawOwner,
+      image,
+      attributes,
     } = sdkEntity;
 
+    const owner = rawOwner.Ethereum || rawOwner.Substrate;
+    console.log('rawOwner', collection_id, token_id, rawOwner);
     const parsedNestingAddress = parseNestingAddress(owner);
     const parent_id = parsedNestingAddress
       ? `${parsedNestingAddress.collectionId}_${parsedNestingAddress.tokenId}`
       : null;
+
+    if (parent_id) {
+      console.log('Added parent_id', parent_id);
+    }
 
     return {
       token_id,
       collection_id,
       owner,
       owner_normalized: normalizeSubstrateAddress(owner),
-      data,
+      data: {
+        image: image.fullUrl,
+        attributes: Object.fromEntries(
+          Object.values(attributes).map(({ name, value }) => [name, value]),
+        ),
+      },
       parent_id,
     };
   }
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
-    // const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
-
     const {
       block: { height: blockNumber, timestamp: blockTimestamp },
       event: { name: eventName, args },
@@ -110,6 +120,15 @@ export class TokensSubscriberService implements ISubscriberService {
       if (tokenId === 0) {
         throw new Error('Bad tokenId');
       }
+
+      // ! DEBUG
+      // if (
+      //   ![829, 835, 836, 901, 902, 908, 909, 921, 922, 926, 927, 936].includes(
+      //     collectionId,
+      //   )
+      // ) {
+      //   return;
+      // }
 
       const tokenData = await this.getTokenData(collectionId, tokenId);
 

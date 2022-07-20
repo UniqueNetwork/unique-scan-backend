@@ -40,10 +40,7 @@ export class SdkService {
   async getToken(collectionId: number, tokenId: number) {
     const sdk = await this.getSdk();
 
-    const result = await sdk.tokens.get({ collectionId, tokenId });
-
-    const result1 = await sdk.tokens.get_new({ collectionId, tokenId });
-    console.log(result1);
+    const result = await sdk.tokens.get_new({ collectionId, tokenId });
 
     return result;
   }
