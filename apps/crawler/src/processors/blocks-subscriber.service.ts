@@ -3,7 +3,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from '@subsquid/typeorm-store';
 import {
-  EventHandlerContext,
+  BlockHandlerContext,
   SubstrateBlock,
 } from '@subsquid/substrate-processor';
 import { ProcessorService } from './processor.service';
@@ -33,29 +33,7 @@ export class BlocksSubscriberService implements ISubscriberService {
           items: true,
         },
       } as const,
-      async (ctx) => {
-        // console.log(ctx);
-        // console.log(ctx.items);
-
-        const events = ctx.items
-          .filter(({ kind }) => kind === 'event')
-          .map((item) => item['event']);
-
-        const extrinsics = ctx.items
-          .filter(({ kind }) => kind === 'call')
-          .map((item) => {
-            const { name, extrinsic } = item as {
-              name: string;
-              extrinsic: object;
-            };
-            return { name, ...extrinsic };
-          });
-
-        // console.log(
-        //   'events',
-        //   events.map(({ name }) => name),
-        // );
-      },
+      this.upsertHandler.bind(this),
     );
   }
 
@@ -65,7 +43,7 @@ export class BlocksSubscriberService implements ISubscriberService {
     extrinsics: object[],
   ) {
     const { height, hash, parentHash, specId, timestamp } = block;
-    const [specName, specVersion] = specId.split('@');
+    const [specName, specVersion] = specId.split('@') as [string, number];
     return {
       block_number: height,
       block_hash: hash,
@@ -77,9 +55,9 @@ export class BlocksSubscriberService implements ISubscriberService {
         .length,
       new_accounts: events.filter(({ name }) => name === EVENT_ENDOWED).length,
       total_extrinsics: extrinsics.length,
-      timestamp: normalizeTimestamp(timestamp),
+      timestamp: String(normalizeTimestamp(timestamp)),
 
-      // todo
+      // todo or not todo
       extrinsics_root: '',
       state_root: '',
       session_length: '0',
@@ -88,26 +66,46 @@ export class BlocksSubscriberService implements ISubscriberService {
     };
   }
 
-  private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
+  private async upsertHandler(ctx: BlockHandlerContext<Store>): Promise<void> {
     // const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
 
-    const {
-      block: { height: blockNumber, timestamp: blockTimestamp },
-      event: { name: eventName, args },
-    } = ctx;
+    const { block, items } = ctx;
 
-    console.log('ctx', ctx);
-    // console.log('ctx.event', ctx.event);
-    // console.log('eventName', eventName);
-    // console.log('args', args);
+    const { height: blockNumber } = block;
 
     const log = {
-      eventName,
       blockNumber,
-      blockTimestamp,
-      entity: null as null | object | string,
-      collectionId: null as null | number,
-      tokenId: null as null | number,
     };
+
+    try {
+      const events = items
+        .filter(({ kind }) => kind === 'event')
+        .map((item) => item['event']);
+
+      const extrinsics = items
+        .filter(({ kind }) => kind === 'call')
+        .map((item) => {
+          const { name, extrinsic } = item as {
+            name: string;
+            extrinsic: object;
+          };
+          return { name, ...extrinsic };
+        });
+
+      const blockData = this.getBlockData(block, events, extrinsics);
+
+      await this.blocksRepository.upsert(blockData, ['block_number']);
+
+      const { total_events: totalEvents, total_extrinsics: totalExtrinsics } =
+        blockData;
+
+      this.logger.verbose({
+        ...log,
+        totalEvents,
+        totalExtrinsics,
+      });
+    } catch (error) {
+      this.logger.error({ ...log, error: error.message || error });
+    }
   }
 }
