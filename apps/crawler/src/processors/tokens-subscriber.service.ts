@@ -7,7 +7,7 @@ import { Tokens } from '@entities/Tokens';
 import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress, parseNestingAddress } from '@common/utils';
+import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import ISubscriberService from './subscriber.interface';
 import { TokenDecoded } from '@unique-nft/sdk/tokens';
 
@@ -58,7 +58,7 @@ export class TokensSubscriberService implements ISubscriberService {
   }
 
   prepareDataToWrite(sdkEntity: TokenDecoded) {
-    console.log(sdkEntity);
+    // console.log(sdkEntity);
     const {
       tokenId: token_id,
       collectionId: collection_id,
@@ -72,28 +72,26 @@ export class TokensSubscriberService implements ISubscriberService {
     }: { owner: { Ethereum?: string; Substrate?: string } } = sdkEntity;
 
     const owner = rawOwner?.Ethereum || rawOwner?.Substrate;
-    console.log('rawOwner', collection_id, token_id, rawOwner, parent);
-    // const parsedNestingAddress = parseNestingAddress(owner);
-    // const parent_id = parsedNestingAddress
-    //   ? `${parsedNestingAddress.collectionId}_${parsedNestingAddress.tokenId}`
-    //   : null;
 
-    // if (parent_id) {
-    //   console.log('Added parent_id', parent_id);
-    // }
+    let parentId = null;
+    if (parent) {
+      const { collectionId, tokenId } = parent;
+      parentId = `${collectionId}_${tokenId}`;
+    }
 
     return {
       token_id,
       collection_id,
       owner,
       owner_normalized: normalizeSubstrateAddress(owner),
+      // todo: Find out what should we store here
       data: {
-        image: image.fullUrl,
+        image: image.fullUrl || image.ipfsCid,
         attributes: Object.fromEntries(
           Object.values(attributes).map(({ name, value }) => [name, value]),
         ),
       },
-      // parent_id,
+      parent_id: parentId,
     };
   }
 
@@ -147,7 +145,9 @@ export class TokensSubscriberService implements ISubscriberService {
           {
             ...dataToWrite,
             date_of_creation:
-              eventName === EventName.ITEM_CREATED ? blockTimestamp : undefined,
+              eventName === EventName.ITEM_CREATED
+                ? normalizeTimestamp(blockTimestamp)
+                : undefined,
           },
           ['collection_id', 'token_id'],
         );
