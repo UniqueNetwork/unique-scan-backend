@@ -12,8 +12,8 @@ import { Block } from '@entities/Block';
 import { normalizeTimestamp } from '@common/utils';
 import { EventMethod, EventSection } from '@common/constants';
 
-const TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
-const ENDOWED = `${EventSection.BALANCES}.${EventMethod.ENDOWED}`;
+const EVENT_TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
+const EVENT_ENDOWED = `${EventSection.BALANCES}.${EventMethod.ENDOWED}`;
 
 @Injectable()
 export class BlocksSubscriberService implements ISubscriberService {
@@ -34,21 +34,27 @@ export class BlocksSubscriberService implements ISubscriberService {
         },
       } as const,
       async (ctx) => {
-        console.log(ctx);
-        console.log(ctx.items);
+        // console.log(ctx);
+        // console.log(ctx.items);
 
         const events = ctx.items
           .filter(({ kind }) => kind === 'event')
           .map((item) => item['event']);
 
-        // const extrinsics = ctx.items
-        //   .filter(({ kind }) => kind === 'call')
-        //   .map((item) => {
-        //     const { name, call, extrinsic } = item;
-        //     return { name, ...extrinsic };
-        //   });
+        const extrinsics = ctx.items
+          .filter(({ kind }) => kind === 'call')
+          .map((item) => {
+            const { name, extrinsic } = item as {
+              name: string;
+              extrinsic: object;
+            };
+            return { name, ...extrinsic };
+          });
 
-        console.log('events', events);
+        // console.log(
+        //   'events',
+        //   events.map(({ name }) => name),
+        // );
       },
     );
   }
@@ -56,7 +62,7 @@ export class BlocksSubscriberService implements ISubscriberService {
   private getBlockData(
     block: SubstrateBlock,
     events: { name: string }[],
-    extrinsics: { name: string }[],
+    extrinsics: object[],
   ) {
     const { height, hash, parentHash, specId, timestamp } = block;
     const [specName, specVersion] = specId.split('@');
@@ -67,8 +73,9 @@ export class BlocksSubscriberService implements ISubscriberService {
       spec_name: specName,
       spec_version: specVersion,
       total_events: events.length,
-      num_transfers: events.filter(({ name }) => name === TRANSFER).length,
-      new_accounts: events.filter(({ name }) => name === ENDOWED).length,
+      num_transfers: events.filter(({ name }) => name === EVENT_TRANSFER)
+        .length,
+      new_accounts: events.filter(({ name }) => name === EVENT_ENDOWED).length,
       total_extrinsics: extrinsics.length,
       timestamp: normalizeTimestamp(timestamp),
 

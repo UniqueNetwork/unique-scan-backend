@@ -35,9 +35,9 @@ export enum EventMethod {
 }
 
 export enum EventSection {
-  SYSTEM = 'system',
-  BALANCES = 'balances',
-  TREASURY = 'treasury',
+  SYSTEM = 'System',
+  BALANCES = 'Balances',
+  TREASURY = 'Treasury',
 }
 
 export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;

@@ -124,15 +124,6 @@ export class TokensSubscriberService implements ISubscriberService {
         throw new Error('Bad tokenId');
       }
 
-      // ! DEBUG
-      // if (
-      //   ![829, 835, 836, 901, 902, 908, 909, 921, 922, 926, 927, 936].includes(
-      //     collectionId,
-      //   )
-      // ) {
-      //   return;
-      // }
-
       const tokenData = await this.getTokenData(collectionId, tokenId);
 
       if (tokenData) {
