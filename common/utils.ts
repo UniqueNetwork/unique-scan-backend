@@ -32,3 +32,7 @@ export function parseNestingAddress(address) {
     tokenId: parseInt(tokenIdString, 16) || null,
   };
 }
+
+export function normalizeTimestamp(timestamp: number) {
+  return Math.floor(timestamp / 1000);
+}

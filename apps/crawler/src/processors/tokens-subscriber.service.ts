@@ -9,7 +9,7 @@ import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
 import { normalizeSubstrateAddress, parseNestingAddress } from '@common/utils';
 import ISubscriberService from './subscriber.interface';
-import { UniqueTokenDecoded } from '@unique-nft/sdk/tokens';
+import { TokenDecoded } from '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
@@ -51,31 +51,36 @@ export class TokensSubscriberService implements ISubscriberService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
-  ): Promise<UniqueTokenDecoded | null> {
+  ): Promise<TokenDecoded | null> {
     const result = await this.sdkService.getToken(collectionId, tokenId);
 
     return result ? result : null;
   }
 
-  prepareDataToWrite(sdkEntity: UniqueTokenDecoded) {
+  prepareDataToWrite(sdkEntity: TokenDecoded) {
+    console.log(sdkEntity);
     const {
       tokenId: token_id,
       collectionId: collection_id,
-      owner: rawOwner,
       image,
       attributes,
+      parent,
     } = sdkEntity;
 
-    const owner = rawOwner.Ethereum || rawOwner.Substrate;
-    console.log('rawOwner', collection_id, token_id, rawOwner);
-    const parsedNestingAddress = parseNestingAddress(owner);
-    const parent_id = parsedNestingAddress
-      ? `${parsedNestingAddress.collectionId}_${parsedNestingAddress.tokenId}`
-      : null;
+    const {
+      owner: rawOwner,
+    }: { owner: { Ethereum?: string; Substrate?: string } } = sdkEntity;
 
-    if (parent_id) {
-      console.log('Added parent_id', parent_id);
-    }
+    const owner = rawOwner?.Ethereum || rawOwner?.Substrate;
+    console.log('rawOwner', collection_id, token_id, rawOwner, parent);
+    // const parsedNestingAddress = parseNestingAddress(owner);
+    // const parent_id = parsedNestingAddress
+    //   ? `${parsedNestingAddress.collectionId}_${parsedNestingAddress.tokenId}`
+    //   : null;
+
+    // if (parent_id) {
+    //   console.log('Added parent_id', parent_id);
+    // }
 
     return {
       token_id,
@@ -88,7 +93,7 @@ export class TokensSubscriberService implements ISubscriberService {
           Object.values(attributes).map(({ name, value }) => [name, value]),
         ),
       },
-      parent_id,
+      // parent_id,
     };
   }
 

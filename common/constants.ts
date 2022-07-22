@@ -26,6 +26,20 @@ export enum SchemaVersion {
   UNIQUE = 'Unique',
 }
 
+export enum EventMethod {
+  TRANSFER = 'Transfer',
+  DEPOSIT = 'Deposit',
+  WITHDRAW = 'Withdraw',
+  ENDOWED = 'Endowed',
+  EXTRINSIC_SUCCESS = 'ExtrinsicSuccess',
+}
+
+export enum EventSection {
+  SYSTEM = 'system',
+  BALANCES = 'balances',
+  TREASURY = 'treasury',
+}
+
 export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
 
 export const NESTING_ADDRESS_PREFIX = '0xf8238ccfff8ed887463fd5e0';

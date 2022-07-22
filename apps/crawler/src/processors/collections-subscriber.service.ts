@@ -6,7 +6,7 @@ import { Store } from '@subsquid/typeorm-store';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress } from '@common/utils';
+import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import {
   CollectionInfoWithSchema,
   CollectionLimits,
@@ -16,6 +16,13 @@ import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
 import ISubscriberService from './subscriber.interface';
 
+type ParsedSchemaFields = {
+  collectionCover?: string;
+  schemaVersion?: string;
+  offchainSchema?: string;
+  constOnChainSchema?: object;
+  variableOnChainSchema?: object;
+};
 @Injectable()
 export class CollectionsSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(CollectionsSubscriberService.name);
@@ -82,15 +89,27 @@ export class CollectionsSubscriberService implements ISubscriberService {
     return result;
   }
 
-  private processSchema(schema: UniqueCollectionSchemaDecoded) {
-    const { schemaName } = schema;
+  private processSchema(
+    schema: UniqueCollectionSchemaDecoded,
+    collectionId: number,
+  ): ParsedSchemaFields {
+    let result = {};
 
-    let result = null;
+    if (!schema) {
+      this.logger.warn(`No collection schema ${collectionId}`);
+      return result;
+    }
+
+    // todo: Find out what to do with attributes
+
+    const { schemaName } = schema;
     if (schemaName == '_old_') {
       const {
         coverPicture: { fullUrl, ipfsCid },
+        schemaVersion,
+        attributesSchemaVersion,
         oldProperties: {
-          _old_schemaVersion: schemaVersion,
+          _old_schemaVersion: oldSchemaVersion,
           _old_offchainSchema: offchainSchema,
           _old_constOnChainSchema: rawConstOnChainSchema,
           _old_variableOnChainSchema: rawVariableOnChainSchema,
@@ -99,7 +118,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
       result = {
         collectionCover: ipfsCid || fullUrl,
-        schemaVersion,
+        schemaVersion: `${schemaName}@${schemaVersion}@${attributesSchemaVersion}@${oldSchemaVersion}`,
         offchainSchema,
         constOnChainSchema: this.processJsonStringifiedValue(
           rawConstOnChainSchema,
@@ -108,8 +127,18 @@ export class CollectionsSubscriberService implements ISubscriberService {
           rawVariableOnChainSchema,
         ),
       };
+    } else if (schemaName === 'unique') {
+      const {
+        coverPicture: { fullUrl, ipfsCid },
+        schemaVersion,
+        attributesSchemaVersion,
+      } = schema;
+
+      result = {
+        collectionCover: ipfsCid || fullUrl,
+        schemaVersion: `${schemaName}@${schemaVersion}@${attributesSchemaVersion}`,
+      };
     } else {
-      // todo: Process 'unique' schema when ready
       this.logger.warn(`Unknown schema name ${schemaName}`);
     }
 
@@ -120,6 +149,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
     collectionInfo: CollectionInfoWithSchema,
     collectionLimits: CollectionLimits,
   ) {
+    // console.log(collectionInfo);
     const {
       id: collection_id,
       owner,
@@ -138,7 +168,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
       offchainSchema = null,
       constOnChainSchema = null,
       variableOnChainSchema = null,
-    } = this.processSchema(schema);
+    } = this.processSchema(schema, collection_id);
 
     const {
       tokenLimit: token_limit,
@@ -212,7 +242,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
             ...dataToWrite,
             date_of_creation:
               eventName === EventName.COLLECTION_CREATED
-                ? blockTimestamp
+                ? normalizeTimestamp(blockTimestamp)
                 : undefined,
           },
           ['collection_id'],

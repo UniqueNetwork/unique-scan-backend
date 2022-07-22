@@ -2,10 +2,18 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from '@subsquid/typeorm-store';
-import { EventHandlerContext } from '@subsquid/substrate-processor';
+import {
+  EventHandlerContext,
+  SubstrateBlock,
+} from '@subsquid/substrate-processor';
 import { ProcessorService } from './processor.service';
 import ISubscriberService from './subscriber.interface';
 import { Block } from '@entities/Block';
+import { normalizeTimestamp } from '@common/utils';
+import { EventMethod, EventSection } from '@common/constants';
+
+const TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
+const ENDOWED = `${EventSection.BALANCES}.${EventMethod.ENDOWED}`;
 
 @Injectable()
 export class BlocksSubscriberService implements ISubscriberService {
@@ -26,10 +34,51 @@ export class BlocksSubscriberService implements ISubscriberService {
         },
       } as const,
       async (ctx) => {
-        // console.log(ctx.block.height);
-        // console.log(ctx.items);
+        console.log(ctx);
+        console.log(ctx.items);
+
+        const events = ctx.items
+          .filter(({ kind }) => kind === 'event')
+          .map((item) => item['event']);
+
+        // const extrinsics = ctx.items
+        //   .filter(({ kind }) => kind === 'call')
+        //   .map((item) => {
+        //     const { name, call, extrinsic } = item;
+        //     return { name, ...extrinsic };
+        //   });
+
+        console.log('events', events);
       },
     );
+  }
+
+  private getBlockData(
+    block: SubstrateBlock,
+    events: { name: string }[],
+    extrinsics: { name: string }[],
+  ) {
+    const { height, hash, parentHash, specId, timestamp } = block;
+    const [specName, specVersion] = specId.split('@');
+    return {
+      block_number: height,
+      block_hash: hash,
+      parent_hash: parentHash,
+      spec_name: specName,
+      spec_version: specVersion,
+      total_events: events.length,
+      num_transfers: events.filter(({ name }) => name === TRANSFER).length,
+      new_accounts: events.filter(({ name }) => name === ENDOWED).length,
+      total_extrinsics: extrinsics.length,
+      timestamp: normalizeTimestamp(timestamp),
+
+      // todo
+      extrinsics_root: '',
+      state_root: '',
+      session_length: '0',
+      total_issuance: '', // TODO: no need. may be
+      need_rescan: false,
+    };
   }
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
