@@ -40,4 +40,16 @@ export enum EventSection {
   TREASURY = 'Treasury',
 }
 
+export enum ExtrinsicSection {
+  PARACHAIN_SYSTEM = 'ParachainSystem',
+  TIMESTAMP = 'Timestamp',
+}
+
+export enum ExtrinsicMethod {
+  TRANSFER = 'transfer',
+  TRANSFER_ALL = 'transfer_all',
+  TRANSFER_KEEP_ALIVE = 'transfer_keep_alive',
+  VESTED_TRANSFER = 'vested_transfer',
+}
+
 export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
