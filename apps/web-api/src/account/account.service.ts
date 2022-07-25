@@ -33,4 +33,27 @@ export class AccountService extends BaseService<Account, AccountDTO> {
     const count = await qb.getCount();
     return { data, count };
   }
+
+  public async statistic({
+    fromDate,
+    toDate,
+  }: {
+    fromDate?: Date;
+    toDate?: Date;
+  }): Promise<any> {
+    const qb = await this.repo.createQueryBuilder();
+    qb.select(`date_trunc('hour', TO_TIMESTAMP(timestamp))`, 'date');
+    qb.addSelect('count(*)', 'count');
+    qb.groupBy('date');
+    qb.orderBy('date', 'DESC');
+
+    if (fromDate) {
+      qb.where(`"timestamp" >= ${this.formatDate(fromDate)}`);
+    }
+    if (toDate) {
+      qb.andWhere(`"timestamp" <= ${this.formatDate(fromDate)}`);
+    }
+
+    return qb.getRawMany();
+  }
 }

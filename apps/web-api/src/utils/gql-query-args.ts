@@ -132,3 +132,30 @@ export function ListDataType<T>(classRef: Type<T>): Type<IDataListResponse<T>> {
 
   return ListDataType as Type<IDataListResponse<T>>;
 }
+
+@ArgsType()
+export class DateRangeArgs {
+  @Field(() => Date)
+  fromDate!: Date;
+
+  @Field(() => Date, { nullable: true })
+  toDate?: Date;
+}
+
+@ObjectType()
+class StatisticDataEntity {
+  @Field(() => Date, { nullable: true })
+  date?: Date;
+
+  @Field(() => Int)
+  count!: number;
+
+  // @Field(() => String)
+  // chain!: string;
+}
+
+@ObjectType()
+export class StatisticDataResponse {
+  @Field(() => [StatisticDataEntity], { nullable: true })
+  data?: StatisticDataEntity[];
+}

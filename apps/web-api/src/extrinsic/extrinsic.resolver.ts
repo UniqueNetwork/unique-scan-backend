@@ -8,6 +8,7 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import {
+  DateRangeArgs,
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
@@ -15,6 +16,7 @@ import {
   IDataListResponse,
   IGQLQueryArgs,
   ListDataType,
+  StatisticDataResponse,
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
@@ -120,5 +122,13 @@ export class ExtrinsicResolver {
     @Args() args: QueryArgs,
   ): Promise<IDataListResponse<ExtrinsicDTO>> {
     return this.service.find(args);
+  }
+
+  @Query(() => StatisticDataResponse)
+  public async extrinsicsStatistics(
+    @Args() args: DateRangeArgs,
+  ): Promise<StatisticDataResponse> {
+    const data = await this.service.statistic(args);
+    return { data };
   }
 }
