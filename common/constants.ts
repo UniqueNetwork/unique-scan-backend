@@ -26,18 +26,18 @@ export enum SchemaVersion {
   UNIQUE = 'Unique',
 }
 
+export enum EventSection {
+  SYSTEM = 'System',
+  BALANCES = 'Balances',
+  TREASURY = 'Treasury',
+}
+
 export enum EventMethod {
   TRANSFER = 'Transfer',
   DEPOSIT = 'Deposit',
   WITHDRAW = 'Withdraw',
   ENDOWED = 'Endowed',
   EXTRINSIC_SUCCESS = 'ExtrinsicSuccess',
-}
-
-export enum EventSection {
-  SYSTEM = 'System',
-  BALANCES = 'Balances',
-  TREASURY = 'Treasury',
 }
 
 export enum ExtrinsicSection {

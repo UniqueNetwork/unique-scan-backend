@@ -36,6 +36,10 @@ const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER_KEEP_ALIVE,
   ExtrinsicMethod.VESTED_TRANSFER,
 ];
+
+const EVENT_NAMES_TO_SKIP = [
+  `${EventSection.SYSTEM}.${EventMethod.EXTRINSIC_SUCCESS}`,
+];
 interface IExtrinsicExtended extends SubstrateExtrinsic {
   name: string;
 }
@@ -50,6 +54,8 @@ interface IBlockItem {
 interface IEvent {
   name: string;
   extrinsic: SubstrateExtrinsic;
+  indexInBlock: number;
+  phase: string;
   args: { value?: string; amount?: string };
 }
 
@@ -62,6 +68,11 @@ interface IExtrinsicRecipient {
   // Balances.transfer_keep_alive
   // Vesting.vested_transfer
   dest?: { value: string };
+}
+
+interface IBlockCommonData {
+  timestamp: number;
+  blockNumber: number;
 }
 
 @Injectable()
@@ -102,8 +113,8 @@ export class BlocksSubscriberService implements ISubscriberService {
       .filter(({ kind }) => kind === 'event')
       .map((item) => item.event as IEvent);
 
-    // Save amount and fee for extrinsic's events
-    const valuesByExtrinsics = events.reduce((acc, curr) => {
+    // Save 'amount' and 'fee' for extrinsic's events
+    const extrinsicsValues = events.reduce((acc, curr) => {
       const { name, extrinsic, args } = curr;
 
       const extrinsicId = extrinsic?.id;
@@ -111,14 +122,16 @@ export class BlocksSubscriberService implements ISubscriberService {
         return acc;
       }
 
+      const rawAmount = args?.amount || args?.value;
+
       if (name === `${EventSection.BALANCES}.${EventMethod.TRANSFER}`) {
         // Save extrinsic amount
         acc[extrinsicId] = acc[extrinsicId] || {};
-        acc[extrinsicId].amount = getAmount(args.amount);
+        acc[extrinsicId].amount = getAmount(rawAmount);
       } else if (name === `${EventSection.TREASURY}.${EventMethod.DEPOSIT}`) {
         // Save extrinsic fee
         acc[extrinsicId] = acc[extrinsicId] || {};
-        acc[extrinsicId].fee = getAmount(args.value);
+        acc[extrinsicId].fee = getAmount(rawAmount);
       } else {
         return acc;
       }
@@ -129,42 +142,51 @@ export class BlocksSubscriberService implements ISubscriberService {
     return {
       count: events.length,
       events,
-      valuesByExtrinsics,
+      extrinsicsValues,
       numTransfers: events.filter(({ name }) => name === EVENT_TRANSFER).length,
       newAccounts: events.filter(({ name }) => name === EVENT_ENDOWED).length,
     };
   }
 
-  private processData(block: SubstrateBlock, items: IBlockItem[]) {
-    const { height, hash, parentHash, specId, timestamp: rawTimestamp } = block;
+  private processContextData(block: SubstrateBlock, items: IBlockItem[]) {
+    const processedEventsItems = this.processEventItems(items);
 
+    const processedExtrinsicsItems = this.processExtrinsicItems(items);
+
+    const { height: blockNumber, timestamp: rawTimestamp } = block;
     const timestamp = normalizeTimestamp(rawTimestamp);
+    const blockCommonData = { blockNumber, timestamp } as IBlockCommonData;
 
-    const processedEvents = this.processEventItems(items);
-
-    const { valuesByExtrinsics } = processedEvents;
-
-    const { extrinsics, count: extrinsicsCount } =
-      this.processExtrinsicItems(items);
-
-    const extrinsicsData = this.getExtrinsicsData(
+    // Create extrinsics data to write
+    const { extrinsicsValues } = processedEventsItems;
+    const { extrinsics } = processedExtrinsicsItems;
+    const extrinsicsDataToWrite = this.getExtrinsicsDataToWrite(
       extrinsics,
-      valuesByExtrinsics,
-    ).map((item) => ({
-      block_number: height,
-      block_index: `${height}-${item.extrinsic_index}`, // todo: Do we need this field?
-      timestamp,
-      ...item,
-    }));
+      extrinsicsValues,
+      blockCommonData,
+    );
 
-    if (extrinsicsData.length) {
-      console.log(extrinsicsData);
-    }
+    // Create events data to write
+    const { events } = processedEventsItems;
+    const eventsDataToWrite = this.getEventsDataToWrite(
+      events,
+      blockCommonData,
+    );
 
+    // Create block data to write
+    const { specId, hash, parentHash } = block;
     const [specName, specVersion] = specId.split('@') as [string, number];
 
-    return {
-      block_number: height,
+    const {
+      count: eventsCount,
+      numTransfers,
+      newAccounts,
+    } = processedEventsItems;
+
+    const { count: extrinsicsCount } = processedExtrinsicsItems;
+
+    const blockDataToWrite = {
+      block_number: blockNumber,
       block_hash: hash,
       parent_hash: parentHash,
       spec_name: specName,
@@ -172,9 +194,9 @@ export class BlocksSubscriberService implements ISubscriberService {
       timestamp: String(timestamp),
 
       // events info
-      total_events: processedEvents.count,
-      num_transfers: processedEvents.numTransfers,
-      new_accounts: processedEvents.newAccounts,
+      total_events: eventsCount,
+      num_transfers: numTransfers,
+      new_accounts: newAccounts,
 
       // extrinsics info
       total_extrinsics: extrinsicsCount,
@@ -186,69 +208,118 @@ export class BlocksSubscriberService implements ISubscriberService {
       total_issuance: '', // TODO: no need. may be
       need_rescan: false,
     };
+
+    return {
+      blockData: blockDataToWrite,
+      extrinsicsData: extrinsicsDataToWrite,
+      eventsData: eventsDataToWrite,
+    };
   }
 
-  private getExtrinsicsData(
+  private getExtrinsicsDataToWrite(
     extrinsics: IExtrinsicExtended[],
-    valuesByExtrinsics: {
+    extrinsicsEventValues: {
       [key: string]: { amount?: string; fee?: string };
     },
+    blockCommonData: IBlockCommonData,
   ) {
     return extrinsics
-      .map(
-        ({
-          id,
-          name,
+      .map((extrinsic) => {
+        const { name } = extrinsic;
+        const [section, method] = name.split('.') as [
+          ExtrinsicSection,
+          ExtrinsicMethod,
+        ];
+
+        // Skip processing common extrinsic types
+        if (EXTRINSICS_SECTIONS_TO_SKIP.includes(section)) {
+          return null;
+        }
+
+        let signer = null;
+        const { signature } = extrinsic;
+        if (signature) {
+          ({
+            address: { value: signer },
+          } = signature);
+        }
+
+        let toOwner = null;
+        if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
+          const {
+            call: { args },
+          } = extrinsic;
+
+          const recipientAddress = args as IExtrinsicRecipient;
+          toOwner =
+            recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
+        }
+
+        const { id, hash, indexInBlock, success } = extrinsic;
+
+        const { amount = '0', fee = '0' } = extrinsicsEventValues[id] || {};
+
+        const { timestamp, blockNumber } = blockCommonData;
+
+        return {
+          timestamp,
+          block_number: blockNumber,
+          // todo: Do we need this field?
+          block_index: `${blockNumber}-${indexInBlock}`,
+          extrinsic_index: indexInBlock,
+          section,
+          method,
           hash,
-          indexInBlock,
           success,
-          call: { args },
-          signature,
-        }) => {
-          const [section, method] = name.split('.') as [
-            ExtrinsicSection,
-            ExtrinsicMethod,
-          ];
+          is_signed: !!signature,
+          signer,
+          signer_normalized: signer && normalizeSubstrateAddress(signer),
+          to_owner: toOwner,
+          to_owner_normalized: toOwner && normalizeSubstrateAddress(toOwner),
+          // todo: Do we realy need that data?
+          args: '', // JSON.stringify(args),
+          amount,
+          fee,
+        };
+      })
+      .filter((item) => !!item);
+  }
 
-          // Skip processing common extrinsic types
-          if (EXTRINSICS_SECTIONS_TO_SKIP.includes(section)) {
-            return null;
-          }
+  private getEventsDataToWrite(
+    events: IEvent[],
+    blockCommonData: IBlockCommonData,
+  ) {
+    return events
+      .map((event) => {
+        const { name, indexInBlock, phase, extrinsic, args } = event;
+        const { timestamp, blockNumber } = blockCommonData;
 
-          let signer = null;
-          if (signature) {
-            ({
-              address: { value: signer },
-            } = signature);
-          }
+        // Skip redundant events
+        if (phase === 'Initialization' || EVENT_NAMES_TO_SKIP.includes(name)) {
+          return null;
+        }
 
-          let toOwner = null;
-          if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
-            const recipientAddress = args as IExtrinsicRecipient;
-            toOwner =
-              recipientAddress?.recipient?.value ||
-              recipientAddress?.dest?.value;
-          }
+        const [section, method] = name.split('.') as [
+          EventSection,
+          EventMethod,
+        ];
 
-          const { amount = '0', fee = '0' } = valuesByExtrinsics[id] || {};
+        const rawAmount = args?.amount || args?.value;
 
-          return {
-            extrinsic_index: indexInBlock,
-            section,
-            method,
-            hash,
-            success,
-            is_signed: !!signature,
-            signer,
-            signer_normalized: signer && normalizeSubstrateAddress(signer),
-            to_owner: toOwner,
-            to_owner_normalized: toOwner && normalizeSubstrateAddress(toOwner),
-            args: '', // JSON.stringify(args), // todo: Do we realy need that data? ,
-            amount,
-            fee,
-          };
-        },
-      )
+        return {
+          timestamp,
+          block_number: blockNumber,
+          event_index: indexInBlock,
+          // todo: Do we need this field?
+          block_index: `${blockNumber}-${indexInBlock}`,
+          section,
+          method,
+          // todo: Make more clean connect to extrinsic
+          phase: phase === 'ApplyExtrinsic' ? extrinsic.indexInBlock : phase,
+          data: JSON.stringify(args),
+          amount: rawAmount ? getAmount(rawAmount) : null,
+        };
+      })
       .filter((item) => !!item);
   }
 
@@ -263,9 +334,20 @@ export class BlocksSubscriberService implements ISubscriberService {
 
     try {
       // Writing block model
-      // @ts-ignore
-      const blockData = this.processData(block, items);
+      const { blockData, extrinsicsData, eventsData } = this.processContextData(
+        block,
+        items,
+      );
 
+      // if (extrinsicsData.length) {
+      //   console.log('extrinsicsData', extrinsicsData);
+      // }
+
+      // if (eventsData.length) {
+      //   console.log('eventsData', eventsData);
+      // }
+
+      // todo: use transaction
       await this.blocksRepository.upsert(blockData, ['block_number']);
 
       // todo: Writing events models
