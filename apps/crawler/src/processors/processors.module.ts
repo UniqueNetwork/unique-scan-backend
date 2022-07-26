@@ -1,6 +1,7 @@
 import { Block } from '@entities/Block';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
+import { Event } from '@entities/Event';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,10 +12,11 @@ import { SubstrateProcessor } from '@subsquid/substrate-processor';
 import { CollectionsSubscriberService } from './collections-subscriber.service';
 import { TokensSubscriberService } from './tokens-subscriber.service';
 import { BlocksSubscriberService } from './blocks-subscriber.service';
+import { Extrinsic } from '@entities/Extrinsic';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Block, Collections, Tokens]),
+    TypeOrmModule.forFeature([Block, Collections, Event, Extrinsic, Tokens]),
     ConfigModule,
   ],
   providers: [

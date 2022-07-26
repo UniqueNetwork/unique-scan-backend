@@ -21,6 +21,8 @@ import {
   ExtrinsicMethod,
   ExtrinsicSection,
 } from '@common/constants';
+import { Extrinsic } from '@entities/Extrinsic';
+import { Event } from '@entities/Event';
 
 const EVENT_TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
 const EVENT_ENDOWED = `${EventSection.BALANCES}.${EventMethod.ENDOWED}`;
@@ -40,6 +42,7 @@ const EXTRINSICS_TRANSFER_METHODS = [
 const EVENT_NAMES_TO_SKIP = [
   `${EventSection.SYSTEM}.${EventMethod.EXTRINSIC_SUCCESS}`,
 ];
+
 interface IExtrinsicExtended extends SubstrateExtrinsic {
   name: string;
 }
@@ -82,6 +85,13 @@ export class BlocksSubscriberService implements ISubscriberService {
   constructor(
     @InjectRepository(Block)
     private blocksRepository: Repository<Block>,
+
+    @InjectRepository(Extrinsic)
+    private extrinsicsRepository: Repository<Extrinsic>,
+
+    @InjectRepository(Event)
+    private eventsRepository: Repository<Event>,
+
     private processorService: ProcessorService,
   ) {}
 
@@ -262,8 +272,8 @@ export class BlocksSubscriberService implements ISubscriberService {
         const { timestamp, blockNumber } = blockCommonData;
 
         return {
-          timestamp,
-          block_number: blockNumber,
+          timestamp: String(timestamp),
+          block_number: String(blockNumber),
           // todo: Do we need this field?
           block_index: `${blockNumber}-${indexInBlock}`,
           extrinsic_index: indexInBlock,
@@ -307,15 +317,16 @@ export class BlocksSubscriberService implements ISubscriberService {
         const rawAmount = args?.amount || args?.value;
 
         return {
-          timestamp,
-          block_number: blockNumber,
+          timestamp: String(timestamp),
+          block_number: String(blockNumber),
           event_index: indexInBlock,
           // todo: Do we need this field?
           block_index: `${blockNumber}-${indexInBlock}`,
           section,
           method,
           // todo: Make more clean connect to extrinsic
-          phase: phase === 'ApplyExtrinsic' ? extrinsic.indexInBlock : phase,
+          phase:
+            phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
           data: JSON.stringify(args),
           amount: rawAmount ? getAmount(rawAmount) : null,
         };
@@ -333,24 +344,22 @@ export class BlocksSubscriberService implements ISubscriberService {
     };
 
     try {
-      // Writing block model
       const { blockData, extrinsicsData, eventsData } = this.processContextData(
         block,
         items,
       );
 
-      // if (extrinsicsData.length) {
-      //   console.log('extrinsicsData', extrinsicsData);
-      // }
-
-      // if (eventsData.length) {
-      //   console.log('eventsData', eventsData);
-      // }
-
-      // todo: use transaction
-      await this.blocksRepository.upsert(blockData, ['block_number']);
-
-      // todo: Writing events models
+      await Promise.all([
+        this.blocksRepository.upsert(blockData, ['block_number']),
+        this.extrinsicsRepository.upsert(extrinsicsData, [
+          'block_number',
+          'extrinsic_index',
+        ]),
+        this.eventsRepository.upsert(eventsData, [
+          'block_number',
+          'event_index',
+        ]),
+      ]);
 
       const { total_events: totalEvents, total_extrinsics: totalExtrinsics } =
         blockData;
