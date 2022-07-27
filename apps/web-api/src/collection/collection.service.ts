@@ -7,7 +7,9 @@ import { BaseService } from '../utils/base.service';
 import { OperatorMethods } from '../utils/base.service.types';
 import {
   IDataListResponse,
+  IDateRange,
   IGQLQueryArgs,
+  IStatsResponse,
   TWhere,
 } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
@@ -60,10 +62,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   public async statistic({
     fromDate,
     toDate,
-  }: {
-    fromDate?: Date;
-    toDate?: Date;
-  }): Promise<any> {
+  }: IDateRange): Promise<IStatsResponse[]> {
     const qb = await this.repo.createQueryBuilder();
     qb.select(`date_trunc('hour', TO_TIMESTAMP(date_of_creation))`, 'date');
     qb.addSelect('count(*)', 'count');

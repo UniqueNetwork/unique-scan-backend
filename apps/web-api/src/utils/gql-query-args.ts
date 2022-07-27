@@ -117,6 +117,16 @@ export interface IDataListResponse<T> {
   timestamp?: number;
 }
 
+export interface IDateRange {
+  fromDate?: Date;
+  toDate?: Date;
+}
+
+export interface IStatsResponse {
+  count: number;
+  date: Date;
+}
+
 export function ListDataType<T>(classRef: Type<T>): Type<IDataListResponse<T>> {
   @ObjectType({ isAbstract: true })
   class ListDataType implements IDataListResponse<T> {
@@ -135,8 +145,8 @@ export function ListDataType<T>(classRef: Type<T>): Type<IDataListResponse<T>> {
 
 @ArgsType()
 export class DateRangeArgs {
-  @Field(() => Date)
-  fromDate!: Date;
+  @Field(() => Date, { nullable: true })
+  fromDate?: Date;
 
   @Field(() => Date, { nullable: true })
   toDate?: Date;
@@ -149,9 +159,6 @@ class StatisticDataEntity {
 
   @Field(() => Int)
   count!: number;
-
-  // @Field(() => String)
-  // chain!: string;
 }
 
 @ObjectType()

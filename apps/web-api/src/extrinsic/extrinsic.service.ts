@@ -3,8 +3,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
+import {
+  IDataListResponse,
+  IDateRange,
+  IGQLQueryArgs,
+  IStatsResponse,
+} from '../utils/gql-query-args';
 import { ExtrinsicDTO } from './extrinsic.dto';
+import { ExtrinsicsStatsTypeEnum } from './extrinsic.resolver';
 
 const aliasFields = {
   from_owner: 'signer',
@@ -50,10 +56,10 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
   public async statistic({
     fromDate,
     toDate,
-  }: {
-    fromDate?: Date;
-    toDate?: Date;
-  }): Promise<any> {
+    type,
+  }: IDateRange & { type?: ExtrinsicsStatsTypeEnum }): Promise<
+    IStatsResponse[]
+  > {
     const qb = await this.repo.createQueryBuilder();
     qb.select(`date_trunc('hour', TO_TIMESTAMP(timestamp))`, 'date');
     qb.addSelect('count(*)', 'count');
@@ -65,6 +71,14 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     }
     if (toDate) {
       qb.andWhere(`"timestamp" <= ${this.formatDate(fromDate)}`);
+    }
+
+    if (type === ExtrinsicsStatsTypeEnum.COINS) {
+      qb.andWhere(`"section" = 'balances'`);
+      qb.andWhere(`"method" = 'transfer'`);
+    } else if (type === ExtrinsicsStatsTypeEnum.TOKENS) {
+      qb.andWhere(`"section" != 'balances'`);
+      qb.andWhere(`"method" = 'transfer'`);
     }
 
     return qb.getRawMany();

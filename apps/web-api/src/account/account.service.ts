@@ -3,7 +3,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
+import {
+  IDataListResponse,
+  IDateRange,
+  IGQLQueryArgs,
+  IStatsResponse,
+} from '../utils/gql-query-args';
 import { AccountDTO } from './account.dto';
 
 @Injectable()
@@ -37,10 +42,7 @@ export class AccountService extends BaseService<Account, AccountDTO> {
   public async statistic({
     fromDate,
     toDate,
-  }: {
-    fromDate?: Date;
-    toDate?: Date;
-  }): Promise<any> {
+  }: IDateRange): Promise<IStatsResponse[]> {
     const qb = await this.repo.createQueryBuilder();
     qb.select(`date_trunc('hour', TO_TIMESTAMP(timestamp))`, 'date');
     qb.addSelect('count(*)', 'count');

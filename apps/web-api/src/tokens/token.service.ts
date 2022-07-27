@@ -3,7 +3,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
+import {
+  IDataListResponse,
+  IDateRange,
+  IGQLQueryArgs,
+  IStatsResponse,
+} from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
 
 const relationsFields = {
@@ -64,10 +69,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   public async statistic({
     fromDate,
     toDate,
-  }: {
-    fromDate?: Date;
-    toDate?: Date;
-  }): Promise<any> {
+  }: IDateRange): Promise<IStatsResponse[]> {
     const qb = await this.repo.createQueryBuilder();
     qb.select(`date_trunc('hour', TO_TIMESTAMP(date_of_creation))`, 'date');
     qb.addSelect('count(*)', 'count');
