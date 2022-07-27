@@ -58,7 +58,6 @@ export class TokensSubscriberService implements ISubscriberService {
   }
 
   prepareDataToWrite(sdkEntity: TokenDecoded) {
-    // console.log(sdkEntity);
     const {
       tokenId: token_id,
       collectionId: collection_id,
@@ -100,10 +99,6 @@ export class TokensSubscriberService implements ISubscriberService {
       block: { height: blockNumber, timestamp: blockTimestamp },
       event: { name: eventName, args },
     } = ctx;
-
-    // console.log('ctx.event', ctx.event);
-    // console.log('eventName', eventName);
-    // console.log('args', args);
 
     const log = {
       eventName,
@@ -164,10 +159,6 @@ export class TokensSubscriberService implements ISubscriberService {
       block: { height: blockNumber, timestamp: blockTimestamp },
       event: { name: eventName, args },
     } = ctx;
-
-    // console.log('ctx.event', ctx.event);
-    // console.log('eventName', eventName);
-    // console.log('args', args);
 
     const log = {
       eventName,

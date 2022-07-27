@@ -215,7 +215,7 @@ export class BlocksSubscriberService implements ISubscriberService {
       extrinsics_root: '',
       state_root: '',
       session_length: '0',
-      total_issuance: '', // TODO: no need. may be
+      total_issuance: '',
       need_rescan: false,
     };
 

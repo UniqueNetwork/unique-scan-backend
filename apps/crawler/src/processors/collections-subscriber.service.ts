@@ -100,7 +100,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
       return result;
     }
 
-    // todo: Find out what to do with attributes
+    // todo: Find out what to do with 'properties', 'attributesSchema'
 
     const { schemaName } = schema;
     if (schemaName == '_old_') {
@@ -149,7 +149,6 @@ export class CollectionsSubscriberService implements ISubscriberService {
     collectionInfo: CollectionInfoWithSchema,
     collectionLimits: CollectionLimits,
   ) {
-    // console.log(collectionInfo);
     const {
       id: collection_id,
       owner,
