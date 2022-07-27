@@ -74,7 +74,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.select(`date_trunc('hour', TO_TIMESTAMP(date_of_creation))`, 'date');
     qb.addSelect('count(*)', 'count');
     qb.groupBy('date');
-    qb.orderBy('date', 'DESC');
 
     if (fromDate) {
       qb.where(`"date_of_creation" >= ${this.formatDate(fromDate)}`);

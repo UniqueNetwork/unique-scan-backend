@@ -47,7 +47,6 @@ export class AccountService extends BaseService<Account, AccountDTO> {
     qb.select(`date_trunc('hour', TO_TIMESTAMP(timestamp))`, 'date');
     qb.addSelect('count(*)', 'count');
     qb.groupBy('date');
-    qb.orderBy('date', 'DESC');
 
     if (fromDate) {
       qb.where(`"timestamp" >= ${this.formatDate(fromDate)}`);
