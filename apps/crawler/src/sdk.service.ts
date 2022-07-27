@@ -24,7 +24,9 @@ export class SdkService {
   async getCollection(collectionId: number) {
     const sdk = await this.getSdk();
 
-    return sdk.collections.get({ collectionId });
+    const result = await sdk.collections.get_new({ collectionId });
+
+    return result;
   }
 
   async getCollectionLimits(collectionId: number) {
@@ -38,6 +40,8 @@ export class SdkService {
   async getToken(collectionId: number, tokenId: number) {
     const sdk = await this.getSdk();
 
-    return sdk.tokens.get({ collectionId, tokenId });
+    const result = await sdk.tokens.get_new({ collectionId, tokenId });
+
+    return result;
   }
 }
