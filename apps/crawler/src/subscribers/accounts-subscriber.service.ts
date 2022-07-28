@@ -52,12 +52,13 @@ export class AccountsSubscriberService implements ISubscriberService {
     const { accountId, blockNumber, timestamp, balancesData } = params;
 
     const { availableBalance, lockedBalance, freeBalance } = balancesData;
+
     return {
       account_id: accountId,
       account_id_normalized: normalizeSubstrateAddress(accountId),
-      available_balance: availableBalance.formatted,
-      free_balance: freeBalance.formatted,
-      locked_balance: lockedBalance.formatted,
+      available_balance: availableBalance.amount,
+      free_balance: freeBalance.amount,
+      locked_balance: lockedBalance.amount,
       timestamp: String(timestamp),
       block_height: String(blockNumber),
 

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ProcessorService } from './processors/processor.service';
-import { AccountsSubscriberService } from './processors/accounts-subscriber.service';
-import { BlocksSubscriberService } from './processors/blocks-subscriber.service';
-import { CollectionsSubscriberService } from './processors/collections-subscriber.service';
-import { TokensSubscriberService } from './processors/tokens-subscriber.service';
+import { ProcessorService } from './subscribers/processor.service';
+import { AccountsSubscriberService } from './subscribers/accounts-subscriber.service';
+import { BlocksSubscriberService } from './subscribers/blocks-subscriber.service';
+import { CollectionsSubscriberService } from './subscribers/collections-subscriber.service';
+import { TokensSubscriberService } from './subscribers/tokens-subscriber.service';
 
 @Injectable()
 export class CrawlerService {

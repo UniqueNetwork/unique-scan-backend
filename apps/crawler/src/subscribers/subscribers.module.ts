@@ -46,4 +46,4 @@ import { AccountsSubscriberService } from './accounts-subscriber.service';
     TokensSubscriberService,
   ],
 })
-export class ProcessorsModule {}
+export class SubscribersModule {}
