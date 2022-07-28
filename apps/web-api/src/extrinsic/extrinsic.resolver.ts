@@ -24,12 +24,12 @@ import {
 import { ExtrinsicDTO } from './extrinsic.dto';
 import { ExtrinsicService } from './extrinsic.service';
 
-export enum ExtrinsicsStatsTypeEnum {
+export enum ExtrinsicsStatsEnumType {
   COINS = 'coins',
   TOKENS = 'tokens',
 }
 
-registerEnumType(ExtrinsicsStatsTypeEnum, { name: 'ExtrinsicsStatsTypeEnum' });
+registerEnumType(ExtrinsicsStatsEnumType, { name: 'ExtrinsicsStatsTypeEnum' });
 
 @InputType()
 class ExtrinsicWhereParams implements TWhereParams<ExtrinsicDTO> {
@@ -123,8 +123,8 @@ class ExtrinsicDataResponse extends ListDataType(ExtrinsicDTO) {}
 
 @ArgsType()
 export class ExtrinsicsStats extends DateRangeArgs {
-  @Field(() => ExtrinsicsStatsTypeEnum, { nullable: true })
-  type?: ExtrinsicsStatsTypeEnum;
+  @Field(() => ExtrinsicsStatsEnumType, { nullable: true })
+  type?: ExtrinsicsStatsEnumType;
 }
 
 @Resolver(() => ExtrinsicDTO)

@@ -10,7 +10,7 @@ import {
   IStatsResponse,
 } from '../utils/gql-query-args';
 import { ExtrinsicDTO } from './extrinsic.dto';
-import { ExtrinsicsStatsTypeEnum } from './extrinsic.resolver';
+import { ExtrinsicsStatsEnumType } from './extrinsic.resolver';
 
 const aliasFields = {
   from_owner: 'signer',
@@ -57,7 +57,7 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     fromDate,
     toDate,
     type,
-  }: IDateRange & { type?: ExtrinsicsStatsTypeEnum }): Promise<
+  }: IDateRange & { type?: ExtrinsicsStatsEnumType }): Promise<
     IStatsResponse[]
   > {
     const qb = await this.repo.createQueryBuilder();
@@ -72,10 +72,10 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
       qb.andWhere(`"timestamp" <= ${this.formatDate(fromDate)}`);
     }
 
-    if (type === ExtrinsicsStatsTypeEnum.COINS) {
+    if (type === ExtrinsicsStatsEnumType.COINS) {
       qb.andWhere(`"section" = 'balances'`);
       qb.andWhere(`"method" = 'transfer'`);
-    } else if (type === ExtrinsicsStatsTypeEnum.TOKENS) {
+    } else if (type === ExtrinsicsStatsEnumType.TOKENS) {
       qb.andWhere(`"section" != 'balances'`);
       qb.andWhere(`"method" = 'transfer'`);
     }
