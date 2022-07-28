@@ -4,13 +4,13 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProcessorConfigService } from './processor.config.service';
 import { CrawlerService } from './crawler.service';
-import { ProcessorsModule } from './processors/processors.module';
+import { SubscribersModule } from './subscribers/subscribers.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(typeormConfig),
-    ProcessorsModule,
+    SubscribersModule,
   ],
   controllers: [],
   providers: [Logger, CrawlerService, ProcessorConfigService],
