@@ -13,10 +13,19 @@ import { CollectionsSubscriberService } from './collections-subscriber.service';
 import { TokensSubscriberService } from './tokens-subscriber.service';
 import { BlocksSubscriberService } from './blocks-subscriber.service';
 import { Extrinsic } from '@entities/Extrinsic';
+import { Account } from '@entities/Account';
+import { AccountsSubscriberService } from './accounts-subscriber.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Block, Collections, Event, Extrinsic, Tokens]),
+    TypeOrmModule.forFeature([
+      Account,
+      Block,
+      Collections,
+      Event,
+      Extrinsic,
+      Tokens,
+    ]),
     ConfigModule,
   ],
   providers: [
@@ -24,15 +33,17 @@ import { Extrinsic } from '@entities/Extrinsic';
     ProcessorService,
     SdkService,
     ProcessorConfigService,
+    AccountsSubscriberService,
     BlocksSubscriberService,
     CollectionsSubscriberService,
     TokensSubscriberService,
   ],
   exports: [
     ProcessorService,
+    AccountsSubscriberService,
     BlocksSubscriberService,
     CollectionsSubscriberService,
     TokensSubscriberService,
   ],
 })
-export class ProcessorsModule {}
+export class SubscribersModule {}

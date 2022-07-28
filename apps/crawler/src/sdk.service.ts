@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Sdk } from '@unique-nft/sdk';
 import '@unique-nft/sdk/tokens';
+import '@unique-nft/sdk/balance';
 import { SdkOptions } from '@unique-nft/sdk/types';
 
 @Injectable()
@@ -41,6 +42,14 @@ export class SdkService {
     const sdk = await this.getSdk();
 
     const result = await sdk.tokens.get_new({ collectionId, tokenId });
+
+    return result;
+  }
+
+  async getAccountBalances(accountId: string) {
+    const sdk = await this.getSdk();
+
+    const result = await sdk.balance.get({ address: accountId });
 
     return result;
   }
