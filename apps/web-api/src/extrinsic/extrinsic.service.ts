@@ -1,6 +1,7 @@
 import { Extrinsic } from '@entities/Extrinsic';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EventSection, ExtrinsicMethod } from '@common/constants';
 import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
@@ -72,12 +73,14 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
       qb.andWhere(`"timestamp" <= ${this.formatDate(fromDate)}`);
     }
 
+    // TODO: remove after start new crawler
+    const balances = String(EventSection.BALANCES).toLowerCase();
     if (type === ExtrinsicsStatsEnumType.COINS) {
-      qb.andWhere(`"section" = 'balances'`);
-      qb.andWhere(`"method" = 'transfer'`);
+      qb.andWhere(`"section" = '${balances}'`);
+      qb.andWhere(`"method" = '${ExtrinsicMethod.TRANSFER}'`);
     } else if (type === ExtrinsicsStatsEnumType.TOKENS) {
-      qb.andWhere(`"section" != 'balances'`);
-      qb.andWhere(`"method" = 'transfer'`);
+      qb.andWhere(`"section" != '${balances}'`);
+      qb.andWhere(`"method" = '${ExtrinsicMethod.TRANSFER}'`);
     }
 
     return qb.getRawMany();
