@@ -7,7 +7,9 @@ import { BaseService } from '../utils/base.service';
 import { OperatorMethods } from '../utils/base.service.types';
 import {
   IDataListResponse,
+  IDateRange,
   IGQLQueryArgs,
+  IStatsResponse,
   TWhere,
 } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
@@ -55,6 +57,25 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     return this.findOne({
       where: { collection_id: { _eq: id } },
     });
+  }
+
+  public async statistic({
+    fromDate,
+    toDate,
+  }: IDateRange): Promise<IStatsResponse[]> {
+    const qb = await this.repo.createQueryBuilder();
+    qb.select(`date_trunc('hour', TO_TIMESTAMP(date_of_creation))`, 'date');
+    qb.addSelect('count(*)', 'count');
+    qb.groupBy('date');
+
+    if (fromDate) {
+      qb.where(`"date_of_creation" >= ${this.formatDate(fromDate)}`);
+    }
+    if (toDate) {
+      qb.andWhere(`"date_of_creation" <= ${this.formatDate(fromDate)}`);
+    }
+
+    return qb.getRawMany();
   }
 
   private applyFilters(

@@ -1,10 +1,17 @@
 import { Extrinsic } from '@entities/Extrinsic';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EventSection, ExtrinsicMethod } from '@common/constants';
 import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
+import {
+  IDataListResponse,
+  IDateRange,
+  IGQLQueryArgs,
+  IStatsResponse,
+} from '../utils/gql-query-args';
 import { ExtrinsicDTO } from './extrinsic.dto';
+import { ExtrinsicsStatsEnumType } from './extrinsic.resolver';
 
 const aliasFields = {
   from_owner: 'signer',
@@ -45,5 +52,37 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     const data = await qb.getRawMany();
     const count = await qb.getCount();
     return { data, count };
+  }
+
+  public async statistic({
+    fromDate,
+    toDate,
+    type,
+  }: IDateRange & { type?: ExtrinsicsStatsEnumType }): Promise<
+    IStatsResponse[]
+  > {
+    const qb = await this.repo.createQueryBuilder();
+    qb.select(`date_trunc('hour', TO_TIMESTAMP(timestamp))`, 'date');
+    qb.addSelect('count(*)', 'count');
+    qb.groupBy('date');
+
+    if (fromDate) {
+      qb.where(`"timestamp" >= ${this.formatDate(fromDate)}`);
+    }
+    if (toDate) {
+      qb.andWhere(`"timestamp" <= ${this.formatDate(fromDate)}`);
+    }
+
+    // TODO: remove after start new crawler
+    const balances = String(EventSection.BALANCES).toLowerCase();
+    if (type === ExtrinsicsStatsEnumType.COINS) {
+      qb.andWhere(`"section" = '${balances}'`);
+      qb.andWhere(`"method" = '${ExtrinsicMethod.TRANSFER}'`);
+    } else if (type === ExtrinsicsStatsEnumType.TOKENS) {
+      qb.andWhere(`"section" != '${balances}'`);
+      qb.andWhere(`"method" = '${ExtrinsicMethod.TRANSFER}'`);
+    }
+
+    return qb.getRawMany();
   }
 }

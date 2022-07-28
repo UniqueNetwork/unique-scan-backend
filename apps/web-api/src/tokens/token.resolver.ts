@@ -1,6 +1,10 @@
 import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { forwardRef, Inject } from '@nestjs/common';
-import { IDataListResponse } from '../utils/gql-query-args';
+import {
+  DateRangeArgs,
+  IDataListResponse,
+  StatisticDataResponse,
+} from '../utils/gql-query-args';
 import { TokenService } from './token.service';
 import { CollectionService } from '../collection/collection.service';
 import {
@@ -27,5 +31,13 @@ export class TokenResolver {
   @ResolveField()
   async collection(@Parent() { collection_id }: TokenEntity) {
     return this.collectionService.getCollectionById(collection_id);
+  }
+
+  @Query(() => StatisticDataResponse)
+  public async tokenStatistics(
+    @Args() args: DateRangeArgs,
+  ): Promise<StatisticDataResponse> {
+    const data = await this.service.statistic(args);
+    return { data };
   }
 }
