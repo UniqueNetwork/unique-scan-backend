@@ -210,12 +210,11 @@ export class totalStatsTriggers1658207698185 implements MigrationInterface {
           select
             coalesce(sum(available_balance::double precision), 0) as locked,
             coalesce(sum(locked_balance::double precision), 0) as circulating,
-            coalesce(sum(available_balance::double precision + locked_balance::double precision), 0) as total,
             count(*) filter (where available_balance <> '0' or locked_balance <> '0') as holders
           from account a
         `,
       );
-      const { locked, circulating, total, holders } = stat[0];
+      const { locked, circulating, holders } = stat[0];
 
       if (locked) {
         await queryRunner.manager.upsert(
@@ -228,14 +227,6 @@ export class totalStatsTriggers1658207698185 implements MigrationInterface {
         await queryRunner.manager.upsert(
           Total,
           { count: Math.floor(circulating), name: 'circulating_supply' },
-          ['name'],
-        );
-      }
-
-      if (total) {
-        await queryRunner.manager.upsert(
-          Total,
-          { count: Math.floor(total), name: 'total_supply' },
           ['name'],
         );
       }
@@ -270,15 +261,20 @@ export class totalStatsTriggers1658207698185 implements MigrationInterface {
            where name = 'circulating_supply';
         end if;
 
-        if  (TG_OP = 'INSERT' and new.locked_balance <> '0' and new.available_balance <> '0') then
+        if  (TG_OP = 'INSERT' and (new.locked_balance <> '0' or new.available_balance <> '0')) then
           update total set count = count + 1 where name = 'holders';
         end if;
 
-        if  (TG_OP = 'UPDATE' and new.locked_balance = '0' and new.available_balance = '0') then
+        if  (TG_OP = 'UPDATE'
+         and new.locked_balance = '0' and old.locked_balance <> '0'
+          and new.available_balance = '0' and old.available_balance <> '0'
+        ) then
           update total set count = count - 1 where name = 'holders';
         end if;
 
-        if  (TG_OP = 'UPDATE' and ((old.locked_balance = '0' and new.locked_balance <> '0') or (old.available_balance = '0' and new.available_balance <> '0'))) then
+        if  (TG_OP = 'UPDATE'
+          and ((old.locked_balance = '0' and new.locked_balance <> '0')
+           or (old.available_balance = '0' and new.available_balance <> '0'))) then
           update total set count = count + 1 where name = 'holders';
         end if;
 
@@ -290,35 +286,9 @@ export class totalStatsTriggers1658207698185 implements MigrationInterface {
 
       await queryRunner.query(
         `
-        create trigger update_supply AFTER INSERT OR DELETE ON account
+        create trigger update_supply AFTER INSERT OR UPDATE OR DELETE ON account
         FOR EACH ROW
         EXECUTE FUNCTION update_account_supply();
-        `,
-      );
-
-      await queryRunner.query(
-        `
-        create or replace function update_total_supply() returns trigger as $$
-        begin
-        if  (TG_OP = 'INSERT' and (new.locked_supply <> 0 or new.circulating_supply <> 0)) then
-          update total set count = count + coalesce(new.locked_supply, 0) + coalesce(new.circulating_supply, 0) where name = 'total_supply';
-        end if;
-
-        if  (TG_OP = 'UPDATE') then
-          update total set count = count + coalesce(new.locked_supply, 0) + coalesce(new.circulating_supply, 0) where name = 'total_supply';
-        end if;
-
-        return null;
-        end;
-        $$ LANGUAGE plpgsql;
-        `,
-      );
-
-      await queryRunner.query(
-        `
-        create trigger update_total AFTER INSERT OR DELETE ON total
-        FOR EACH ROW
-        EXECUTE FUNCTION update_total_supply();
         `,
       );
 
@@ -348,7 +318,7 @@ export class totalStatsTriggers1658207698185 implements MigrationInterface {
     await queryRunner.query(`drop trigger transfers_total on extrinsic;`);
     await queryRunner.query(`drop function update_transfers_total;`);
 
-    await queryRunner.query(`drop trigger update_supply on extrinsic;`);
+    await queryRunner.query(`drop trigger update_supply on account;`);
     await queryRunner.query(`drop function update_account_supply0;`);
 
     await queryRunner.query(`drop trigger update_total on extrinsic;`);
