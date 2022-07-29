@@ -49,6 +49,7 @@ export enum ExtrinsicSection {
 
 export enum ExtrinsicMethod {
   TRANSFER = 'transfer',
+  TRANSFER_FROM = 'transfer_from',
   TRANSFER_ALL = 'transfer_all',
   TRANSFER_KEEP_ALIVE = 'transfer_keep_alive',
   VESTED_TRANSFER = 'vested_transfer',

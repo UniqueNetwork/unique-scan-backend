@@ -22,6 +22,7 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
     super();
   }
 
+  // ! from Event
   // * block_index
   // * timestamp
   // * collection_id
@@ -36,8 +37,10 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
   // * image_path
 
   // ! join extrinsics
-  // to_owner
-  // to_owner_normalized
+  // * to_owner
+  // * to_owner_normalized
+  // signer
+  // signer_normalized
 
   public async find_token_transactions(
     queryArgs: IGQLQueryArgs<TransactionDTO>,
@@ -47,6 +50,7 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
 
     qb.addSelect('("Event".data::jsonb ->> 0)::integer', 'collection_id');
     qb.addSelect('("Event".data::jsonb ->> 1)::integer', 'token_id');
+
     qb.addSelect('"Collection".name', 'collection_name');
     qb.addSelect('"Collection".token_prefix', 'token_prefix');
     qb.addSelect(`"Token".data ->> 'name'::text`, 'token_name');
@@ -62,14 +66,17 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
     );
 
     qb.addSelect('"Extrinsic".to_owner', 'to_owner');
+    qb.addSelect('"Extrinsic".to_owner_normalized', 'to_owner_normalized');
+    qb.addSelect('"Extrinsic".signer', 'signer');
+    qb.addSelect('"Extrinsic".signer_normalized', 'signer_normalized');
 
-    qb.innerJoin(
+    qb.leftJoin(
       Collections,
       'Collection',
       '"Collection".collection_id = ("Event".data::jsonb ->> 0)::integer',
     );
 
-    qb.innerJoin(
+    qb.leftJoin(
       Tokens,
       'Token',
       `"Token".collection_id = ("Event".data::jsonb ->> 0)::integer 
@@ -79,7 +86,7 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
     qb.innerJoin(
       Extrinsic,
       'Extrinsic',
-      `"Extrinsic".block_index = "Event".block_index`,
+      `"Extrinsic".block_index = "Event".block_index AND to_owner IS NOT NULL`,
     );
 
     // this.applyWhereCondition(qb, queryArgs);
