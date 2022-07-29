@@ -1,9 +1,4 @@
-import {
-  EventMethod,
-  EventSection,
-  ExtrinsicMethod,
-  ExtrinsicSection,
-} from '@common/constants';
+import { EventMethod, EventSection } from '@common/constants';
 import { Collections } from '@entities/Collections';
 import { Event } from '@entities/Event';
 import { Extrinsic } from '@entities/Extrinsic';
@@ -39,8 +34,8 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
   // ! join extrinsics
   // * to_owner
   // * to_owner_normalized
-  // signer
-  // signer_normalized
+  // * signer
+  // * signer_normalized
 
   public async find_token_transactions(
     queryArgs: IGQLQueryArgs<TransactionDTO>,
