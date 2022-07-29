@@ -9,33 +9,12 @@ import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { TransactionDTO } from './transaction.dto';
-// import {} from '@common/cons';
 
 @Injectable()
 export class TransactionService extends BaseService<Event, TransactionDTO> {
   constructor(@InjectRepository(Event) private repo: Repository<Event>) {
     super();
   }
-
-  // ! from Event
-  // * block_index
-  // * timestamp
-  // * collection_id
-  // * token_id
-
-  // ! join collections
-  // * token_prefix
-  // * collection_name
-
-  // ! join tokens
-  // * token_name
-  // * image_path
-
-  // ! join extrinsics
-  // * to_owner
-  // * to_owner_normalized
-  // * signer
-  // * signer_normalized
 
   public async find_token_transactions(
     queryArgs: IGQLQueryArgs<TransactionDTO>,
@@ -48,6 +27,7 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
 
     qb.addSelect('"Collection".name', 'collection_name');
     qb.addSelect('"Collection".token_prefix', 'token_prefix');
+
     qb.addSelect(`"Token".data ->> 'name'::text`, 'token_name');
     qb.addSelect(
       `COALESCE(
@@ -84,18 +64,18 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
       `"Extrinsic".block_index = "Event".block_index AND to_owner IS NOT NULL`,
     );
 
-    // this.applyWhereCondition(qb, queryArgs);
-    this.applyOrderCondition(qb, queryArgs);
-
     qb.where({
       section: EventSection.COMMON,
       method: EventMethod.TRANSFER,
     });
 
+    this.applyOrderCondition(qb, queryArgs);
+
     this.applyLimitOffset(qb, queryArgs);
 
+    const count = await qb.getCount();
     const data = await qb.getRawMany();
 
-    return { data, count: -1 };
+    return { data, count };
   }
 }
