@@ -1,39 +1,42 @@
-import { ScanProcessor } from './scan-processor';
 import { Injectable, Logger } from '@nestjs/common';
-import { Connection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EventHandlerContext } from '@subsquid/substrate-processor';
+import { Store } from '@subsquid/typeorm-store';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
-import { EventHandlerContext } from '@subsquid/substrate-processor';
+import { EventName } from '@common/constants';
+import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import {
+  CollectionInfoWithSchema,
+  CollectionLimits,
+  UniqueCollectionSchemaDecoded,
+} from '@unique-nft/sdk/tokens';
 import { SdkService } from '../sdk.service';
-import { EventName, SchemaVersion } from '@common/constants';
-import { normalizeSubstrateAddress } from '@common/utils';
-import { CollectionInfo, CollectionLimits } from '@unique-nft/sdk/tokens';
-import { ProcessorConfigService } from '../processor.config.service';
+import { ProcessorService } from './processor.service';
+import ISubscriberService from './subscriber.interface';
 
+type ParsedSchemaFields = {
+  collectionCover?: string;
+  schemaVersion?: string;
+  offchainSchema?: string;
+  constOnChainSchema?: object;
+  variableOnChainSchema?: object;
+};
 @Injectable()
-export class CollectionsProcessor {
-  name = 'collections';
-  private readonly logger = new Logger(CollectionsProcessor.name);
-  private processor: ScanProcessor;
+export class CollectionsSubscriberService implements ISubscriberService {
+  private readonly logger = new Logger(CollectionsSubscriberService.name);
 
   constructor(
     @InjectRepository(Collections)
     private collectionsRepository: Repository<Collections>,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
-    protected connection: Connection,
-    protected sdkService: SdkService,
-    private processorConfigService: ProcessorConfigService,
-  ) {
-    this.processor = new ScanProcessor(
-      this.name,
-      this.connection,
-      processorConfigService.getDataSource(),
-      processorConfigService.getRange(),
-      processorConfigService.getTypesBundle(),
-    );
+    private processorService: ProcessorService,
+    private sdkService: SdkService,
+  ) {}
 
+  subscribe() {
     // todo: Remove some items when models rework is done
     const EVENTS_TO_UPDATE_COLLECTION = [
       // Insert
@@ -50,16 +53,16 @@ export class CollectionsProcessor {
       EventName.ALLOW_LIST_ADDRESS_REMOVED,
       EventName.COLLECTION_LIMIT_SET,
       EventName.COLLECTION_SPONSOR_SET,
-
-      // todo: debug
-      // 'system.ExtrinsicSuccess',
     ];
 
     EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
-      this.processor.addEventHandler(eventName, this.upsertHandler.bind(this)),
+      this.processorService.processor.addEventHandler(
+        eventName,
+        this.upsertHandler.bind(this),
+      ),
     );
 
-    this.processor.addEventHandler(
+    this.processorService.processor.addEventHandler(
       EventName.COLLECTION_DESTROYED,
       this.destroyHandler.bind(this),
     );
@@ -67,56 +70,83 @@ export class CollectionsProcessor {
 
   private async getCollectionData(
     collectionId: number,
-  ): Promise<[CollectionInfo, CollectionLimits] | null> {
-    const result = await Promise.all([
+  ): Promise<[CollectionInfoWithSchema | null, CollectionLimits | null]> {
+    return Promise.all([
       this.sdkService.getCollection(collectionId),
       this.sdkService.getCollectionLimits(collectionId),
-    ]).catch();
+    ]);
+  }
+
+  private processJsonStringifiedValue(rawValue) {
+    let result: object | null = null;
+    try {
+      result = typeof rawValue === 'object' ? rawValue : JSON.parse(rawValue);
+    } catch (err) {
+      // Bad value, log it
+      result = { raw: rawValue };
+    }
 
     return result;
   }
 
-  /**
-   * Creates 'collection_cover' field value from other fields.
-   */
-  createCollectionCoverValue({
-    collection_id,
-    schema_version,
-    offchain_schema,
-    variable_on_chain_schema,
-  }) {
-    let result = null;
+  private processSchema(
+    schema: UniqueCollectionSchemaDecoded,
+    collectionId: number,
+  ): ParsedSchemaFields {
+    let result = {};
 
-    try {
-      const urlPattern = /^["']?(http[s]?:\/\/[^"']+)["']?$/;
+    if (!schema) {
+      this.logger.warn(`No collection schema ${collectionId}`);
+      return result;
+    }
 
-      if (
-        schema_version === SchemaVersion.IMAGE_URL &&
-        offchain_schema &&
-        urlPattern.test(offchain_schema)
-      ) {
-        const match = offchain_schema.match(urlPattern);
-        const plainUrl = match[1];
-        result = String(plainUrl).replace('{id}', '1');
-      } else if (variable_on_chain_schema?.collectionCover) {
-        result = variable_on_chain_schema.collectionCover;
-      }
-    } catch (error) {
-      this.logger.error({
-        error: 'Collection cover processing error',
-        message: error.message,
-        collection_id,
-        schema_version,
-        offchain_schema,
-        variable_on_chain_schema,
-      });
+    // todo: Find out what to do with 'properties', 'attributesSchema'
+
+    const { schemaName } = schema;
+    if (schemaName == '_old_') {
+      const {
+        coverPicture: { fullUrl, ipfsCid },
+        schemaVersion,
+        attributesSchemaVersion,
+        oldProperties: {
+          _old_schemaVersion: oldSchemaVersion,
+          _old_offchainSchema: offchainSchema,
+          _old_constOnChainSchema: rawConstOnChainSchema,
+          _old_variableOnChainSchema: rawVariableOnChainSchema,
+        },
+      } = schema;
+
+      result = {
+        collectionCover: ipfsCid || fullUrl,
+        schemaVersion: `${schemaName}@${schemaVersion}@${attributesSchemaVersion}@${oldSchemaVersion}`,
+        offchainSchema,
+        constOnChainSchema: this.processJsonStringifiedValue(
+          rawConstOnChainSchema,
+        ),
+        variableOnChainSchema: this.processJsonStringifiedValue(
+          rawVariableOnChainSchema,
+        ),
+      };
+    } else if (schemaName === 'unique') {
+      const {
+        coverPicture: { fullUrl, ipfsCid },
+        schemaVersion,
+        attributesSchemaVersion,
+      } = schema;
+
+      result = {
+        collectionCover: ipfsCid || fullUrl,
+        schemaVersion: `${schemaName}@${schemaVersion}@${attributesSchemaVersion}`,
+      };
+    } else {
+      this.logger.warn(`Unknown schema name ${schemaName}`);
     }
 
     return result;
   }
 
   prepareDataToWrite(
-    collectionInfo: CollectionInfo,
+    collectionInfo: CollectionInfoWithSchema,
     collectionLimits: CollectionLimits,
   ) {
     const {
@@ -127,14 +157,17 @@ export class CollectionsProcessor {
       sponsorship,
       tokenPrefix: token_prefix,
       mode,
-      properties: {
-        offchainSchema: offchain_schema,
-        constOnChainSchema: const_chain_schema,
-        variableOnChainSchema: rawVariableOnChainSchema,
-        schemaVersion: schema_version,
-      } = {},
+      schema,
       permissions: { mintMode: mint_mode },
     } = collectionInfo;
+
+    const {
+      collectionCover = null,
+      schemaVersion = null,
+      offchainSchema = null,
+      constOnChainSchema = null,
+      variableOnChainSchema = null,
+    } = this.processSchema(schema, collection_id);
 
     const {
       tokenLimit: token_limit,
@@ -145,48 +178,35 @@ export class CollectionsProcessor {
       ownerCanDestroy: owner_can_destroy,
     } = collectionLimits;
 
-    let processedVariableOnChainSchema: object | null = null;
-    try {
-      processedVariableOnChainSchema =
-        typeof rawVariableOnChainSchema === 'object'
-          ? rawVariableOnChainSchema
-          : JSON.parse(rawVariableOnChainSchema);
-    } catch (err) {
-      // Bad value, log it
-      processedVariableOnChainSchema = { raw: rawVariableOnChainSchema };
-    }
-
     return {
       collection_id,
       owner,
       name,
       description,
-      offchain_schema,
+      offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
-      const_chain_schema,
-      variable_on_chain_schema: processedVariableOnChainSchema,
+      const_chain_schema: constOnChainSchema,
+      variable_on_chain_schema: variableOnChainSchema,
       limits_account_ownership,
       limits_sponsore_data_size,
       limits_sponsore_data_rate,
       owner_can_transfer,
       owner_can_destroy,
       sponsorship: sponsorship?.isConfirmed ? sponsorship.address : null,
-      schema_version,
+      schema_version: schemaVersion,
       token_prefix,
       mode,
       mint_mode,
       owner_normalized: normalizeSubstrateAddress(owner),
-      collection_cover: this.createCollectionCoverValue({
-        collection_id,
-        schema_version,
-        offchain_schema,
-        variable_on_chain_schema: processedVariableOnChainSchema,
-      }),
+      collection_cover: collectionCover,
     };
   }
 
-  private async upsertHandler(ctx: EventHandlerContext): Promise<void> {
-    const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
+  private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
+    const {
+      block: { height: blockNumber, timestamp: blockTimestamp },
+      event: { name: eventName, args },
+    } = ctx;
 
     const log = {
       eventName,
@@ -197,7 +217,7 @@ export class CollectionsProcessor {
     };
 
     try {
-      const collectionId = params[0].value as number;
+      const collectionId = this.getCollectionIdFromArgs(args);
 
       log.collectionId = collectionId;
 
@@ -221,7 +241,7 @@ export class CollectionsProcessor {
             ...dataToWrite,
             date_of_creation:
               eventName === EventName.COLLECTION_CREATED
-                ? blockTimestamp
+                ? normalizeTimestamp(blockTimestamp)
                 : undefined,
           },
           ['collection_id'],
@@ -239,8 +259,11 @@ export class CollectionsProcessor {
     }
   }
 
-  private async destroyHandler(ctx: EventHandlerContext): Promise<void> {
-    const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
+  private async destroyHandler(ctx: EventHandlerContext<Store>): Promise<void> {
+    const {
+      block: { height: blockNumber, timestamp: blockTimestamp },
+      event: { name: eventName, args },
+    } = ctx;
 
     const log = {
       eventName,
@@ -250,7 +273,7 @@ export class CollectionsProcessor {
     };
 
     try {
-      const collectionId = params[0].value as number;
+      const collectionId = this.getCollectionIdFromArgs(args);
 
       log.collectionId = collectionId;
 
@@ -259,7 +282,6 @@ export class CollectionsProcessor {
       this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
-      process.exit(1);
     }
   }
 
@@ -271,14 +293,7 @@ export class CollectionsProcessor {
     ]);
   }
 
-  public run(): void {
-    const params = this.processorConfigService.getAllParams();
-
-    this.logger.log({
-      msg: `Starting ${this.name} crawler...`,
-      params,
-    });
-
-    this.processor.run();
+  private getCollectionIdFromArgs(args): number {
+    return typeof args === 'number' ? args : (args[0] as number);
   }
 }

@@ -5,9 +5,11 @@ import {
   InputType,
   ObjectType,
   Query,
+  registerEnumType,
   Resolver,
 } from '@nestjs/graphql';
 import {
+  DateRangeArgs,
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
@@ -15,11 +17,19 @@ import {
   IDataListResponse,
   IGQLQueryArgs,
   ListDataType,
+  StatisticDataResponse,
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { ExtrinsicDTO } from './extrinsic.dto';
 import { ExtrinsicService } from './extrinsic.service';
+
+export enum ExtrinsicsStatsEnumType {
+  COINS = 'coins',
+  TOKENS = 'tokens',
+}
+
+registerEnumType(ExtrinsicsStatsEnumType, { name: 'ExtrinsicsStatsTypeEnum' });
 
 @InputType()
 class ExtrinsicWhereParams implements TWhereParams<ExtrinsicDTO> {
@@ -111,6 +121,12 @@ class QueryArgs
 @ObjectType()
 class ExtrinsicDataResponse extends ListDataType(ExtrinsicDTO) {}
 
+@ArgsType()
+export class ExtrinsicsStats extends DateRangeArgs {
+  @Field(() => ExtrinsicsStatsEnumType, { nullable: true })
+  type?: ExtrinsicsStatsEnumType;
+}
+
 @Resolver(() => ExtrinsicDTO)
 export class ExtrinsicResolver {
   constructor(private service: ExtrinsicService) {}
@@ -120,5 +136,13 @@ export class ExtrinsicResolver {
     @Args() args: QueryArgs,
   ): Promise<IDataListResponse<ExtrinsicDTO>> {
     return this.service.find(args);
+  }
+
+  @Query(() => StatisticDataResponse)
+  public async extrinsicsStatistics(
+    @Args() args: ExtrinsicsStats,
+  ): Promise<StatisticDataResponse> {
+    const data = await this.service.statistic(args);
+    return { data };
   }
 }

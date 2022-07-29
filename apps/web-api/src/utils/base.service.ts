@@ -229,4 +229,8 @@ export class BaseService<T, S> {
       this.aliasFields[field] ?? field
     }"`;
   }
+
+  protected formatDate(date: Date): number {
+    return Math.floor(date.getTime() / 1000);
+  }
 }

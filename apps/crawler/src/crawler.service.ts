@@ -1,60 +1,39 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DataSource } from 'typeorm';
-import { ProcessorConfigService } from './processor.config.service';
-import { CollectionsProcessor } from './processors/collections-processor';
-import { TokensProcessor } from './processors/tokens-processor';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ProcessorService } from './subscribers/processor.service';
+import { AccountsSubscriberService } from './subscribers/accounts-subscriber.service';
+import { BlocksSubscriberService } from './subscribers/blocks-subscriber.service';
+import { CollectionsSubscriberService } from './subscribers/collections-subscriber.service';
+import { TokensSubscriberService } from './subscribers/tokens-subscriber.service';
 
 @Injectable()
 export class CrawlerService {
-  private readonly logger = new Logger(CrawlerService.name);
-
   constructor(
-    private dataSource: DataSource,
-    private collectionsProcessor: CollectionsProcessor,
-    private tokensProcessor: TokensProcessor,
-    private processorConfigService: ProcessorConfigService,
+    private configService: ConfigService,
+    private processorService: ProcessorService,
+    private accountsSubscriberService: AccountsSubscriberService,
+    private blocksSubscriberService: BlocksSubscriberService,
+    private collectionsSubscriberService: CollectionsSubscriberService,
+    private tokensSubscriberService: TokensSubscriberService,
   ) {}
 
-  subscribeAll(forceRescan = false) {
-    const range = this.processorConfigService.getRange();
-
-    return Promise.all([
-      this.subscribeCollections({ range, forceRescan }),
-      this.subscribeTokens({ range, forceRescan }),
-    ]);
-  }
-
-  async subscribeCollections({ range, forceRescan }) {
-    if (forceRescan && !isNaN(range.from)) {
-      try {
-        const statusDbSchemaName = `${this.collectionsProcessor.name}_status`;
-
-        // Set status height to range.from to rescan old blocks
-        await this.dataSource.query(
-          `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
-        );
-      } catch (err) {
-        // First run, no schema yet
-      }
+  async subscribe(forceRescan = false) {
+    if (this.configService.get('ACCOUNTS_SUBSCRIBER_DISABLE') !== 'true') {
+      this.accountsSubscriberService.subscribe();
     }
 
-    this.collectionsProcessor.run();
-  }
-
-  async subscribeTokens({ range, forceRescan }) {
-    if (forceRescan && !isNaN(range.from)) {
-      try {
-        const statusDbSchemaName = `${this.tokensProcessor.name}_status`;
-
-        // Set status height to range.from to rescan old blocks
-        await this.dataSource.query(
-          `UPDATE ${statusDbSchemaName}.status SET height = ${range.from} WHERE id = 0`,
-        );
-      } catch (err) {
-        // First run, no schema yet
-      }
+    if (this.configService.get('BLOCKS_SUBSCRIBER_DISABLE') !== 'true') {
+      this.blocksSubscriberService.subscribe();
     }
 
-    this.tokensProcessor.run();
+    if (this.configService.get('COLLECTIONS_SUBSCRIBER_DISABLE') !== 'true') {
+      this.collectionsSubscriberService.subscribe();
+    }
+
+    if (this.configService.get('TOKENS_SUBSCRIBER_DISABLE') !== 'true') {
+      this.tokensSubscriberService.subscribe();
+    }
+
+    return this.processorService.run(forceRescan);
   }
 }
