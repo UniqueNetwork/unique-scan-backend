@@ -27,6 +27,7 @@ export enum SchemaVersion {
 }
 
 export enum EventSection {
+  COMMON = 'Common',
   SYSTEM = 'System',
   BALANCES = 'Balances',
   TREASURY = 'Treasury',
@@ -41,6 +42,7 @@ export enum EventMethod {
 }
 
 export enum ExtrinsicSection {
+  UNIQUE = 'Unique',
   PARACHAIN_SYSTEM = 'ParachainSystem',
   TIMESTAMP = 'Timestamp',
 }
