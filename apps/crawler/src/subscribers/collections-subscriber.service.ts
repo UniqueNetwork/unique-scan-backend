@@ -99,7 +99,6 @@ export class CollectionsSubscriberService implements ISubscriberService {
       this.logger.warn(`No collection schema ${collectionId}`);
       return result;
     }
-
     // todo: Find out what to do with 'properties', 'attributesSchema'
 
     const { schemaName } = schema;
