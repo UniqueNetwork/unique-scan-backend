@@ -34,6 +34,7 @@ const EXTRINSICS_SECTIONS_TO_SKIP = [
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
+  ExtrinsicMethod.TRANSFER_FROM,
   ExtrinsicMethod.TRANSFER_ALL,
   ExtrinsicMethod.TRANSFER_KEEP_ALIVE,
   ExtrinsicMethod.VESTED_TRANSFER,
@@ -254,12 +255,12 @@ export class BlocksSubscriberService implements ISubscriberService {
           } = signature);
         }
 
+        const {
+          call: { args },
+        } = extrinsic;
+
         let toOwner = null;
         if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
-          const {
-            call: { args },
-          } = extrinsic;
-
           const recipientAddress = args as IExtrinsicRecipient;
           toOwner =
             recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
@@ -274,7 +275,6 @@ export class BlocksSubscriberService implements ISubscriberService {
         return {
           timestamp: String(timestamp),
           block_number: String(blockNumber),
-          // todo: Do we need this field?
           block_index: `${blockNumber}-${indexInBlock}`,
           extrinsic_index: indexInBlock,
           section,
@@ -287,7 +287,7 @@ export class BlocksSubscriberService implements ISubscriberService {
           to_owner: toOwner,
           to_owner_normalized: toOwner && normalizeSubstrateAddress(toOwner),
           // todo: Do we realy need that data?
-          args: '', // JSON.stringify(args),
+          args: JSON.stringify(args),
           amount,
           fee,
         };
@@ -320,8 +320,7 @@ export class BlocksSubscriberService implements ISubscriberService {
           timestamp: String(timestamp),
           block_number: String(blockNumber),
           event_index: indexInBlock,
-          // todo: Do we need this field?
-          block_index: `${blockNumber}-${indexInBlock}`,
+          block_index: `${blockNumber}-${extrinsic.indexInBlock}`,
           section,
           method,
           // todo: Make more clean connect to extrinsic
