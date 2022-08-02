@@ -2,7 +2,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 import { Total } from '../common/entities/Total';
 
-export class totalStatsTriggers1658207698185 implements MigrationInterface {
+export class totalStatsTriggers1659414459225 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.startTransaction();
 
