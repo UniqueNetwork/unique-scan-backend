@@ -9,7 +9,7 @@ import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
 import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import ISubscriberService from './subscriber.interface';
-import { TokenDecoded } from '@unique-nft/sdk/tokens';
+import { UniqueTokenDecoded } from '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
@@ -51,19 +51,19 @@ export class TokensSubscriberService implements ISubscriberService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
-  ): Promise<TokenDecoded | null> {
+  ): Promise<UniqueTokenDecoded | null> {
     const result = await this.sdkService.getToken(collectionId, tokenId);
 
     return result ? result : null;
   }
 
-  prepareDataToWrite(sdkEntity: TokenDecoded) {
+  prepareDataToWrite(sdkEntity: UniqueTokenDecoded) {
     const {
       tokenId: token_id,
       collectionId: collection_id,
       image,
       attributes,
-      parent,
+      nestingParentToken,
     } = sdkEntity;
 
     const {
@@ -73,8 +73,8 @@ export class TokensSubscriberService implements ISubscriberService {
     const owner = rawOwner?.Ethereum || rawOwner?.Substrate;
 
     let parentId = null;
-    if (parent) {
-      const { collectionId, tokenId } = parent;
+    if (nestingParentToken) {
+      const { collectionId, tokenId } = nestingParentToken;
       parentId = `${collectionId}_${tokenId}`;
     }
 
@@ -86,9 +86,7 @@ export class TokensSubscriberService implements ISubscriberService {
       // todo: Find out what should we store here
       data: {
         image: image.fullUrl || image.ipfsCid,
-        attributes: Object.fromEntries(
-          Object.values(attributes).map(({ name, value }) => [name, value]),
-        ),
+        attributes: Array.from(Object.values(attributes)),
       },
       parent_id: parentId,
     };
