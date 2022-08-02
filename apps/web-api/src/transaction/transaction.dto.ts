@@ -29,10 +29,10 @@ export class TransactionDTO {
   @Field(() => String, { nullable: true })
   token_name?: string;
 
-  @Field(() => String, { nullable: true }) // todo: remove nullable when sdk wixed
+  @Field(() => String, { nullable: true }) // Collection can be not scaned yet
   token_prefix?: string;
 
-  @Field(() => String, { nullable: true }) // todo: remove nullable when sdk wixed
+  @Field(() => String, { nullable: true }) // Collection can be not scaned yet
   collection_name?: string;
 
   @Field(() => String)
