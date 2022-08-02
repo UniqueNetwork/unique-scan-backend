@@ -2,7 +2,7 @@ import { ObjectType, ArgsType, Field, InputType } from '@nestjs/graphql';
 import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
-  GQLWhereOpsInt,
+  //   GQLWhereOpsInt,
   GQLWhereOpsString,
   IGQLQueryArgs,
   ListDataType,

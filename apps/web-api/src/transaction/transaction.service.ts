@@ -7,11 +7,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import {
-  IDataListResponse,
-  IGQLQueryArgs,
-  TWhere,
-} from '../utils/gql-query-args';
+import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { TransactionDTO } from './transaction.dto';
 
 @Injectable()
@@ -84,14 +80,4 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
 
     return { data, count };
   }
-
-  // applyWhereCondition(
-  //   qb: SelectQueryBuilder<T>,
-  //   args: IGQLQueryArgs<S>,
-  //   filterCb?: (
-  //     qb: SelectQueryBuilder<T>,
-  //     where: TWhere<S>,
-  //     method: OperatorMethods,
-  //   ) => void,
-  // ): void {}
 }
