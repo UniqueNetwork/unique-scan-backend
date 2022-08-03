@@ -6,7 +6,11 @@ import { Store } from '@subsquid/typeorm-store';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import {
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+  sanitizePropertiesValues,
+} from '@common/utils';
 import {
   CollectionInfoWithSchema,
   CollectionLimits,
@@ -99,7 +103,6 @@ export class CollectionsSubscriberService implements ISubscriberService {
       this.logger.warn(`No collection schema ${collectionId}`);
       return result;
     }
-    // todo: Find out what to do with 'properties', 'attributesSchema'
 
     const { schemaName } = schema;
     if (schemaName == '_old_') {
@@ -162,7 +165,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
       mode,
       schema,
       permissions: { mintMode: mint_mode },
-      properties = {},
+      properties = [],
     } = collectionInfo;
 
     const {
@@ -192,7 +195,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
       description,
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
-      properties,
+      properties: sanitizePropertiesValues(properties),
       attributes_schema: attributesSchema,
       const_chain_schema: constOnChainSchema,
       variable_on_chain_schema: variableOnChainSchema,

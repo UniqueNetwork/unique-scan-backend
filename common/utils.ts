@@ -24,3 +24,16 @@ export function getAmount(strNum: string) {
 
   return dividedBy;
 }
+
+export function sanitizeUnicodeString(str) {
+  return str.replace(/\\u0000|\x00/g, '');
+}
+
+export function sanitizePropertiesValues(
+  propertiesArr: { key: string; value: string }[],
+) {
+  return propertiesArr.map(({ key, value }) => ({
+    key,
+    value: sanitizeUnicodeString(value),
+  }));
+}
