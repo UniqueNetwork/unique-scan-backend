@@ -159,6 +159,10 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
       'actions_count',
     );
     qb.addSelect('Collections.date_of_creation', 'date_of_creation');
-    qb.leftJoin('Collections.statistics', 'Statistics');
+    qb.leftJoin(
+      'collections_stats',
+      'Statistics',
+      '"Collections".collection_id = "Statistics".collection_id',
+    );
   }
 }
