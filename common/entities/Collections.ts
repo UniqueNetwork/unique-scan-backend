@@ -31,7 +31,7 @@ export class Collections {
   @Column('bigint', { name: 'token_limit' })
   token_limit: number;
 
-  @Column('jsonb', { name: 'properties', default: {} })
+  @Column('jsonb', { name: 'properties', default: [] })
   properties: object | null;
 
   @Column('jsonb', { name: 'attributes_schema', default: {} })
