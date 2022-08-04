@@ -9,10 +9,7 @@ import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
 import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import ISubscriberService from './subscriber.interface';
-import {
-  TokenPropertiesResult,
-  UniqueTokenDecoded,
-} from '@unique-nft/sdk/tokens';
+import { UniqueTokenDecoded } from '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
@@ -54,22 +51,10 @@ export class TokensSubscriberService implements ISubscriberService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
-  ): Promise<{
-    tokenDecoded: UniqueTokenDecoded | null;
-    tokenProperties: TokenPropertiesResult | null;
-  }> {
-    const [tokenDecoded, tokenProperties] = await Promise.all([
-      this.sdkService.getToken(collectionId, tokenId),
-      null,
-      // this.sdkService.getTokenProperties(collectionId, tokenId),
-    ]);
+  ): Promise<UniqueTokenDecoded | null> {
+    const result = await this.sdkService.getToken(collectionId, tokenId);
 
-    console.log(tokenDecoded);
-
-    return {
-      tokenDecoded,
-      tokenProperties,
-    };
+    return result ? result : null;
   }
 
   prepareDataToWrite(sdkEntity: UniqueTokenDecoded) {
@@ -132,16 +117,10 @@ export class TokensSubscriberService implements ISubscriberService {
         throw new Error('Bad tokenId');
       }
 
-      const { tokenDecoded, tokenProperties } = await this.getTokenData(
-        collectionId,
-        tokenId,
-      );
+      const tokenData = await this.getTokenData(collectionId, tokenId);
 
-      console.log('tokenDecoded', tokenDecoded);
-      console.log('tokenProperties', tokenProperties);
-
-      if (tokenDecoded) {
-        const dataToWrite = this.prepareDataToWrite(tokenDecoded);
+      if (tokenData) {
+        const dataToWrite = this.prepareDataToWrite(tokenData);
 
         log.entity = dataToWrite;
 
