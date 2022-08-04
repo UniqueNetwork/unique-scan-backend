@@ -2,7 +2,6 @@ import { ObjectType, ArgsType, Field, InputType } from '@nestjs/graphql';
 import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
-  //   GQLWhereOpsInt,
   GQLWhereOpsString,
   IGQLQueryArgs,
   ListDataType,
@@ -29,12 +28,6 @@ export class TransactionsOrderByParams
 class TransactionWhereParams implements TWhereParams<TransactionDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   block_index?: GQLWhereOpsString;
-
-  //   @Field(() => GQLWhereOpsString, { nullable: true })
-  //   owner_normalized?: GQLWhereOpsString;
-
-  //   @Field(() => GQLWhereOpsInt, { nullable: true })
-  //   collection_id?: GQLWhereOpsInt;
 
   @Field(() => [TransactionWhereParams], { nullable: true })
   _and?: TransactionWhereParams[];
