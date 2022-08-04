@@ -3,7 +3,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
+import {
+  IDataListResponse,
+  IDateRange,
+  IGQLQueryArgs,
+  IStatsResponse,
+} from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
 
 const relationsFields = {
@@ -30,7 +35,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     this.applyFilters(qb, queryArgs);
     const data = await qb.getRawMany();
-    const count = await qb.getCount();
+    const count = await this.getCountByFilters(qb, queryArgs);
 
     return { data, count };
   }
@@ -61,6 +66,25 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     };
   }
 
+  public async statistic({
+    fromDate,
+    toDate,
+  }: IDateRange): Promise<IStatsResponse[]> {
+    const qb = await this.repo.createQueryBuilder();
+    qb.select(`date_trunc('hour', TO_TIMESTAMP(date_of_creation))`, 'date');
+    qb.addSelect('count(*)', 'count');
+    qb.groupBy('date');
+
+    if (fromDate) {
+      qb.where(`"date_of_creation" >= ${this.formatDate(fromDate)}`);
+    }
+    if (toDate) {
+      qb.andWhere(`"date_of_creation" <= ${this.formatDate(fromDate)}`);
+    }
+
+    return qb.getRawMany();
+  }
+
   private applyFilters(
     qb: SelectQueryBuilder<Tokens>,
     queryArgs: IGQLQueryArgs<TokenDTO>,
@@ -69,6 +93,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
+    this.applyDistinctOn(qb, queryArgs);
   }
 
   private select(qb: SelectQueryBuilder<Tokens>): void {
@@ -78,6 +103,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.owner', 'owner');
     qb.addSelect('Tokens.date_of_creation', 'date_of_creation');
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
+    qb.addSelect('Tokens.parent_id', 'parent_id');
     qb.addSelect(
       `COALESCE(
         "Tokens".data::json ->> 'ipfsJson'::text,

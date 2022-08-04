@@ -51,11 +51,25 @@ $ npm run start:prod
 # unit tests
 $ npm run test
 
-# e2e tests
-$ npm run test:e2e
-
 # test coverage
 $ npm run test:cov
+```
+
+## E2E Tests
+
+1. Set environment variables in .env
+   1. WS_PROVIDER_URL - blockchain ws (for local use: 'ws://host.docker.internal:9944')
+   2. TESTS_GRAPHQL_URL - scan api url (for local use: 'http://localhost:3031/v1/graphql')
+
+```bash
+# start environment
+$ npm run tests:start-environment
+
+# run tests
+$ npm run tests
+
+# stop environment
+$ npm run tests:stop-environment
 ```
 
 ## Support

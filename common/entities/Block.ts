@@ -53,4 +53,7 @@ export class Block {
 
   @Column('boolean', { name: 'need_rescan', default: false })
   need_rescan: boolean;
+
+  @Column('integer', { name: 'total_extrinsics' })
+  total_extrinsics: number;
 }

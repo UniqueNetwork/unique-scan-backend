@@ -8,12 +8,14 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import {
+  DateRangeArgs,
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsString,
   IDataListResponse,
   IGQLQueryArgs,
   ListDataType,
+  StatisticDataResponse,
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
@@ -89,5 +91,13 @@ export class AccountResolver {
     @Args() args: QueryArgs,
   ): Promise<IDataListResponse<AccountDTO>> {
     return this.service.find(args);
+  }
+
+  @Query(() => StatisticDataResponse)
+  public async accountsStatistics(
+    @Args() args: DateRangeArgs,
+  ): Promise<StatisticDataResponse> {
+    const data = await this.service.statistic(args);
+    return { data };
   }
 }

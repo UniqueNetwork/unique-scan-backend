@@ -31,6 +31,12 @@ export class Collections {
   @Column('bigint', { name: 'token_limit' })
   token_limit: number;
 
+  @Column('jsonb', { name: 'properties', default: [] })
+  properties: object | null;
+
+  @Column('jsonb', { name: 'attributes_schema', default: {} })
+  attributes_schema: object | null;
+
   @Column('jsonb', { name: 'const_chain_schema', nullable: true, default: {} })
   const_chain_schema: object | null;
 
@@ -50,11 +56,11 @@ export class Collections {
   @Column('integer', { name: 'limits_sponsore_data_rate', nullable: true })
   limits_sponsore_data_rate: number | null;
 
-  @Column('boolean', { name: 'owner_can_transfer', default: false })
-  owner_can_transfer: boolean;
+  @Column('boolean', { name: 'owner_can_transfer', nullable: true })
+  owner_can_transfer: boolean | null;
 
-  @Column('boolean', { name: 'owner_can_destroy', default: false })
-  owner_can_destroy: boolean;
+  @Column('boolean', { name: 'owner_can_destroy', nullable: true })
+  owner_can_destroy: boolean | null;
 
   @Column('character varying', {
     name: 'sponsorship',
@@ -99,9 +105,6 @@ export class Collections {
   })
   collection_cover: string | null;
 
-  @OneToOne(() => CollectionsStats)
-  @JoinColumn([
-    { name: 'collection_id', referencedColumnName: 'collection_id' },
-  ])
+  @OneToOne(() => CollectionsStats, { nullable: true })
   statistics: CollectionsStats;
 }

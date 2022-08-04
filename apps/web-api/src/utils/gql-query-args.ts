@@ -1,6 +1,7 @@
 import {
   ArgsType,
   Field,
+  Float,
   InputType,
   Int,
   ObjectType,
@@ -67,19 +68,19 @@ export interface IGQLQueryArgs<T> {
 
 @InputType()
 export class GQLWhereOpsInt implements IWhereOperators {
-  @Field(() => Int, { nullable: true })
+  @Field(() => Float, { nullable: true })
   _eq?: number;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => Float, { nullable: true })
   _neq?: number;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => Float, { nullable: true })
   _like?: number;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => Float, { nullable: true })
   _ilike?: number;
 
-  @Field(() => [Int], { nullable: true })
+  @Field(() => [Float], { nullable: true })
   _in?: number[];
 }
 
@@ -113,17 +114,55 @@ export class GQLQueryPaginationArgs {
 export interface IDataListResponse<T> {
   data: T[];
   count: number;
+  timestamp?: number;
+}
+
+export interface IDateRange {
+  fromDate?: Date;
+  toDate?: Date;
+}
+
+export interface IStatsResponse {
+  count: number;
+  date: Date;
 }
 
 export function ListDataType<T>(classRef: Type<T>): Type<IDataListResponse<T>> {
   @ObjectType({ isAbstract: true })
-  abstract class ListDataType implements IDataListResponse<T> {
+  class ListDataType implements IDataListResponse<T> {
     @Field(() => [classRef], { nullable: true })
     data: T[];
 
     @Field(() => Int)
     count: number;
+
+    @Field(() => Float)
+    timestamp: number;
   }
 
   return ListDataType as Type<IDataListResponse<T>>;
+}
+
+@ArgsType()
+export class DateRangeArgs {
+  @Field(() => Date, { nullable: true })
+  fromDate?: Date;
+
+  @Field(() => Date, { nullable: true })
+  toDate?: Date;
+}
+
+@ObjectType()
+class StatisticDataEntity {
+  @Field(() => Date, { nullable: true })
+  date?: Date;
+
+  @Field(() => Int)
+  count!: number;
+}
+
+@ObjectType()
+export class StatisticDataResponse {
+  @Field(() => [StatisticDataEntity], { nullable: true })
+  data?: StatisticDataEntity[];
 }

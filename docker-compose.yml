@@ -1,8 +1,8 @@
 version: "3"
 
 networks:
-  market:
-    external: true
+ scan-api:
+   external: false
 
 services:
   scan-web-api:
@@ -13,10 +13,9 @@ services:
     ports:
       - "3031:3031"
     networks:
-      - market
+      - scan-api
     depends_on:
       - postgres
-      - crawler
     restart: on-failure
     environment:
       - PORT=3031
@@ -30,37 +29,86 @@ services:
     image: postgres:14.2-alpine
     container_name: scan-database
     networks:
-      - market
+      - scan-api
+    env_file:
+      - .env
     environment:
-      - POSTGRES_USER=polkastats
-      - POSTGRES_PASSWORD=polkastats
-      - POSTGRES_DB=polkastats
       - TZ=Europe/Moscow
       - PGTZ=Europe/Moscow
     ports:
-      - "3032:5432"
+      - "5432:5432"
     volumes:
       - scan-pgdata:/var/lib/postgresql/data
       - /etc/localtime:/etc/localtime:ro
 
-  crawler:
-    image: polkastats-backend:latest
-    container_name: scan-crawler
-    networks:
-      - market
+  indexer:
+    image: subsquid/hydra-indexer:5
+    restart: unless-stopped
+    environment:
+      - WORKERS_NUMBER=50
+      - DB_NAME=indexer
+      - DB_HOST=postgres
+      - DB_USER=polkastats
+      - DB_PASS=polkastats
+      - DB_PORT=5432
+      - REDIS_URI=redis://redis:6379/0
+      - FORCE_HEIGHT=${SCAN_FORCE_RESCAN}
+      - BLOCK_HEIGHT=${SCAN_RANGE_FROM}
+      - WS_PROVIDER_ENDPOINT_URI=${CHAIN_WS_URL}
+      - BUNDLE_TYPES=/configs/typesBundle.json
     depends_on:
       - postgres
-    restart: on-failure
+      - redis
+    volumes:
+      - "./typesBundle.json:/configs/typesBundle.json"
+    command: >
+      sh -c "yarn db:bootstrap && yarn start:prod"
+    ports:
+      - 9090:9090
+    networks:
+      - scan-api
+
+  indexer-gateway:
+    image: subsquid/hydra-indexer-gateway:5
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - postgres
+      - indexer-status-service
+      - indexer
+    ports:
+      - "4010:8080"
+    networks:
+      - scan-api
     environment:
-      - NODE_ENV=production
-      - WS_PROVIDER_URL=${WS_PROVIDER_URL}
-      - TYPE_PROVIDER=${TYPE_PROVIDER}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_USER=polkastats
-      - POSTGRES_PASSWORD=polkastats
-      - POSTGRES_DATABASE=polkastats
-      - PROMETHEUS_PORT=9003
-      - HOST_CRAWLER=0.0.0.0
+      - DEV_MODE=true
+      - DB_NAME=indexer
+      - DB_HOST=postgres
+      - DB_USER=polkastats
+      - DB_PASS=polkastats
+      - DB_PORT=5432
+      # - FORCE_HEIGHT=true
+      # - BLOCK_HEIGHT=1000000 # starting block height
+      - HYDRA_INDEXER_STATUS_SERVICE=http://indexer-status-service:8081/status
+
+  indexer-status-service:
+    image: subsquid/hydra-indexer-status-service:5
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      REDIS_URI: redis://redis:6379/0
+      PORT: 8081
+    networks:
+      - scan-api
+
+  redis:
+    image: redis:6.0-alpine
+    restart: always
+    ports:
+      - "6379"
+    networks:
+      - scan-api
 
 volumes:
   scan-pgdata:

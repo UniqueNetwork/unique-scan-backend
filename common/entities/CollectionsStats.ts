@@ -16,7 +16,9 @@ export class CollectionsStats {
   @Column('bigint', { name: 'actions_count' })
   actions_count: number;
 
-  @OneToOne(() => Collections, (collections) => collections.statistics)
+  @OneToOne(() => Collections, (collections) => collections.statistics, {
+    nullable: true,
+  })
   @JoinColumn([
     { name: 'collection_id', referencedColumnName: 'collection_id' },
   ])

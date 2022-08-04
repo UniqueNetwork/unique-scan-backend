@@ -25,6 +25,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/scraper/tsconfig.app.json"
       }
+    },
+    "crawler": {
+      "type": "application",
+      "root": "apps/crawler",
+      "entryFile": "main",
+      "sourceRoot": "apps/crawler/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/crawler/tsconfig.app.json"
+      }
     }
   }
 }

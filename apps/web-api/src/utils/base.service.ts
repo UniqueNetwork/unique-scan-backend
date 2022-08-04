@@ -17,11 +17,13 @@ export class BaseService<T, S> {
   private readonly DEFAULT_PAGE_SIZE = 10;
   private readonly aliasFields: ISetting = {};
   private readonly relationsFields: ISetting = {};
+  private readonly relations: string[] = [];
 
   constructor(schemas: ISettingsSchema = {}) {
-    const { aliasFields = {}, relationsFields = {} } = schemas;
+    const { aliasFields = {}, relationsFields = {}, relations = [] } = schemas;
     this.aliasFields = aliasFields;
     this.relationsFields = relationsFields;
+    this.relations = relations;
   }
 
   protected applyLimitOffset(
@@ -93,9 +95,14 @@ export class BaseService<T, S> {
   protected applyWhereCondition(
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
+    filterCb?: (
+      qb: SelectQueryBuilder<T>,
+      where: TWhere<S>,
+      method: OperatorMethods,
+    ) => void,
   ): void {
     if (!isEmpty(args.where)) {
-      this.applyConditionTree(qb, args.where);
+      this.applyConditionTree(qb, args.where, Operator.AND, filterCb);
     }
   }
 
@@ -103,6 +110,11 @@ export class BaseService<T, S> {
     qb: SelectQueryBuilder<T>,
     where: TWhere<S>,
     upperOperator = Operator.AND,
+    filterCb?: (
+      qb: SelectQueryBuilder<T>,
+      where: TWhere<S>,
+      method: OperatorMethods,
+    ) => void,
   ): void {
     Object.keys(where).forEach((op) => {
       const operator = this.getOrmWhereOperation(op);
@@ -112,17 +124,21 @@ export class BaseService<T, S> {
           this.addSubQuery(
             where,
             operator === OperatorMethods.AND ? Operator.AND : Operator.OR,
+            filterCb,
           ),
         );
       } else {
-        const whereEntity = { [op]: where[op] } as TWhere<S>;
-        this.setWhereConditionExpression(
-          qb,
-          whereEntity,
+        const method =
           upperOperator === Operator.AND
             ? OperatorMethods.AND
-            : OperatorMethods.OR,
-        );
+            : OperatorMethods.OR;
+
+        if (typeof filterCb === 'function' && this.relations?.includes(op)) {
+          filterCb(qb, where[op], method);
+        } else {
+          const whereEntity = { [op]: where[op] } as TWhere<S>;
+          this.setWhereConditionExpression(qb, whereEntity, method);
+        }
       }
     });
   }
@@ -148,13 +164,22 @@ export class BaseService<T, S> {
     }
   }
 
-  private addSubQuery(where: TWhere<S>, operator: Operator) {
+  private addSubQuery(
+    where: TWhere<S>,
+    operator: Operator,
+    filterCb?: (
+      qb: SelectQueryBuilder<T>,
+      where: TWhere<S>,
+      method: OperatorMethods,
+    ) => void,
+  ) {
     return new Brackets((qb) =>
       where[operator].map((queryArray) => {
         this.applyConditionTree(
           qb as SelectQueryBuilder<T>,
           queryArray,
           operator,
+          filterCb,
         );
       }),
     );
@@ -203,5 +228,9 @@ export class BaseService<T, S> {
     return `"${this.relationsFields[field] ?? qb.alias}"."${
       this.aliasFields[field] ?? field
     }"`;
+  }
+
+  protected formatDate(date: Date): number {
+    return Math.floor(date.getTime() / 1000);
   }
 }

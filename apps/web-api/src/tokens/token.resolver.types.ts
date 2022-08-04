@@ -1,4 +1,10 @@
-import { ArgsType, Field, InputType, ObjectType } from '@nestjs/graphql';
+import {
+  ArgsType,
+  Field,
+  InputType,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
@@ -9,8 +15,10 @@ import {
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
-import { TokenDTO } from './token.dto';
+import { TokenDistinctFieldsEnum, TokenDTO } from './token.dto';
 import { CollectionDTO } from '../collection/collection.dto';
+
+registerEnumType(TokenDistinctFieldsEnum, { name: 'TokenEnum' });
 
 @InputType()
 export class TokenWhereParams implements TWhereParams<TokenDTO> {
@@ -22,6 +30,9 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   collection_name?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  parent_id?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsInt, { nullable: true })
   collection_id?: GQLWhereOpsInt;
@@ -54,6 +65,9 @@ export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
   collection_id?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  parent_id?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
   token_id?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
@@ -65,6 +79,9 @@ export class QueryArgs
   extends GQLQueryPaginationArgs
   implements IGQLQueryArgs<TokenDTO>
 {
+  @Field(() => TokenDistinctFieldsEnum, { nullable: true })
+  distinct_on?: TokenDistinctFieldsEnum;
+
   @Field(() => TokenWhereParams, { nullable: true })
   where?: TokenWhereParams;
 
