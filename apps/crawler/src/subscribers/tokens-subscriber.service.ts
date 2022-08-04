@@ -7,7 +7,11 @@ import { Tokens } from '@entities/Tokens';
 import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import {
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+  sanitizePropertiesValues,
+} from '@common/utils';
 import ISubscriberService from './subscriber.interface';
 import {
   TokenPropertiesResult,
@@ -60,11 +64,8 @@ export class TokensSubscriberService implements ISubscriberService {
   }> {
     const [tokenDecoded, tokenProperties] = await Promise.all([
       this.sdkService.getToken(collectionId, tokenId),
-      null,
-      // this.sdkService.getTokenProperties(collectionId, tokenId),
+      this.sdkService.getTokenProperties(collectionId, tokenId),
     ]);
-
-    console.log(tokenDecoded);
 
     return {
       tokenDecoded,
@@ -72,18 +73,21 @@ export class TokensSubscriberService implements ISubscriberService {
     };
   }
 
-  prepareDataToWrite(sdkEntity: UniqueTokenDecoded) {
+  prepareDataToWrite(
+    tokenDecoded: UniqueTokenDecoded,
+    tokenProperties: TokenPropertiesResult,
+  ) {
     const {
       tokenId: token_id,
       collectionId: collection_id,
       image,
       attributes,
       nestingParentToken,
-    } = sdkEntity;
+    } = tokenDecoded;
 
     const {
       owner: rawOwner,
-    }: { owner: { Ethereum?: string; Substrate?: string } } = sdkEntity;
+    }: { owner: { Ethereum?: string; Substrate?: string } } = tokenDecoded;
 
     const owner = rawOwner?.Ethereum || rawOwner?.Substrate;
 
@@ -98,11 +102,13 @@ export class TokensSubscriberService implements ISubscriberService {
       collection_id,
       owner,
       owner_normalized: normalizeSubstrateAddress(owner),
-      // todo: Find out what should we store here
       data: {
         image: image.fullUrl || image.ipfsCid,
-        attributes: Array.from(Object.values(attributes)),
       },
+      attributes,
+      properties: tokenProperties
+        ? sanitizePropertiesValues(tokenProperties)
+        : [],
       parent_id: parentId,
     };
   }
@@ -137,11 +143,14 @@ export class TokensSubscriberService implements ISubscriberService {
         tokenId,
       );
 
-      console.log('tokenDecoded', tokenDecoded);
-      console.log('tokenProperties', tokenProperties);
+      // console.log('tokenDecoded', tokenDecoded);
+      // console.log('tokenProperties', tokenProperties);
 
       if (tokenDecoded) {
-        const dataToWrite = this.prepareDataToWrite(tokenDecoded);
+        const dataToWrite = this.prepareDataToWrite(
+          tokenDecoded,
+          tokenProperties,
+        );
 
         log.entity = dataToWrite;
 

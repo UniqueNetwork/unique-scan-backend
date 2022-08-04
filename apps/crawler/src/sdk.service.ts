@@ -29,9 +29,7 @@ export class SdkService {
   async getCollection(collectionId: number) {
     const sdk = await this.getSdk();
 
-    const result = await sdk.collections.get_new({ collectionId });
-
-    return result;
+    return sdk.collections.get_new({ collectionId });
   }
 
   async getCollectionLimits(collectionId: number) {
@@ -48,9 +46,7 @@ export class SdkService {
   ): Promise<UniqueTokenDecoded | null> {
     const sdk = await this.getSdk();
 
-    const result = await sdk.tokens.get_new({ collectionId, tokenId });
-
-    return result;
+    return sdk.tokens.get_new({ collectionId, tokenId });
   }
 
   async getTokenProperties(
@@ -59,16 +55,12 @@ export class SdkService {
   ): Promise<TokenPropertiesResult | null> {
     const sdk = await this.getSdk();
 
-    const result = await sdk.tokens.properties({ collectionId, tokenId });
-
-    return result;
+    return sdk.tokens.properties({ collectionId, tokenId });
   }
 
   async getAccountBalances(accountId: string) {
     const sdk = await this.getSdk();
 
-    const result = await sdk.balance.get({ address: accountId });
-
-    return result;
+    return sdk.balance.get({ address: accountId });
   }
 }
