@@ -3,6 +3,10 @@ import { Sdk } from '@unique-nft/sdk';
 import '@unique-nft/sdk/tokens';
 import '@unique-nft/sdk/balance';
 import { SdkOptions } from '@unique-nft/sdk/types';
+import {
+  TokenPropertiesResult,
+  UniqueTokenDecoded,
+} from '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class SdkService {
@@ -38,10 +42,24 @@ export class SdkService {
     return result?.limits;
   }
 
-  async getToken(collectionId: number, tokenId: number) {
+  async getToken(
+    collectionId: number,
+    tokenId: number,
+  ): Promise<UniqueTokenDecoded | null> {
     const sdk = await this.getSdk();
 
     const result = await sdk.tokens.get_new({ collectionId, tokenId });
+
+    return result;
+  }
+
+  async getTokenProperties(
+    collectionId: number,
+    tokenId: number,
+  ): Promise<TokenPropertiesResult | null> {
+    const sdk = await this.getSdk();
+
+    const result = await sdk.tokens.properties({ collectionId, tokenId });
 
     return result;
   }
