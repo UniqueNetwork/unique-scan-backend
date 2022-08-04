@@ -12,9 +12,9 @@ export class TransactionResolver {
   constructor(private service: TransactionService) {}
 
   @Query(() => TransactionsDataResponse)
-  public async token_transactions(
+  public async tokenTransactions(
     @Args() args: QueryArgs,
   ): Promise<IDataListResponse<TransactionDTO>> {
-    return this.service.find_token_transactions(args);
+    return this.service.findTokenTransactions(args);
   }
 }

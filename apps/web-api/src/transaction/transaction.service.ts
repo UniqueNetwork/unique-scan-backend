@@ -16,7 +16,7 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
     super();
   }
 
-  public async find_token_transactions(
+  public async findTokenTransactions(
     queryArgs: IGQLQueryArgs<TransactionDTO>,
   ): Promise<IDataListResponse<TransactionDTO>> {
     const qb = this.repo.createQueryBuilder();
