@@ -6,7 +6,11 @@ import { Store } from '@subsquid/typeorm-store';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import {
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+  sanitizePropertiesValues,
+} from '@common/utils';
 import {
   CollectionInfoWithSchema,
   CollectionLimits,
@@ -99,7 +103,6 @@ export class CollectionsSubscriberService implements ISubscriberService {
       this.logger.warn(`No collection schema ${collectionId}`);
       return result;
     }
-    // todo: Find out what to do with 'properties', 'attributesSchema'
 
     const { schemaName } = schema;
     if (schemaName == '_old_') {
@@ -107,6 +110,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
         coverPicture: { fullUrl, ipfsCid },
         schemaVersion,
         attributesSchemaVersion,
+        attributesSchema,
         oldProperties: {
           _old_schemaVersion: oldSchemaVersion,
           _old_offchainSchema: offchainSchema,
@@ -125,17 +129,20 @@ export class CollectionsSubscriberService implements ISubscriberService {
         variableOnChainSchema: this.processJsonStringifiedValue(
           rawVariableOnChainSchema,
         ),
+        attributesSchema,
       };
     } else if (schemaName === 'unique') {
       const {
         coverPicture: { fullUrl, ipfsCid },
         schemaVersion,
         attributesSchemaVersion,
+        attributesSchema,
       } = schema;
 
       result = {
         collectionCover: ipfsCid || fullUrl,
         schemaVersion: `${schemaName}@${schemaVersion}@${attributesSchemaVersion}`,
+        attributesSchema,
       };
     } else {
       this.logger.warn(`Unknown schema name ${schemaName}`);
@@ -158,6 +165,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
       mode,
       schema,
       permissions: { mintMode: mint_mode },
+      properties = [],
     } = collectionInfo;
 
     const {
@@ -166,6 +174,9 @@ export class CollectionsSubscriberService implements ISubscriberService {
       offchainSchema = null,
       constOnChainSchema = null,
       variableOnChainSchema = null,
+
+      // @ts-ignore // todo: Remove when sdk ready
+      attributesSchema = {},
     } = this.processSchema(schema, collection_id);
 
     const {
@@ -184,6 +195,8 @@ export class CollectionsSubscriberService implements ISubscriberService {
       description,
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
+      properties: sanitizePropertiesValues(properties),
+      attributes_schema: attributesSchema,
       const_chain_schema: constOnChainSchema,
       variable_on_chain_schema: variableOnChainSchema,
       limits_account_ownership,
