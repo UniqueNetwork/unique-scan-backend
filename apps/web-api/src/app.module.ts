@@ -25,6 +25,7 @@ import { BlockModule } from './block/block.module';
 import { TimestampTransformInterceptor } from './timestamp.interceptor';
 import { Total } from '@entities/Total';
 import { StatisticsModule } from './statistics/statistics.module';
+import { TransactionModule } from './transaction/transaction.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { StatisticsModule } from './statistics/statistics.module';
     AccountModule,
     BlockModule,
     StatisticsModule,
+    TransactionModule,
   ],
   controllers: [AppController],
   providers: [
