@@ -68,19 +68,19 @@ export interface IGQLQueryArgs<T> {
 
 @InputType()
 export class GQLWhereOpsInt implements IWhereOperators {
-  @Field(() => Int, { nullable: true })
+  @Field(() => Float, { nullable: true })
   _eq?: number;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => Float, { nullable: true })
   _neq?: number;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => Float, { nullable: true })
   _like?: number;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => Float, { nullable: true })
   _ilike?: number;
 
-  @Field(() => [Int], { nullable: true })
+  @Field(() => [Float], { nullable: true })
   _in?: number[];
 }
 

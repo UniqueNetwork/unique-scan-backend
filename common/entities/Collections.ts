@@ -99,9 +99,6 @@ export class Collections {
   })
   collection_cover: string | null;
 
-  @OneToOne(() => CollectionsStats)
-  @JoinColumn([
-    { name: 'collection_id', referencedColumnName: 'collection_id' },
-  ])
+  @OneToOne(() => CollectionsStats, { nullable: true })
   statistics: CollectionsStats;
 }
