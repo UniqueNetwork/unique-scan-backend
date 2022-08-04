@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Collections } from './Collections';
 
-@Index('tokens_pkey', ['id'], { unique: true })
+@Index('tokens_pkey', ['token_id', 'collection_id'], { unique: true })
 @Index('tokens_collection_id_token_id_owner_idx', [
   'collection_id',
   'token_id',
