@@ -27,6 +27,7 @@ export enum SchemaVersion {
 }
 
 export enum EventSection {
+  COMMON = 'Common',
   SYSTEM = 'System',
   BALANCES = 'Balances',
   TREASURY = 'Treasury',
@@ -41,12 +42,14 @@ export enum EventMethod {
 }
 
 export enum ExtrinsicSection {
+  UNIQUE = 'Unique',
   PARACHAIN_SYSTEM = 'ParachainSystem',
   TIMESTAMP = 'Timestamp',
 }
 
 export enum ExtrinsicMethod {
   TRANSFER = 'transfer',
+  TRANSFER_FROM = 'transfer_from',
   TRANSFER_ALL = 'transfer_all',
   TRANSFER_KEEP_ALIVE = 'transfer_keep_alive',
   VESTED_TRANSFER = 'vested_transfer',
