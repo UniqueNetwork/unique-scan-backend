@@ -102,9 +102,7 @@ export class TokensSubscriberService implements ISubscriberService {
       collection_id,
       owner,
       owner_normalized: normalizeSubstrateAddress(owner),
-      data: {
-        image: image.fullUrl || image.ipfsCid,
-      },
+      data: { image },
       attributes,
       properties: tokenProperties
         ? sanitizePropertiesValues(tokenProperties)
@@ -152,7 +150,7 @@ export class TokensSubscriberService implements ISubscriberService {
           tokenProperties,
         );
 
-        log.entity = dataToWrite;
+        log.entity = String(dataToWrite); // Just to know that data is not null
 
         // Write collection data into db
         await this.tokensRepository.upsert(
