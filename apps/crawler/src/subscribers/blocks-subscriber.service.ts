@@ -27,21 +27,12 @@ import { Event } from '@entities/Event';
 const EVENT_TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
 const EVENT_ENDOWED = `${EventSection.BALANCES}.${EventMethod.ENDOWED}`;
 
-const EXTRINSICS_SECTIONS_TO_SKIP = [
-  ExtrinsicSection.PARACHAIN_SYSTEM,
-  ExtrinsicSection.TIMESTAMP,
-];
-
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
   ExtrinsicMethod.TRANSFER_FROM,
   ExtrinsicMethod.TRANSFER_ALL,
   ExtrinsicMethod.TRANSFER_KEEP_ALIVE,
   ExtrinsicMethod.VESTED_TRANSFER,
-];
-
-const EVENT_NAMES_TO_SKIP = [
-  `${EventSection.SYSTEM}.${EventMethod.EXTRINSIC_SUCCESS}`,
 ];
 
 interface IExtrinsicExtended extends SubstrateExtrinsic {
@@ -242,11 +233,6 @@ export class BlocksSubscriberService implements ISubscriberService {
           ExtrinsicMethod,
         ];
 
-        // Skip processing common extrinsic types
-        if (EXTRINSICS_SECTIONS_TO_SKIP.includes(section)) {
-          return null;
-        }
-
         let signer = null;
         const { signature } = extrinsic;
         if (signature) {
@@ -303,11 +289,6 @@ export class BlocksSubscriberService implements ISubscriberService {
       .map((event) => {
         const { name, indexInBlock, phase, extrinsic, args } = event;
         const { timestamp, blockNumber } = blockCommonData;
-
-        // Skip redundant events
-        if (phase === 'Initialization' || EVENT_NAMES_TO_SKIP.includes(name)) {
-          return null;
-        }
 
         const [section, method] = name.split('.') as [
           EventSection,
