@@ -141,9 +141,6 @@ export class TokensSubscriberService implements ISubscriberService {
         tokenId,
       );
 
-      // console.log('tokenDecoded', tokenDecoded);
-      // console.log('tokenProperties', tokenProperties);
-
       if (tokenDecoded) {
         const dataToWrite = this.prepareDataToWrite(
           tokenDecoded,
