@@ -7,9 +7,16 @@ import { Tokens } from '@entities/Tokens';
 import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import {
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+  sanitizePropertiesValues,
+} from '@common/utils';
 import ISubscriberService from './subscriber.interface';
-import { UniqueTokenDecoded } from '@unique-nft/sdk/tokens';
+import {
+  TokenPropertiesResult,
+  UniqueTokenDecoded,
+} from '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
@@ -51,24 +58,36 @@ export class TokensSubscriberService implements ISubscriberService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
-  ): Promise<UniqueTokenDecoded | null> {
-    const result = await this.sdkService.getToken(collectionId, tokenId);
+  ): Promise<{
+    tokenDecoded: UniqueTokenDecoded | null;
+    tokenProperties: TokenPropertiesResult | null;
+  }> {
+    const [tokenDecoded, tokenProperties] = await Promise.all([
+      this.sdkService.getToken(collectionId, tokenId),
+      this.sdkService.getTokenProperties(collectionId, tokenId),
+    ]);
 
-    return result ? result : null;
+    return {
+      tokenDecoded,
+      tokenProperties,
+    };
   }
 
-  prepareDataToWrite(sdkEntity: UniqueTokenDecoded) {
+  prepareDataToWrite(
+    tokenDecoded: UniqueTokenDecoded,
+    tokenProperties: TokenPropertiesResult,
+  ) {
     const {
       tokenId: token_id,
       collectionId: collection_id,
       image,
       attributes,
       nestingParentToken,
-    } = sdkEntity;
+    } = tokenDecoded;
 
     const {
       owner: rawOwner,
-    }: { owner: { Ethereum?: string; Substrate?: string } } = sdkEntity;
+    }: { owner: { Ethereum?: string; Substrate?: string } } = tokenDecoded;
 
     const owner = rawOwner?.Ethereum || rawOwner?.Substrate;
 
@@ -83,11 +102,11 @@ export class TokensSubscriberService implements ISubscriberService {
       collection_id,
       owner,
       owner_normalized: normalizeSubstrateAddress(owner),
-      // todo: Find out what should we store here
-      data: {
-        image: image.fullUrl || image.ipfsCid,
-        attributes: Array.from(Object.values(attributes)),
-      },
+      data: { image },
+      attributes,
+      properties: tokenProperties
+        ? sanitizePropertiesValues(tokenProperties)
+        : [],
       parent_id: parentId,
     };
   }
@@ -117,12 +136,18 @@ export class TokensSubscriberService implements ISubscriberService {
         throw new Error('Bad tokenId');
       }
 
-      const tokenData = await this.getTokenData(collectionId, tokenId);
+      const { tokenDecoded, tokenProperties } = await this.getTokenData(
+        collectionId,
+        tokenId,
+      );
 
-      if (tokenData) {
-        const dataToWrite = this.prepareDataToWrite(tokenData);
+      if (tokenDecoded) {
+        const dataToWrite = this.prepareDataToWrite(
+          tokenDecoded,
+          tokenProperties,
+        );
 
-        log.entity = dataToWrite;
+        log.entity = String(dataToWrite); // Just to know that data is not null
 
         // Write collection data into db
         await this.tokensRepository.upsert(
