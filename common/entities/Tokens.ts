@@ -33,7 +33,7 @@ export class Tokens {
   properties: object | null;
 
   @Column('jsonb', { name: 'attributes', default: {} })
-  attributes_schema: object | null;
+  attributes: object | null;
 
   @Column('bigint', { name: 'collection_id' })
   collection_id: number;
