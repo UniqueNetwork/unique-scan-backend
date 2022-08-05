@@ -4,6 +4,7 @@ import '@unique-nft/sdk/tokens';
 import '@unique-nft/sdk/balance';
 import { SdkOptions } from '@unique-nft/sdk/types';
 import {
+  CollectionInfoWithSchema,
   TokenPropertiesResult,
   UniqueTokenDecoded,
 } from '@unique-nft/sdk/tokens';
@@ -26,7 +27,9 @@ export class SdkService {
     return sdk;
   }
 
-  async getCollection(collectionId: number) {
+  async getCollection(
+    collectionId: number,
+  ): Promise<CollectionInfoWithSchema | null> {
     const sdk = await this.getSdk();
 
     return sdk.collections.get_new({ collectionId });
