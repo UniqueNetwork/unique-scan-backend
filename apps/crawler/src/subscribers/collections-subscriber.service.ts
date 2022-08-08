@@ -14,6 +14,7 @@ import {
 import {
   CollectionInfoWithSchema,
   CollectionLimits,
+  CollectionProperty,
   UniqueCollectionSchemaDecoded,
 } from '@unique-nft/sdk/tokens';
 import { SdkService } from '../sdk.service';
@@ -95,15 +96,8 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
   private processSchema(
     schema: UniqueCollectionSchemaDecoded,
-    collectionId: number,
   ): ParsedSchemaFields {
     let result = {};
-
-    if (!schema) {
-      this.logger.warn(`No collection schema ${collectionId}`);
-      return result;
-    }
-
     const {
       schemaName,
       schemaVersion,
@@ -149,6 +143,37 @@ export class CollectionsSubscriberService implements ISubscriberService {
     return result;
   }
 
+  private getSchemaValuesFromProperties(
+    properties: CollectionProperty[],
+  ): UniqueCollectionSchemaDecoded {
+    const result = {
+      schemaName: '_properties_',
+      schemaVersion: '',
+      attributesSchemaVersion: '',
+      coverPicture: {},
+    } as ParsedSchemaFields;
+
+    Object.values(properties).reduce((acc, curr) => {
+      let { key, value } = curr;
+      try {
+        value = JSON.parse(value);
+      } catch (_) {
+        // I should try
+      }
+
+      let obj = acc as { coverPicture?: object };
+      if (key.startsWith('coverPicture.')) {
+        key = key.replace('coverPicture.', '');
+        obj = acc['coverPicture'];
+      }
+
+      obj[key] = value;
+      return acc;
+    }, result);
+
+    return result as UniqueCollectionSchemaDecoded;
+  }
+
   prepareDataToWrite(
     collectionInfo: CollectionInfoWithSchema,
     collectionLimits: CollectionLimits,
@@ -166,6 +191,14 @@ export class CollectionsSubscriberService implements ISubscriberService {
       properties = [],
     } = collectionInfo;
 
+    let schemaFromProperties = {} as UniqueCollectionSchemaDecoded;
+    if (!schema) {
+      this.logger.warn(`No collection schema ${collection_id}`);
+
+      // No schema provided by sdk. Try to figure out some schema values from properties.
+      schemaFromProperties = this.getSchemaValuesFromProperties(properties);
+    }
+
     const {
       collectionCover = null,
       schemaVersion = null,
@@ -175,7 +208,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
       // @ts-ignore // todo: Remove when sdk ready
       attributesSchema = {},
-    } = this.processSchema(schema, collection_id);
+    } = this.processSchema(schema || schemaFromProperties);
 
     const {
       tokenLimit: token_limit,
