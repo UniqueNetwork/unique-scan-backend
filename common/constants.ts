@@ -56,3 +56,8 @@ export enum ExtrinsicMethod {
 }
 
 export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
+
+export const STATE_SCHEMA_NAME_BY_MODE = {
+  SCAN: 'scan_status',
+  RESCAN: 'rescan_status',
+};

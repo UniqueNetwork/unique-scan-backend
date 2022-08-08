@@ -3,6 +3,11 @@ import { Sdk } from '@unique-nft/sdk';
 import '@unique-nft/sdk/tokens';
 import '@unique-nft/sdk/balance';
 import { SdkOptions } from '@unique-nft/sdk/types';
+import {
+  CollectionInfoWithSchema,
+  TokenPropertiesResult,
+  UniqueTokenDecoded,
+} from '@unique-nft/sdk/tokens';
 
 @Injectable()
 export class SdkService {
@@ -22,12 +27,12 @@ export class SdkService {
     return sdk;
   }
 
-  async getCollection(collectionId: number) {
+  async getCollection(
+    collectionId: number,
+  ): Promise<CollectionInfoWithSchema | null> {
     const sdk = await this.getSdk();
 
-    const result = await sdk.collections.get_new({ collectionId });
-
-    return result;
+    return sdk.collections.get_new({ collectionId });
   }
 
   async getCollectionLimits(collectionId: number) {
@@ -38,19 +43,27 @@ export class SdkService {
     return result?.limits;
   }
 
-  async getToken(collectionId: number, tokenId: number) {
+  async getToken(
+    collectionId: number,
+    tokenId: number,
+  ): Promise<UniqueTokenDecoded | null> {
     const sdk = await this.getSdk();
 
-    const result = await sdk.tokens.get_new({ collectionId, tokenId });
+    return sdk.tokens.get_new({ collectionId, tokenId });
+  }
 
-    return result;
+  async getTokenProperties(
+    collectionId: number,
+    tokenId: number,
+  ): Promise<TokenPropertiesResult | null> {
+    const sdk = await this.getSdk();
+
+    return sdk.tokens.properties({ collectionId, tokenId });
   }
 
   async getAccountBalances(accountId: string) {
     const sdk = await this.getSdk();
 
-    const result = await sdk.balance.get({ address: accountId });
-
-    return result;
+    return sdk.balance.get({ address: accountId });
   }
 }

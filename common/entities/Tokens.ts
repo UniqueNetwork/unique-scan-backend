@@ -31,6 +31,12 @@ export class Tokens {
   @Column('jsonb', { name: 'data', default: {} })
   data: object;
 
+  @Column('jsonb', { name: 'properties', default: [] })
+  properties: object;
+
+  @Column('jsonb', { name: 'attributes', default: {} })
+  attributes: object;
+
   @Column('bigint', { name: 'collection_id' })
   collection_id: number;
 

@@ -1,11 +1,4 @@
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
+import { Column, Entity, Index, OneToMany, OneToOne } from 'typeorm';
 import { CollectionsStats } from './CollectionsStats';
 import { Tokens } from './Tokens';
 
