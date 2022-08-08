@@ -23,6 +23,12 @@ export class TokenDTO implements Partial<Tokens> {
   @Field(() => GraphQLJSONObject)
   data?: object;
 
+  @Field(() => GraphQLJSONObject)
+  attributes?: object;
+
+  @Field(() => GraphQLJSONObject)
+  properties?: object;
+
   @Field(() => String)
   owner?: string;
 
