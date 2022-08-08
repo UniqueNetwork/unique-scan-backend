@@ -30,10 +30,10 @@ export class Tokens {
   data: object;
 
   @Column('jsonb', { name: 'properties', default: [] })
-  properties: object | null;
+  properties: object;
 
   @Column('jsonb', { name: 'attributes', default: {} })
-  attributes: object | null;
+  attributes: object;
 
   @Column('bigint', { name: 'collection_id' })
   collection_id: number;
