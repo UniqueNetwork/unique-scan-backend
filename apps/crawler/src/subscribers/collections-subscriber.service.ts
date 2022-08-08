@@ -104,13 +104,24 @@ export class CollectionsSubscriberService implements ISubscriberService {
       return result;
     }
 
-    const { schemaName } = schema;
+    const {
+      schemaName,
+      schemaVersion,
+      attributesSchemaVersion,
+      coverPicture: { fullUrl, ipfsCid },
+      attributesSchema,
+    } = schema;
+
+    const schemaVersionCombined = `${schemaName}@${schemaVersion}@${attributesSchemaVersion}`;
+
+    result = {
+      collectionCover: ipfsCid || fullUrl,
+      schemaVersion: schemaVersionCombined,
+      attributesSchema,
+    };
+
     if (schemaName == '_old_') {
       const {
-        coverPicture: { fullUrl, ipfsCid },
-        schemaVersion,
-        attributesSchemaVersion,
-        attributesSchema,
         oldProperties: {
           _old_schemaVersion: oldSchemaVersion,
           _old_offchainSchema: offchainSchema,
@@ -120,8 +131,9 @@ export class CollectionsSubscriberService implements ISubscriberService {
       } = schema;
 
       result = {
-        collectionCover: ipfsCid || fullUrl,
-        schemaVersion: `${schemaName}@${schemaVersion}@${attributesSchemaVersion}@${oldSchemaVersion}`,
+        ...result,
+
+        schemaVersion: `${schemaVersionCombined}@${oldSchemaVersion}`,
         offchainSchema,
         constOnChainSchema: this.processJsonStringifiedValue(
           rawConstOnChainSchema,
@@ -129,20 +141,6 @@ export class CollectionsSubscriberService implements ISubscriberService {
         variableOnChainSchema: this.processJsonStringifiedValue(
           rawVariableOnChainSchema,
         ),
-        attributesSchema,
-      };
-    } else if (schemaName === 'unique') {
-      const {
-        coverPicture: { fullUrl, ipfsCid },
-        schemaVersion,
-        attributesSchemaVersion,
-        attributesSchema,
-      } = schema;
-
-      result = {
-        collectionCover: ipfsCid || fullUrl,
-        schemaVersion: `${schemaName}@${schemaVersion}@${attributesSchemaVersion}`,
-        attributesSchema,
       };
     } else {
       this.logger.warn(`Unknown schema name ${schemaName}`);
