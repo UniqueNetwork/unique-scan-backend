@@ -64,8 +64,6 @@ export class AccountsSubscriberService implements ISubscriberService {
 
       // todo: no data from sdk? Critical?
       nonce: null,
-      // todo: Do we need this?
-      balances: JSON.stringify(balancesData),
     };
   }
 
