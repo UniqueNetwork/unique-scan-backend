@@ -4,9 +4,11 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Collections } from './Collections';
+import { TokensStats } from './TokensStats';
 
 @Index('tokens_pkey', ['token_id', 'collection_id'], { unique: true })
 @Index('tokens_collection_id_token_id_owner_idx', [
@@ -46,4 +48,7 @@ export class Tokens {
 
   @Column('text', { name: 'parent_id', nullable: true })
   parent_id: string;
+
+  @OneToOne(() => TokensStats, { nullable: true })
+  statistics: TokensStats;
 }

@@ -79,6 +79,7 @@ export class Fixtures {
   private getTestConnectionOptions() {
     return {
       ...typeormConfig,
+      migrations: [],
     } as PostgresConnectionOptions;
   }
 }
