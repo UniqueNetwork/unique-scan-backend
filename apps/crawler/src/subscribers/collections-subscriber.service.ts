@@ -161,13 +161,14 @@ export class CollectionsSubscriberService implements ISubscriberService {
         // I should try
       }
 
-      let obj = acc as { coverPicture?: object };
       if (key.startsWith('coverPicture.')) {
+        // Filling up sub-object by key "coverPicture"
         key = key.replace('coverPicture.', '');
-        obj = acc['coverPicture'];
+        acc['coverPicture'][key] = value;
+      } else {
+        acc[key] = value;
       }
 
-      obj[key] = value;
       return acc;
     }, result);
 
