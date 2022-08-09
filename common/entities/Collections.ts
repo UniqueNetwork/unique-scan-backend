@@ -79,8 +79,8 @@ export class Collections {
   @Column('character varying', { name: 'mode', nullable: true, length: 255 })
   mode: string | null;
 
-  @OneToMany(() => Tokens, (tokens) => tokens.collection)
-  tokens: Tokens[];
+  // @OneToMany(() => Tokens, (tokens) => tokens.collection)
+  // tokens: Tokens[];
 
   @Column('boolean', { name: 'mint_mode', nullable: true })
   mint_mode?: boolean;
