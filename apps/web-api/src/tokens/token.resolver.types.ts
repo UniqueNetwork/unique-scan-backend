@@ -11,6 +11,7 @@ import {
   GQLWhereOpsInt,
   GQLWhereOpsString,
   IGQLQueryArgs,
+  IWhereOperators,
   ListDataType,
   TOrderByParams,
   TWhereParams,
@@ -33,6 +34,9 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   parent_id?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  is_sold?: IWhereOperators;
 
   @Field(() => GQLWhereOpsInt, { nullable: true })
   collection_id?: GQLWhereOpsInt;
@@ -66,6 +70,9 @@ export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   parent_id?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  is_sold?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   token_id?: GQLOrderByParamsArgs;
