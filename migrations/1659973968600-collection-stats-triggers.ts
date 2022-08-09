@@ -2,7 +2,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 const calcStatsQuery = `
-  insert into collections_stats(collection_id, tokens_count, holders_count, actions_count, transfers_count)
+  insert into collections_stats
   select
     c.collection_id,
     coalesce(tk.tokens_count, 0) as tokens_count,
@@ -70,7 +70,7 @@ const calcStatsQuery = `
         (
           select (e.data::json->0)::text::int as collection_id
           from event e
-          where e.method = 'Transfer' and e.sections <> 'Balances'
+          where e.method = 'Transfer' and e.section <> 'Balances'
         ) as ce
       group by ce.collection_id
     ) as transfers on transfers.collection_id = c.collection_id
@@ -89,9 +89,9 @@ create or replace function update_collections_stats_holders() returns trigger as
     --Check owner already has token in collection
     select token_id from tokens where collection_id = NEW.collection_id and token_id != NEW.token_id and "owner" = NEW.owner limit 1 into hasAnotherTokens;
     if (hasAnotherTokens is null) then
-      insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
+      insert into collections_stats (collection_id, tokens_count, holders_count, actions_count)
       values (NEW.collection_id, 0, 1, 0)
-      ON CONFLICT ON CONSTRAINT collections_stats_pkey
+      ON CONFLICT (collection_id)
       DO UPDATE SET holders_count = collections_stats.holders_count + 1;
     end if;
   end if;
@@ -103,7 +103,7 @@ create or replace function update_collections_stats_holders() returns trigger as
     if (newOwnerHasAnotherTokens is null and oldOwnerHasTokens is not null) then
       insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
       values (NEW.collection_id, 0, 1, 0)
-      ON CONFLICT ON CONSTRAINT collections_stats_pkey
+      ON CONFLICT (collection_id)
       DO UPDATE SET holders_count = collections_stats.holders_count + 1;
     end if;
 
@@ -111,7 +111,7 @@ create or replace function update_collections_stats_holders() returns trigger as
     if (oldOwnerHasTokens is null) then
       insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
       values (NEW.collection_id, 0, 0, 0)
-      ON CONFLICT ON CONSTRAINT collections_stats_pkey
+      ON CONFLICT (collection_id)
       DO UPDATE SET holders_count = collections_stats.holders_count - 1;
     end if;
 
@@ -124,7 +124,7 @@ create or replace function update_collections_stats_holders() returns trigger as
     if (hasAnotherTokens is null) then
       insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
       values (OLD.collection_id, 0, 0, 0)
-      ON CONFLICT ON CONSTRAINT collections_stats_pkey
+      ON CONFLICT (collection_id)
       DO UPDATE SET holders_count = collections_stats.holders_count - 1;
     end if;
   end if;
@@ -134,7 +134,7 @@ create or replace function update_collections_stats_holders() returns trigger as
 $$ LANGUAGE plpgsql;
 `;
 
-const deleteHoldersStatsTrigger = `drop trigger if exists collection_holders_stats on total;`;
+const deleteHoldersStatsTrigger = `drop trigger if exists collection_holders_stats on tokens;`;
 const tokensHoldersStatsTrigger = `
   Create trigger collection_holders_stats after insert or update or delete on tokens
   FOR EACH row
@@ -147,19 +147,19 @@ begin
 if (TG_OP = 'INSERT') then
   insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
   values (NEW.collection_id, 1, 0, 0)
-  ON CONFLICT ON CONSTRAINT collections_stats_pkey
+  ON CONFLICT (collection_id)
   DO UPDATE SET tokens_count = collections_stats.tokens_count + 1;
 end if;
 
 if (TG_OP = 'UPDATE' and NEW.collection_id != OLD.collection_id) then
   insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
   values (NEW.collection_id, 1, 0, 0)
-  ON CONFLICT ON CONSTRAINT collections_stats_pkey
+  ON CONFLICT (collection_id)
   DO UPDATE SET tokens_count = collections_stats.tokens_count + 1;
 
   insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
     values (OLD.collection_id, 0, 0, 0)
-    ON CONFLICT ON CONSTRAINT collections_stats_pkey
+    ON CONFLICT (collection_id)
     DO UPDATE SET tokens_count = collections_stats.tokens_count - 1;
 end if;
 
@@ -167,7 +167,7 @@ end if;
 if (TG_OP = 'DELETE') then
     insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
     values (OLD.collection_id, 0, 0, 0)
-    ON CONFLICT ON CONSTRAINT collections_stats_pkey
+    ON CONFLICT (collection_id)
     DO UPDATE SET tokens_count = collections_stats.tokens_count - 1;
 end if;
 
@@ -176,7 +176,7 @@ end;
 $$ LANGUAGE plpgsql;
 `;
 
-const deleteTokensStatsTrigger = `drop trigger if exists collection_tokens_stats on total;`;
+const deleteTokensStatsTrigger = `drop trigger if exists collection_tokens_stats on tokens;`;
 const tokensTokensStatsTrigger = `
   Create trigger collection_tokens_stats after insert or update or delete on tokens
   FOR EACH row
@@ -211,14 +211,14 @@ create or replace function update_collections_stats_actions() returns trigger as
 	        if (TG_OP = 'INSERT') then
 		      	insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
 		      	values ((NEW.data::json->0)::text::int, 0, 0, 1)
-		      	ON CONFLICT ON CONSTRAINT collections_stats_pkey
+		      	ON CONFLICT (collection_id)
 		      	DO UPDATE SET actions_count = collections_stats.actions_count + 1;
 	        end if;
 
 	        if (TG_OP = 'DELETE') then
 	          	insert into collections_stats(collection_id, tokens_count, holders_count, actions_count)
 	          	values ((OLD.data::json->0)::text::int, 0, 0, 0)
-	          	ON CONFLICT ON CONSTRAINT collections_stats_pkey
+	          	ON CONFLICT (collection_id)
 	          	DO UPDATE SET actions_count = collections_stats.actions_count - 1;
 	        end if;
 		end if;
@@ -256,18 +256,18 @@ const collectionsDeleteTrigger = `
 const collectiosUpdateTransfersStatsFn = `
 create or replace function update_collections_stats_transfers() returns trigger as $$
 		begin
-	    if (NEW.method = 'Transfer' and NEW.sections <> 'Balances') then
+	    if (NEW.method = 'Transfer' and NEW.section <> 'Balances') then
 	        if (TG_OP = 'INSERT') then
 		      	insert into collections_stats(collection_id, tokens_count, holders_count, actions_count, transfers_count)
 		      	values ((NEW.data::json->0)::text::int, 0, 0, 0, 1)
-		      	ON CONFLICT ON CONSTRAINT collections_stats_pkey
+		      	ON CONFLICT (collection_id)
 		      	DO UPDATE SET transfers_count = collections_stats.transfers_count + 1;
 	        end if;
 
 	        if (TG_OP = 'DELETE') then
 	          	insert into collections_stats(collection_id, tokens_count, holders_count, actions_count, transfers_count)
 	          	values ((OLD.data::json->0)::text::int, 0, 0, 0, 0)
-	          	ON CONFLICT ON CONSTRAINT collections_stats_pkey
+	          	ON CONFLICT (collection_id)
 	          	DO UPDATE SET transfers_count = collections_stats.transfers_count - 1;
 	        end if;
 		end if;
@@ -278,7 +278,7 @@ create or replace function update_collections_stats_transfers() returns trigger 
 
 const deleteTransfersStatsTrigger = `drop trigger if exists collection_transfers_stats on event;`;
 const collectionTransfersStatsTrigger = `
-  Create trigger collection_transfers_stats after insert on event
+  Create trigger collection_transfers_stats after insert or delete on event
   FOR EACH row
   execute function update_collections_stats_transfers();
 `;
@@ -292,8 +292,8 @@ export class collectionStatsTriggers1659679545086
     try {
       await queryRunner.query(`delete from collections_stats`);
       await queryRunner.query(calcStatsQuery);
-      await queryRunner.query(deleteHoldersStatsTrigger);
 
+      await queryRunner.query(deleteHoldersStatsTrigger);
       await queryRunner.query(tokensUpdateHoldersStatsFn);
       await queryRunner.query(tokensHoldersStatsTrigger);
 
@@ -308,6 +308,11 @@ export class collectionStatsTriggers1659679545086
       await queryRunner.query(collectionsDeleteCollectionsStatsFn);
       await queryRunner.query(deleteCollectionsDeleteTrigger);
       await queryRunner.query(collectionsDeleteTrigger);
+
+      await queryRunner.query(collectiosUpdateTransfersStatsFn);
+      await queryRunner.query(deleteTransfersStatsTrigger);
+      await queryRunner.query(collectionTransfersStatsTrigger);
+
       await queryRunner.commitTransaction();
     } catch (err) {
       await queryRunner.rollbackTransaction();
@@ -326,5 +331,12 @@ export class collectionStatsTriggers1659679545086
 
     await queryRunner.query(`drop function update_collections_stats_actions;`);
     await queryRunner.query(`drop trigger collection_actions_stats on tokens;`);
+
+    await queryRunner.query(
+      `drop function update_collections_stats_transfers;`,
+    );
+    await queryRunner.query(
+      `drop trigger collection_transfers_stats on tokens;`,
+    );
   }
 }

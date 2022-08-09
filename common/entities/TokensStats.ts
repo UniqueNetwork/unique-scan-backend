@@ -13,6 +13,6 @@ export class TokensStats {
   @OneToOne(() => Tokens, (token) => token.statistics, {
     nullable: true,
   })
-  @JoinColumn([{ name: 'token_id', referencedColumnName: 'token_id' }])
+  @JoinColumn([{ name: 'token_id', referencedColumnName: 'id' }])
   token: Tokens;
 }
