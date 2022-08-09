@@ -52,4 +52,7 @@ export class Tokens {
 
   @Column('text', { name: 'parent_id', nullable: true })
   parent_id: string;
+
+  @Column('boolean', { name: 'is_sold', default: false })
+  is_sold: boolean;
 }
