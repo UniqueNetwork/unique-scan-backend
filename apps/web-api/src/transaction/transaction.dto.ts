@@ -35,6 +35,7 @@ export class TransactionDTO {
   @Field(() => String, { nullable: true }) // Collection can be not scaned yet
   collection_name?: string;
 
-  @Field(() => String)
-  image_path?: string;
+  // todo: Check this field while SCAN-301 develop
+  @Field(() => Object)
+  image?: object;
 }
