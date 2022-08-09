@@ -4,26 +4,24 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 export class createTokensStatsCollection1659971881633
   implements MigrationInterface
 {
-  name = 'createTokensStatsCollection1659971881633';
-
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "tokens_stats" ("token_id" bigint NOT NULL, "transfers_count" bigint NOT NULL, CONSTRAINT "REL_583c70481dd4af6653f84d82c1" UNIQUE ("token_id"), CONSTRAINT "PK_583c70481dd4af6653f84d82c1f" PRIMARY KEY ("token_id"))`,
+      `CREATE TABLE "tokens_stats" ("id" BIGSERIAL NOT NULL, "token_id" integer NOT NULL, "collection_id" bigint NOT NULL, "transfers_count" bigint NOT NULL, CONSTRAINT "REL_6ac2fd9b097d5ece012ee28b90" UNIQUE ("token_id", "collection_id"), CONSTRAINT "PK_1da9b0ad1e4e8f36ad2412c4577" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "tokens_stats_pkey" ON "tokens_stats" ("token_id") `,
+      `CREATE UNIQUE INDEX "tokens_stats_pkey" ON "tokens_stats" ("token_id", "collection_id") `,
     );
     await queryRunner.query(
       `ALTER TABLE "collections_stats" ADD "transfers_count" bigint NOT NULL DEFAULT '0'`,
     );
     await queryRunner.query(
-      `ALTER TABLE "tokens_stats" ADD CONSTRAINT "FK_583c70481dd4af6653f84d82c1f" FOREIGN KEY ("token_id") REFERENCES "tokens"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+      `ALTER TABLE "tokens_stats" ADD CONSTRAINT "FK_6ac2fd9b097d5ece012ee28b905" FOREIGN KEY ("token_id", "collection_id") REFERENCES "tokens"("token_id","collection_id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "tokens_stats" DROP CONSTRAINT "FK_583c70481dd4af6653f84d82c1f"`,
+      `ALTER TABLE "tokens_stats" DROP CONSTRAINT "FK_6ac2fd9b097d5ece012ee28b905"`,
     );
     await queryRunner.query(
       `ALTER TABLE "collections_stats" DROP COLUMN "transfers_count"`,

@@ -253,7 +253,7 @@ const collectionsDeleteTrigger = `
   execute function delete_collections_stats();
 `;
 
-const collectiosUpdateTransfersStatsFn = `
+const collectionsUpdateTransfersStatsFn = `
 create or replace function update_collections_stats_transfers() returns trigger as $$
 		begin
 	    if (NEW.method = 'Transfer' and NEW.section <> 'Balances') then
@@ -277,13 +277,13 @@ create or replace function update_collections_stats_transfers() returns trigger 
 `;
 
 const deleteTransfersStatsTrigger = `drop trigger if exists collection_transfers_stats on event;`;
-const collectionTransfersStatsTrigger = `
+const collectionsTransfersStatsTrigger = `
   Create trigger collection_transfers_stats after insert or delete on event
   FOR EACH row
   execute function update_collections_stats_transfers();
 `;
 
-export class collectionStatsTriggers1659679545086
+export class collectionStatsTriggers1659999968600
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -309,9 +309,9 @@ export class collectionStatsTriggers1659679545086
       await queryRunner.query(deleteCollectionsDeleteTrigger);
       await queryRunner.query(collectionsDeleteTrigger);
 
-      await queryRunner.query(collectiosUpdateTransfersStatsFn);
+      await queryRunner.query(collectionsUpdateTransfersStatsFn);
       await queryRunner.query(deleteTransfersStatsTrigger);
-      await queryRunner.query(collectionTransfersStatsTrigger);
+      await queryRunner.query(collectionsTransfersStatsTrigger);
 
       await queryRunner.commitTransaction();
     } catch (err) {
