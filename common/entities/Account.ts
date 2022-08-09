@@ -7,9 +7,6 @@ export class Account {
   @Column('text', { primary: true, name: 'account_id' })
   account_id: string;
 
-  @Column('text', { name: 'balances' })
-  balances: string;
-
   @Column('text', { name: 'available_balance', nullable: true })
   available_balance: string | null;
 

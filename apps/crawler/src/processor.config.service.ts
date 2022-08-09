@@ -37,4 +37,8 @@ export class ProcessorConfigService {
       typesBundle: this.getTypesBundle(),
     };
   }
+
+  public getForceMode() {
+    return this.configService.get('SCAN_FORCE_RESCAN');
+  }
 }

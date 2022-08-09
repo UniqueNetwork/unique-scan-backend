@@ -1,3 +1,4 @@
+import { STATE_SCHEMA_NAME_BY_MODE } from '@common/constants';
 import { Injectable, Logger } from '@nestjs/common';
 import { SubstrateProcessor } from '@subsquid/substrate-processor';
 import {
@@ -53,7 +54,7 @@ class ScanDatabase extends TypeormDatabase {
 
 @Injectable()
 export class ProcessorService {
-  private stateSchema = 'scan_status';
+  private stateSchema;
 
   private substrateProcessor: SubstrateProcessor<Store>;
 
@@ -64,6 +65,11 @@ export class ProcessorService {
     private connection: Connection,
     private processorConfigService: ProcessorConfigService,
   ) {
+    this.stateSchema =
+      this.processorConfigService.getForceMode() === 'true'
+        ? STATE_SCHEMA_NAME_BY_MODE.RESCAN
+        : STATE_SCHEMA_NAME_BY_MODE.SCAN;
+
     const db = new ScanDatabase({
       stateSchema: this.stateSchema,
       con: this.connection,
