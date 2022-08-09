@@ -112,7 +112,7 @@ export class TokensSubscriberService implements ISubscriberService {
       collection_id,
       owner,
       owner_normalized: normalizeSubstrateAddress(owner),
-      data: { image },
+      image,
       attributes,
       properties: tokenProperties
         ? sanitizePropertiesValues(tokenProperties)

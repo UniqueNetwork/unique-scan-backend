@@ -152,6 +152,10 @@ export class BaseService<T, S> {
       Object.entries(operators).forEach((parameters) => {
         const [operation, value] = parameters;
 
+        if (Array.isArray(value) && !value.length) {
+          return;
+        }
+
         const { query, params } = this.createWhereConditionExpression(
           qb,
           field,

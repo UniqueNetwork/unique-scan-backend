@@ -28,17 +28,8 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
     qb.addSelect('"Collection".name', 'collection_name');
     qb.addSelect('"Collection".token_prefix', 'token_prefix');
 
-    qb.addSelect(`"Token".data ->> 'name'::text`, 'token_name');
-    qb.addSelect(
-      `COALESCE(
-        "Token".data::json ->> 'ipfsJson'::text,
-        replace(
-          COALESCE("Collection".offchain_schema, ''::text), '{id}'::text, "Token".token_id::character varying(255)::text
-        ),
-        ''::text
-      )`,
-      'image_path',
-    );
+    // todo: What is Token.data.name? See UniqueTokenDecoded type.
+    // qb.addSelect(`"Token".data ->> 'name'::text`, 'token_name');
 
     qb.addSelect('"Extrinsic".to_owner', 'to_owner');
     qb.addSelect('"Extrinsic".to_owner_normalized', 'to_owner_normalized');
