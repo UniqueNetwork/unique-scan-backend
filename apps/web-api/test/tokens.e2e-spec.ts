@@ -59,9 +59,8 @@ describe('Tokens (e2e)', () => {
               collection_description
               collection_id
               collection_name
-              data
+              image
               date_of_creation
-              image_path
               owner
               owner_normalized
               token_id
@@ -110,7 +109,10 @@ describe('Tokens (e2e)', () => {
           expect(res.body.data.tokens.data[0].date_of_creation).toBe(
             1650433764,
           );
-          expect(res.body.data.tokens.data[0].image_path).toBe('1');
+
+          // todo: check me, maybe add 'attributes' and 'properties'
+          expect(res.body.data.tokens.data[0].image).toBe('1');
+
           expect(res.body.data.tokens.data[0].owner).toBe(
             '0x2303410dcc766995e70b47beedda828b4486320b1',
           );
@@ -142,7 +144,10 @@ describe('Tokens (e2e)', () => {
           expect(res.body.data.tokens.data[3].date_of_creation).toBe(
             1650433764,
           );
-          expect(res.body.data.tokens.data[3].image_path).toBe('4');
+
+          // todo: check me, maybe add 'attributes' and 'properties'
+          expect(res.body.data.tokens.data[3].image).toBe('4');
+
           expect(res.body.data.tokens.data[3].owner).toBe(
             '0x2303410dcc766995e70b47beedda828b4486320b4',
           );
