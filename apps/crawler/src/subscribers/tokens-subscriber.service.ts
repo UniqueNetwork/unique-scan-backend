@@ -14,6 +14,7 @@ import {
 } from '@common/utils';
 import ISubscriberService from './subscriber.interface';
 import {
+  CollectionInfoWithSchema,
   TokenPropertiesResult,
   UniqueTokenDecoded,
 } from '@unique-nft/sdk/tokens';
@@ -61,21 +62,25 @@ export class TokensSubscriberService implements ISubscriberService {
   ): Promise<{
     tokenDecoded: UniqueTokenDecoded | null;
     tokenProperties: TokenPropertiesResult | null;
+    collection: CollectionInfoWithSchema | null;
   }> {
-    const [tokenDecoded, tokenProperties] = await Promise.all([
+    const [tokenDecoded, tokenProperties, collection] = await Promise.all([
       this.sdkService.getToken(collectionId, tokenId),
       this.sdkService.getTokenProperties(collectionId, tokenId),
+      this.sdkService.getCollection(collectionId),
     ]);
 
     return {
       tokenDecoded,
       tokenProperties,
+      collection,
     };
   }
 
   prepareDataToWrite(
     tokenDecoded: UniqueTokenDecoded,
     tokenProperties: TokenPropertiesResult,
+    collection: CollectionInfoWithSchema,
   ) {
     const {
       tokenId: token_id,
@@ -90,6 +95,11 @@ export class TokensSubscriberService implements ISubscriberService {
     }: { owner: { Ethereum?: string; Substrate?: string } } = tokenDecoded;
 
     const owner = rawOwner?.Ethereum || rawOwner?.Substrate;
+
+    const { owner: collectionOwner } = collection;
+
+    console.log('TOKEN OWNER', owner, normalizeSubstrateAddress(owner));
+    console.log('COLL OWNER', collectionOwner);
 
     let parentId = null;
     if (nestingParentToken) {
@@ -136,15 +146,14 @@ export class TokensSubscriberService implements ISubscriberService {
         throw new Error('Bad tokenId');
       }
 
-      const { tokenDecoded, tokenProperties } = await this.getTokenData(
-        collectionId,
-        tokenId,
-      );
+      const { tokenDecoded, tokenProperties, collection } =
+        await this.getTokenData(collectionId, tokenId);
 
       if (tokenDecoded) {
         const dataToWrite = this.prepareDataToWrite(
           tokenDecoded,
           tokenProperties,
+          collection,
         );
 
         log.entity = String(dataToWrite); // Just to know that data is not null
