@@ -98,9 +98,6 @@ export class TokensSubscriberService implements ISubscriberService {
 
     const { owner: collectionOwner } = collection;
 
-    console.log('TOKEN OWNER', owner, normalizeSubstrateAddress(owner));
-    console.log('COLL OWNER', collectionOwner);
-
     let parentId = null;
     if (nestingParentToken) {
       const { collectionId, tokenId } = nestingParentToken;
@@ -118,6 +115,7 @@ export class TokensSubscriberService implements ISubscriberService {
         ? sanitizePropertiesValues(tokenProperties)
         : [],
       parent_id: parentId,
+      is_sold: owner !== collectionOwner,
     };
   }
 
