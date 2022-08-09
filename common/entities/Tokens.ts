@@ -26,14 +26,14 @@ export class Tokens {
   @Column('character varying', { name: 'owner', length: 255 })
   owner: string;
 
-  @Column('jsonb', { name: 'data', default: {} })
-  data: object;
-
   @Column('jsonb', { name: 'properties', default: [] })
   properties: object;
 
-  @Column('jsonb', { name: 'attributes', default: {} })
+  @Column('jsonb', { name: 'attributes', nullable: true, default: null })
   attributes: object;
+
+  @Column('jsonb', { name: 'image', nullable: true, default: null })
+  image: object;
 
   @Column('bigint', { name: 'collection_id' })
   collection_id: number;
