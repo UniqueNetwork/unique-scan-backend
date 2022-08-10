@@ -127,5 +127,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       'token_name',
     );
     qb.leftJoin('Tokens.collection', 'Collection');
+    qb.leftJoin('tokens_stats', 'Statistics', '"Tokens".id = "Statistics".id');
   }
 }
