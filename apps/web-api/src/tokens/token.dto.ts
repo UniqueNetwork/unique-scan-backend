@@ -55,4 +55,7 @@ export class TokenDTO implements Partial<Tokens> {
 
   @Field(() => String, { nullable: true })
   parent_id?: string;
+
+  @Field(() => Int, { nullable: true })
+  transfers_count?: number;
 }
