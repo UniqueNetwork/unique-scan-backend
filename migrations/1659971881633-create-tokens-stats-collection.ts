@@ -9,7 +9,7 @@ export class createTokensStatsCollection1659971881633
       `CREATE TABLE "tokens_stats" ("id" BIGSERIAL NOT NULL, "token_id" integer NOT NULL, "collection_id" bigint NOT NULL, "transfers_count" bigint NOT NULL, CONSTRAINT "REL_6ac2fd9b097d5ece012ee28b90" UNIQUE ("token_id", "collection_id"), CONSTRAINT "PK_1da9b0ad1e4e8f36ad2412c4577" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "tokens_stats_pkey" ON "tokens_stats" ("token_id", "collection_id") `,
+      `CREATE UNIQUE INDEX "tokens_stats_pkey" ON "tokens_stats" ("collection_id", "token_id") `,
     );
     await queryRunner.query(
       `ALTER TABLE "collections_stats" ADD "transfers_count" bigint NOT NULL DEFAULT '0'`,

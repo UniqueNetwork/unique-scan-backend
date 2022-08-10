@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Tokens } from './Tokens';
 
-@Index('tokens_stats_pkey', ['token_id', 'collection_id'], { unique: true })
+@Index('tokens_stats_pkey', ['collection_id', 'token_id'], { unique: true })
 @Entity('tokens_stats', { schema: 'public' })
 export class TokensStats {
   @PrimaryGeneratedColumn({ type: 'bigint', name: 'id' })
