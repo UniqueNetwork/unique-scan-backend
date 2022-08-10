@@ -1,7 +1,7 @@
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Db, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
   IDataListResponse,
@@ -107,6 +107,11 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
     qb.addSelect('Tokens.parent_id', 'parent_id');
     qb.addSelect('Tokens.is_sold', 'is_sold');
+    qb.leftJoinAndSelect(
+      'collections',
+      'Collection',
+      '"Tokens".collection_id = "Collection".collection_id',
+    );
     qb.addSelect('Collection.token_prefix', 'token_prefix');
     qb.addSelect('Collection.name', 'collection_name');
     qb.addSelect('Collection.description', 'collection_description');
@@ -115,6 +120,5 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       `concat(Collection.token_prefix, ' #', Tokens.token_id)`,
       'token_name',
     );
-    qb.leftJoin('Tokens.collection', 'Collection');
   }
 }
