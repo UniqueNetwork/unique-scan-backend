@@ -1,4 +1,5 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { GraphQLJSONObject } from 'graphql-type-json';
 
 @ObjectType('transaction')
 export class TransactionDTO {
@@ -35,6 +36,6 @@ export class TransactionDTO {
   @Field(() => String, { nullable: true }) // Collection can be not scaned yet
   collection_name?: string;
 
-  @Field(() => String)
-  image_path?: string;
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  image?: object;
 }

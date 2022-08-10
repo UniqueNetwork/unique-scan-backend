@@ -1,7 +1,7 @@
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Db, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
   IDataListResponse,
@@ -99,24 +99,17 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   private select(qb: SelectQueryBuilder<Tokens>): void {
     qb.select('Tokens.collection_id', 'collection_id');
     qb.addSelect('Tokens.token_id', 'token_id');
-    qb.addSelect('Tokens.data', 'data');
+    qb.addSelect('Tokens.image', 'image');
     qb.addSelect('Tokens.attributes', 'attributes');
     qb.addSelect('Tokens.properties', 'properties');
     qb.addSelect('Tokens.owner', 'owner');
     qb.addSelect('Tokens.date_of_creation', 'date_of_creation');
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
     qb.addSelect('Tokens.parent_id', 'parent_id');
-    qb.addSelect(
-      `COALESCE(
-        "Tokens".data::json ->> 'ipfsJson'::text,
-          replace(
-            COALESCE(Collection.offchain_schema, ''::text),
-            '{id}'::text,
-            "Tokens".token_id::character varying(255)::text
-          ),
-        ''::text
-      )`,
-      'image_path',
+    qb.leftJoinAndSelect(
+      'collections',
+      'Collection',
+      '"Tokens".collection_id = "Collection".collection_id',
     );
     qb.addSelect('Collection.token_prefix', 'token_prefix');
     qb.addSelect('Collection.name', 'collection_name');
