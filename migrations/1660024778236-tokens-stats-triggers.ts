@@ -20,17 +20,23 @@ const transferTrigger = 'token_transfers_stats';
 const tokensUpdateTransfersStatsFn = `
 create or replace function ${transferFn}() returns trigger as $$
 		begin
-	    if (NEW.method = 'Transfer' and NEW.section <> 'Balances') then
-	        if (TG_OP = 'INSERT') then
-		      	insert into tokens_stats(collection_id, token_id, transfers_count)
-		      	values ((NEW.data::json->0)::text::int, (NEW.data::json->1)::text::int, 1)
-		      	ON CONFLICT (collection_id, token_id)
-		      	DO UPDATE SET transfers_count = tokens_stats.transfers_count + 1;
-	        end if;
-		end if;
-        return null;
-        end;
-        $$ LANGUAGE plpgsql;
+	    if (TG_OP = 'INSERT' and NEW.method = 'Transfer' and NEW.section <> 'Balances') then
+        insert into tokens_stats(collection_id, token_id, transfers_count)
+        values ((NEW.data::json->0)::text::int, (NEW.data::json->1)::text::int, 1)
+        ON CONFLICT (collection_id, token_id)
+        DO UPDATE SET transfers_count = tokens_stats.transfers_count + 1;
+		  end if;
+
+		  if (TG_OP = 'DELETE' and OLD.method = 'Transfer' and OLD.section <> 'Balances') then
+        insert into tokens_stats(collection_id, token_id, transfers_count)
+        values ((NEW.data::json->0)::text::int, (NEW.data::json->1)::text::int, 0)
+        ON CONFLICT (collection_id, token_id)
+        DO UPDATE SET transfers_count = tokens_stats.transfers_count - 1;
+		  end if;
+
+      return null;
+      end;
+      $$ LANGUAGE plpgsql;
 `;
 
 const deleteTransfersStatsTrigger = `drop trigger if exists ${transferTrigger} on event;`;

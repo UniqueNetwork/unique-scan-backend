@@ -1,6 +1,4 @@
-import { Column, Entity, Index, OneToMany, OneToOne } from 'typeorm';
-import { CollectionsStats } from './CollectionsStats';
-import { Tokens } from './Tokens';
+import { Column, Entity, Index } from 'typeorm';
 
 @Index('collections_pkey', ['collection_id'], { unique: true })
 @Index('collections_owner_normalized_idx', ['owner_normalized'], {})
@@ -79,9 +77,6 @@ export class Collections {
   @Column('character varying', { name: 'mode', nullable: true, length: 255 })
   mode: string | null;
 
-  // @OneToMany(() => Tokens, (tokens) => tokens.collection)
-  // tokens: Tokens[];
-
   @Column('boolean', { name: 'mint_mode', nullable: true })
   mint_mode?: boolean;
 
@@ -97,7 +92,4 @@ export class Collections {
     length: 255,
   })
   collection_cover: string | null;
-
-  // @OneToOne(() => CollectionsStats, { nullable: true })
-  // statistics: CollectionsStats;
 }

@@ -7,7 +7,7 @@ items:
     collection_id: ($current)
     date_of_creation: 1650433764
     owner_normalized: '0x2303410dcc766995e70b47beedda828b4486320b($current)'
-    # image: '{ ipfsCid: ($current) }'
+    image: { ipfsCid: '($current)' }
     # attributes: "{}"
     token_prefix: 'token_prefix_($current)'
     token_name: 'token_name($current)'
