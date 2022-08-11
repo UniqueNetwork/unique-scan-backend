@@ -37,3 +37,7 @@ export function sanitizePropertiesValues(
     value: sanitizeUnicodeString(value),
   }));
 }
+
+export function sanitizeAddress(rawAddress: string) {
+  return rawAddress.replace(/^0x/, '');
+}

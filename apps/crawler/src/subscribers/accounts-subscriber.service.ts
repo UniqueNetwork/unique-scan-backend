@@ -7,7 +7,11 @@ import { Account } from '@entities/Account';
 import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
 import { EventMethod, EventSection } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import {
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+  sanitizeAddress,
+} from '@common/utils';
 import ISubscriberService from './subscriber.interface';
 import { AllBalances } from '@unique-nft/sdk/types';
 
@@ -70,9 +74,15 @@ export class AccountsSubscriberService implements ISubscriberService {
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
       block: { height: blockNumber, timestamp: rawTimestamp },
-      event: { name: eventName, args },
+      event: { name: eventName, args, extrinsic, call },
     } = ctx;
 
+    // console.log(ctx);
+    // console.log(ctx._chain.description);
+    console.log(ctx._chain.getConstant('System', 'SS58Prefix'));
+    console.log(args);
+    // console.log(extrinsic);
+    // console.log(call);
     const log = {
       eventName,
       blockNumber,
@@ -89,6 +99,7 @@ export class AccountsSubscriberService implements ISubscriberService {
       log.accountId = accountId;
 
       const balancesData = await this.getBalancesData(accountId);
+
       if (!balancesData) {
         throw new Error('No balances data');
       }
