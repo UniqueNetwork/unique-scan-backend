@@ -76,7 +76,6 @@ describe('Collections (e2e)', () => {
                 collection_description
                 collection_id
                 collection_name
-                data
                 token_id
                 token_prefix
                 owner

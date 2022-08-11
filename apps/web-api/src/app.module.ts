@@ -4,14 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApolloDriver } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { Block } from '@entities/Block';
-import { Tokens } from '@entities/Tokens';
-import { Event } from '@entities/Event';
-import { CollectionsStats } from '@entities/CollectionsStats';
-import { Extrinsic } from '@entities/Extrinsic';
 import typeormConfig from '@common/typeorm.config';
-import { Account } from '@entities/Account';
-import { Collections } from '@entities/Collections';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HolderModule } from './holder/holder.module';
@@ -23,7 +16,6 @@ import { ExtrinsicModule } from './extrinsic/extrinsic.module';
 import { AccountModule } from './account/account.module';
 import { BlockModule } from './block/block.module';
 import { TimestampTransformInterceptor } from './timestamp.interceptor';
-import { Total } from '@entities/Total';
 import { StatisticsModule } from './statistics/statistics.module';
 import { TransactionModule } from './transaction/transaction.module';
 
@@ -32,16 +24,6 @@ import { TransactionModule } from './transaction/transaction.module';
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       ...typeormConfig,
-      entities: [
-        Block,
-        Tokens,
-        Collections,
-        CollectionsStats,
-        Event,
-        Extrinsic,
-        Account,
-        Total,
-      ],
     }),
     GraphQLModule.forRoot({
       driver: ApolloDriver,

@@ -20,6 +20,7 @@ const relationsFields = {
   tokens_count: 'Statistics',
   actions_count: 'Statistics',
   holders_count: 'Statistics',
+  transfers_count: 'Statistics',
 };
 
 @Injectable()
@@ -138,25 +139,20 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.sponsorship', 'sponsorship');
     qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
     qb.addSelect(
-      `CASE
-        WHEN COALESCE("Statistics".tokens_count, 0::bigint) > 0 THEN COALESCE("Statistics".tokens_count, 0::bigint)
-        ELSE 0::bigint
-      END`,
+      `COALESCE("Statistics".tokens_count, 0::bigint)`,
       'tokens_count',
     );
     qb.addSelect(
-      `CASE
-        WHEN COALESCE("Statistics".holders_count, 0::bigint) > 0 THEN COALESCE("Statistics".holders_count, 0::bigint)
-        ELSE 0::bigint
-      END`,
+      `COALESCE("Statistics".holders_count, 0::bigint)`,
       'holders_count',
     );
     qb.addSelect(
-      `CASE
-        WHEN COALESCE("Statistics".actions_count, 0::bigint) > 0 THEN COALESCE("Statistics".actions_count, 0::bigint)
-        ELSE 0::bigint
-      END`,
+      `COALESCE("Statistics".actions_count, 0::bigint)`,
       'actions_count',
+    );
+    qb.addSelect(
+      `COALESCE("Statistics".transfers_count, 0::bigint)`,
+      'transfers_count',
     );
     qb.addSelect('Collections.date_of_creation', 'date_of_creation');
     qb.leftJoin(

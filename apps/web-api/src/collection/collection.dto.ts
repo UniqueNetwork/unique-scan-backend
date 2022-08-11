@@ -78,6 +78,9 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => Int)
   actions_count?: number;
 
+  @Field(() => Int)
+  transfers_count?: number;
+
   @Field(() => Int, { nullable: true })
   date_of_creation?: number;
 
