@@ -8,7 +8,7 @@ async function bootstrap() {
       'log',
       'error',
       'warn',
-      // 'verbose',
+      'verbose',
       //
     ],
   });
