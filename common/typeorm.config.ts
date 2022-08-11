@@ -9,6 +9,7 @@ import { HarvesterError } from './entities/HarvesterError';
 import { System } from './entities/System';
 import { Tokens } from './entities/Tokens';
 import { Total } from './entities/Total';
+import { TokensStats } from './entities/TokensStats';
 import { DataSourceOptions } from 'typeorm';
 import dotenv = require('dotenv');
 import path = require('path');
@@ -33,6 +34,7 @@ const typeormConfig: DataSourceOptions = {
     Extrinsic,
     HarvesterError,
     System,
+    TokensStats,
     Tokens,
     Total,
   ],

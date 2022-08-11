@@ -1,7 +1,7 @@
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Db, Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
   IDataListResponse,
@@ -15,6 +15,7 @@ const relationsFields = {
   token_prefix: 'Collection',
   collection_name: 'Collection',
   collection_description: 'Collection',
+  transfers_count: 'Statistics',
 };
 
 const aliasFields = {
@@ -116,9 +117,15 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Collection.name', 'collection_name');
     qb.addSelect('Collection.description', 'collection_description');
     qb.addSelect('"Collection".collection_cover', 'collection_cover');
+    qb.addSelect('"Collection".collection_cover', 'collection_cover');
+    qb.addSelect(
+      `COALESCE("Statistics".transfers_count, 0::bigint)`,
+      'transfers_count',
+    );
     qb.addSelect(
       `concat(Collection.token_prefix, ' #', Tokens.token_id)`,
       'token_name',
     );
+    qb.leftJoin('tokens_stats', 'Statistics', '"Tokens".id = "Statistics".id');
   }
 }
