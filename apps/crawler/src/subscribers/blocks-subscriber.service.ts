@@ -301,7 +301,9 @@ export class BlocksSubscriberService implements ISubscriberService {
           timestamp: String(timestamp),
           block_number: String(blockNumber),
           event_index: indexInBlock,
-          block_index: `${blockNumber}-${extrinsic.indexInBlock}`,
+          block_index: `${blockNumber}-${
+            extrinsic ? extrinsic.indexInBlock : ''
+          }`,
           section,
           method,
           // todo: Make more clean connect to extrinsic
