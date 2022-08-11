@@ -55,6 +55,6 @@ export class Tokens {
   @Column('text', { name: 'parent_id', nullable: true })
   parent_id: string;
 
-  @OneToOne(() => TokensStats, { nullable: true })
-  statistics: TokensStats;
+  // @OneToOne(() => TokensStats, { nullable: true })
+  // statistics: TokensStats;
 }

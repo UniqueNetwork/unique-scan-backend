@@ -2,7 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 const calcStatsQuery = `
   insert into tokens_stats (token_id, collection_id, transfers_count)
-  select token_id, collection_id, count(collection_id) as transfers_count
+  select token_id, collection_id, count(true) as transfers_count
   from (
     select
         (e.data::json->0)::text::int as collection_id,

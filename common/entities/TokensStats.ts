@@ -2,11 +2,11 @@ import {
   Column,
   Entity,
   Index,
-  JoinColumn,
-  OneToOne,
+  // JoinColumn,
+  // OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Tokens } from './Tokens';
+// import { Tokens } from './Tokens';
 
 @Index('tokens_stats_pkey', ['collection_id', 'token_id'], { unique: true })
 @Entity('tokens_stats', { schema: 'public' })
@@ -23,15 +23,15 @@ export class TokensStats {
   @Column('bigint', { name: 'transfers_count' })
   transfers_count: number;
 
-  @OneToOne(() => Tokens, (token) => token.statistics, {
-    nullable: true,
-  })
-  @JoinColumn([
-    { name: 'token_id', referencedColumnName: 'token_id' },
-    {
-      name: 'collection_id',
-      referencedColumnName: 'collection_id',
-    },
-  ])
-  token: Tokens;
+  // @OneToOne(() => Tokens, (token) => token.statistics, {
+  //   nullable: true,
+  // })
+  // @JoinColumn([
+  //   { name: 'token_id', referencedColumnName: 'token_id' },
+  //   {
+  //     name: 'collection_id',
+  //     referencedColumnName: 'collection_id',
+  //   },
+  // ])
+  // token: Tokens;
 }

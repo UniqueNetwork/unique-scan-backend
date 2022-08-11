@@ -98,6 +98,6 @@ export class Collections {
   })
   collection_cover: string | null;
 
-  @OneToOne(() => CollectionsStats, { nullable: true })
-  statistics: CollectionsStats;
+  // @OneToOne(() => CollectionsStats, { nullable: true })
+  // statistics: CollectionsStats;
 }

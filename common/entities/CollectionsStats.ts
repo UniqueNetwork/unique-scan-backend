@@ -19,11 +19,11 @@ export class CollectionsStats {
   @Column('bigint', { name: 'transfers_count', default: 0 })
   transfers_count: number;
 
-  @OneToOne(() => Collections, (collections) => collections.statistics, {
-    nullable: true,
-  })
-  @JoinColumn([
-    { name: 'collection_id', referencedColumnName: 'collection_id' },
-  ])
-  collection: Collections;
+  // @OneToOne(() => Collections, (collections) => collections.statistics, {
+  //   nullable: true,
+  // })
+  // @JoinColumn([
+  //   { name: 'collection_id', referencedColumnName: 'collection_id' },
+  // ])
+  // collection: Collections;
 }
