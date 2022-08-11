@@ -58,4 +58,7 @@ export class TokenDTO implements Partial<Tokens> {
 
   @Field(() => Int, { nullable: true })
   transfers_count?: number;
+
+  @Field(() => Boolean)
+  is_sold?: boolean;
 }

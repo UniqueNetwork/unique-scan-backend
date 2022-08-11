@@ -67,6 +67,7 @@ describe('Tokens (e2e)', () => {
               token_name
               token_prefix
               parent_id
+              is_sold
             }
           }
         }
