@@ -272,8 +272,6 @@ export class BlocksSubscriberService implements ISubscriberService {
           signer_normalized: signer && normalizeSubstrateAddress(signer),
           to_owner: toOwner,
           to_owner_normalized: toOwner && normalizeSubstrateAddress(toOwner),
-          // todo: Do we realy need that data?
-          args: JSON.stringify(args),
           amount,
           fee,
         };
