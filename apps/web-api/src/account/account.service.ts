@@ -10,6 +10,7 @@ import {
   IStatsResponse,
 } from '../utils/gql-query-args';
 import { AccountDTO } from './account.dto';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 @Injectable()
 export class AccountService extends BaseService<Account, AccountDTO> {
@@ -17,6 +18,7 @@ export class AccountService extends BaseService<Account, AccountDTO> {
     super();
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<AccountDTO>,
   ): Promise<IDataListResponse<Account>> {

@@ -1,15 +1,31 @@
 import typeormConfig from '@common/typeorm.config';
 import { Logger, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProcessorConfigService } from './processor.config.service';
 import { CrawlerService } from './crawler.service';
 import { SubscribersModule } from './subscribers/subscribers.module';
+import { SentryModule } from '@ntegral/nestjs-sentry';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(typeormConfig),
+    SentryModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (config: ConfigService) => ({
+        dsn: config.get('SENTRY_DSN'),
+        // debug: config.get('SENTRY_DEBUG') === '1',
+        debug: false,
+        // environment: process.env.NODE_ENV ?? 'development',
+        logLevels: ['error'],
+        // logLevels: config.get('SENTRY_LOG_LEVELS')
+        //   ? config.get('SENTRY_LOG_LEVELS').split(',')
+        //   : ['error'],
+        enabled: !!config.get('SENTRY_DSN'),
+      }),
+      inject: [ConfigService],
+    }),
     SubscribersModule,
   ],
   controllers: [],

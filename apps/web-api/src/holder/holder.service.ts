@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { HolderDTO } from './holder.dto';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 interface IQueryParameters {
   [key: string]: any;
@@ -16,6 +17,7 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     super();
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<HolderDTO>,
   ): Promise<IDataListResponse<Tokens>> {

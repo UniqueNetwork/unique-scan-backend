@@ -10,6 +10,7 @@ import {
   IStatsResponse,
 } from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 const relationsFields = {
   token_prefix: 'Collection',
@@ -29,6 +30,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     super({ aliasFields, relationsFields });
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<TokenDTO>,
   ): Promise<IDataListResponse<TokenDTO>> {
