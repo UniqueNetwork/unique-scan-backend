@@ -16,7 +16,7 @@ import ISubscriberService from './subscriber.interface';
 import {
   CollectionInfoWithSchema,
   TokenPropertiesResult,
-  UniqueTokenDecoded,
+  TokenByIdResult,
 } from '@unique-nft/sdk/tokens';
 
 @Injectable()
@@ -60,7 +60,7 @@ export class TokensSubscriberService implements ISubscriberService {
     collectionId: number,
     tokenId: number,
   ): Promise<{
-    tokenDecoded: UniqueTokenDecoded | null;
+    tokenDecoded: TokenByIdResult | null;
     tokenProperties: TokenPropertiesResult | null;
     collection: CollectionInfoWithSchema | null;
   }> {
@@ -78,7 +78,7 @@ export class TokensSubscriberService implements ISubscriberService {
   }
 
   prepareDataToWrite(
-    tokenDecoded: UniqueTokenDecoded,
+    tokenDecoded: TokenByIdResult,
     tokenProperties: TokenPropertiesResult,
     collection: CollectionInfoWithSchema,
   ) {
@@ -88,13 +88,8 @@ export class TokensSubscriberService implements ISubscriberService {
       image,
       attributes,
       nestingParentToken,
+      owner,
     } = tokenDecoded;
-
-    const {
-      owner: rawOwner,
-    }: { owner: { Ethereum?: string; Substrate?: string } } = tokenDecoded;
-
-    const owner = rawOwner?.Ethereum || rawOwner?.Substrate;
 
     const { owner: collectionOwner } = collection;
 

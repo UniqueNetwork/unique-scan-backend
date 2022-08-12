@@ -5,8 +5,8 @@ import '@unique-nft/sdk/balance';
 import { SdkOptions } from '@unique-nft/sdk/types';
 import {
   CollectionInfoWithSchema,
+  TokenByIdResult,
   TokenPropertiesResult,
-  UniqueTokenDecoded,
 } from '@unique-nft/sdk/tokens';
 
 @Injectable()
@@ -46,7 +46,7 @@ export class SdkService {
   async getToken(
     collectionId: number,
     tokenId: number,
-  ): Promise<UniqueTokenDecoded | null> {
+  ): Promise<TokenByIdResult | null> {
     const sdk = await this.getSdk();
 
     return sdk.tokens.get_new({ collectionId, tokenId });
