@@ -88,13 +88,8 @@ export class TokensSubscriberService implements ISubscriberService {
       image,
       attributes,
       nestingParentToken,
+      owner,
     } = tokenDecoded;
-
-    const {
-      owner: rawOwner,
-    }: { owner: { Ethereum?: string; Substrate?: string } } = tokenDecoded;
-
-    const owner = rawOwner?.Ethereum || rawOwner?.Substrate;
 
     const { owner: collectionOwner } = collection;
 
