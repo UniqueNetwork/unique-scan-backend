@@ -44,18 +44,18 @@ export class AccountsSubscriberService implements ISubscriberService {
   }
 
   private prepareDataToWrite(params: {
-    accountId: string;
     timestamp: number;
     blockNumber: number;
     balancesData: AllBalances;
   }) {
-    const { accountId, blockNumber, timestamp, balancesData } = params;
+    const { blockNumber, timestamp, balancesData } = params;
 
-    const { availableBalance, lockedBalance, freeBalance } = balancesData;
+    const { address, availableBalance, lockedBalance, freeBalance } =
+      balancesData;
 
     return {
-      account_id: accountId,
-      account_id_normalized: normalizeSubstrateAddress(accountId),
+      account_id: address,
+      account_id_normalized: normalizeSubstrateAddress(address),
       available_balance: availableBalance.amount,
       free_balance: freeBalance.amount,
       locked_balance: lockedBalance.amount,
@@ -76,29 +76,32 @@ export class AccountsSubscriberService implements ISubscriberService {
     const log = {
       eventName,
       blockNumber,
+      accountIdHex: null as null | string,
       accountId: null as null | string,
     };
 
     try {
-      const { account: accountId } = args;
+      const { account: accountIdHex } = args;
 
-      if (!accountId) {
+      if (!accountIdHex) {
         throw new Error('Bad accountId');
       }
 
-      log.accountId = accountId;
+      log.accountIdHex = accountIdHex;
 
-      const balancesData = await this.getBalancesData(accountId);
+      const balancesData = await this.getBalancesData(accountIdHex);
+
       if (!balancesData) {
         throw new Error('No balances data');
       }
 
       const dataToWrite = this.prepareDataToWrite({
-        accountId,
         blockNumber,
         timestamp: normalizeTimestamp(rawTimestamp),
         balancesData,
       });
+
+      log.accountId = dataToWrite.account_id;
 
       // Write data into db
       await this.accountsRepository.upsert(dataToWrite, ['account_id']);
