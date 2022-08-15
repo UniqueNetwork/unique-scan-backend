@@ -10,10 +10,10 @@ export class TransactionDTO {
   timestamp?: number;
 
   @Field(() => String)
-  signer?: string;
+  owner?: string;
 
   @Field(() => String)
-  signer_normalized?: string;
+  owner_normalized?: string;
 
   @Field(() => String)
   to_owner?: string;

@@ -10,10 +10,15 @@ import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { TransactionDTO } from './transaction.dto';
 
+const aliasFields = {
+  from_owner: 'signer',
+  from_owner_normalized: 'signer_normalized',
+};
+
 @Injectable()
 export class TransactionService extends BaseService<Event, TransactionDTO> {
   constructor(@InjectRepository(Event) private repo: Repository<Event>) {
-    super();
+    super({ aliasFields });
   }
 
   public async findTokenTransactions(
@@ -33,8 +38,8 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
 
     qb.addSelect('"Extrinsic".to_owner', 'to_owner');
     qb.addSelect('"Extrinsic".to_owner_normalized', 'to_owner_normalized');
-    qb.addSelect('"Extrinsic".signer', 'signer');
-    qb.addSelect('"Extrinsic".signer_normalized', 'signer_normalized');
+    qb.addSelect('"Extrinsic".signer', 'owner');
+    qb.addSelect('"Extrinsic".signer_normalized', 'owner_normalized');
 
     qb.leftJoin(
       Collections,
@@ -45,7 +50,7 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
     qb.leftJoin(
       Tokens,
       'Token',
-      `"Token".collection_id = ("Event".data::jsonb ->> 0)::integer 
+      `"Token".collection_id = ("Event".data::jsonb ->> 0)::integer
       AND "Token".token_id = ("Event".data::jsonb ->> 1)::integer`,
     );
 
