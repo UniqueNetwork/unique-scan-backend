@@ -50,7 +50,6 @@
     "@ntegral/nestjs-sentry": "^3.0.7",
     "@polkadot/util-crypto": "^9.7.2",
     "@sentry/node": "^6.19.7",
-    "@sentry/types": "^7.10.0",
     "@subsquid/substrate-processor": "^1.5.1",
     "@subsquid/typeorm-store": "^0.1.1",
     "@unique-nft/opal-testnet-types": "^0.5.2",
