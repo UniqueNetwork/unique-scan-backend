@@ -6,7 +6,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProcessorConfigService } from '../processor.config.service';
-import { SdkService } from '../sdk.service';
+import { SdkService } from '../skd/sdk.service';
 import { ProcessorService } from './processor.service';
 import { SubstrateProcessor } from '@subsquid/substrate-processor';
 import { CollectionsSubscriberService } from './collections-subscriber.service';
@@ -15,6 +15,7 @@ import { BlocksSubscriberService } from './blocks-subscriber.service';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Account } from '@entities/Account';
 import { AccountsSubscriberService } from './accounts-subscriber.service';
+import { SdkModule } from '../skd/sdk.module';
 
 @Module({
   imports: [
@@ -27,11 +28,11 @@ import { AccountsSubscriberService } from './accounts-subscriber.service';
       Tokens,
     ]),
     ConfigModule,
+    SdkModule,
   ],
   providers: [
     SubstrateProcessor,
     ProcessorService,
-    SdkService,
     ProcessorConfigService,
     AccountsSubscriberService,
     BlocksSubscriberService,

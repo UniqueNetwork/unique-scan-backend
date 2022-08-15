@@ -88,9 +88,7 @@ export class ProcessorService {
       forceRescan,
       ...this.processorConfigService.getAllParams(),
     });
-
     const range = this.processorConfigService.getRange();
-
     if (forceRescan && !isNaN(range.from)) {
       try {
         // Set status height to range.from to rescan old blocks
@@ -101,7 +99,6 @@ export class ProcessorService {
         // First run, no schema yet
       }
     }
-
     return this.processor.run();
   }
 

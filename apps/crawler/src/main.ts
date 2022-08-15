@@ -16,10 +16,13 @@ async function bootstrap() {
   try {
     const crawlerService = app.get(CrawlerService);
 
-    await crawlerService.subscribe(process.env.SCAN_FORCE_RESCAN === 'true');
+    await crawlerService.run(process.env.SCAN_FORCE_RESCAN === 'true');
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);
   }
 }
-bootstrap();
+
+(async function () {
+  await bootstrap();
+})();

@@ -17,7 +17,7 @@ import {
   CollectionProperty,
   UniqueCollectionSchemaDecoded,
 } from '@unique-nft/sdk/tokens';
-import { SdkService } from '../sdk.service';
+import { SdkService } from '../skd/sdk.service';
 import { ProcessorService } from './processor.service';
 import ISubscriberService from './subscriber.interface';
 
