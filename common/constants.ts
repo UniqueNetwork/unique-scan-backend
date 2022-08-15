@@ -39,6 +39,7 @@ export enum EventMethod {
   WITHDRAW = 'Withdraw',
   ENDOWED = 'Endowed',
   EXTRINSIC_SUCCESS = 'ExtrinsicSuccess',
+  ITEM_CREATED = 'ItemCreated',
 }
 
 export enum ExtrinsicSection {
