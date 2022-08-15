@@ -18,6 +18,7 @@ import {
   TokenPropertiesResult,
   TokenByIdResult,
 } from '@unique-nft/sdk/tokens';
+import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
@@ -28,6 +29,7 @@ export class TokensSubscriberService implements ISubscriberService {
     private tokensRepository: Repository<Tokens>,
     private processorService: ProcessorService,
     private sdkService: SdkService,
+    @InjectSentry() private readonly sentry: SentryService,
   ) {}
 
   subscribe() {
@@ -208,6 +210,7 @@ export class TokensSubscriberService implements ISubscriberService {
       this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
+      this.sentry.instance().captureException({ ...log, err });
     }
   }
 }

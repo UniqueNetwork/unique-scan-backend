@@ -1,15 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { SentryService } from '@ntegral/nestjs-sentry';
 import { CrawlerModule } from './crawler.module';
 import { CrawlerService } from './crawler.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(CrawlerModule, {
-    // logger: ['error', 'warn', 'verbose'],
-    logger: false,
+    logger: ['error', 'warn', 'verbose'],
   });
-
-  // app.useLogger(SentryService.SentryServiceInstance());
 
   try {
     const crawlerService = app.get(CrawlerService);

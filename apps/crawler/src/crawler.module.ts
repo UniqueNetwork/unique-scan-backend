@@ -15,13 +15,11 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({
         dsn: config.get('SENTRY_DSN'),
-        // debug: config.get('SENTRY_DEBUG') === '1',
-        debug: false,
-        // environment: process.env.NODE_ENV ?? 'development',
-        logLevels: ['error'],
-        // logLevels: config.get('SENTRY_LOG_LEVELS')
-        //   ? config.get('SENTRY_LOG_LEVELS').split(',')
-        //   : ['error'],
+        debug: config.get('SENTRY_DEBUG') === '1',
+        environment: process.env.NODE_ENV ?? 'development',
+        logLevels: config.get('SENTRY_LOG_LEVELS')
+          ? config.get('SENTRY_LOG_LEVELS').split(',')
+          : ['error'],
         enabled: !!config.get('SENTRY_DSN'),
       }),
       inject: [ConfigService],

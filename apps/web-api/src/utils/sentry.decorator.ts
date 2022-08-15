@@ -1,8 +1,9 @@
 import { SentryService } from '@ntegral/nestjs-sentry';
-import { Inject } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 
 export const SentryWrapper = (emptyResult?: Record<string, unknown>) => {
   const injectSentry = Inject(SentryService);
+  const logger = new Logger();
 
   return (target: any, _name: string, descriptor: PropertyDescriptor) => {
     injectSentry(target, 'sentry');
@@ -14,6 +15,7 @@ export const SentryWrapper = (emptyResult?: Record<string, unknown>) => {
       } catch (error) {
         const sentry = this.sentry as SentryService;
         sentry.instance().captureException(error);
+        logger.error(error);
         if (emptyResult) {
           return emptyResult;
         }
