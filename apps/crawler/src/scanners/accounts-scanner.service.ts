@@ -7,6 +7,7 @@ import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import { AllBalances } from '@unique-nft/sdk/types';
 import IScannerService from './scanner.interface';
 import { ConfigService } from '@nestjs/config';
+import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 
 @Injectable()
 export class AccountsScannerService implements IScannerService {
@@ -17,7 +18,10 @@ export class AccountsScannerService implements IScannerService {
     private accountsRepository: Repository<Account>,
     private configService: ConfigService,
     private sdkService: SdkService,
-  ) {}
+    @InjectSentry() private readonly sentry: SentryService,
+  ) {
+    this.sentry.setContext(AccountsScannerService.name);
+  }
 
   async scan() {
     this.logger.log('Start full scan...');
@@ -42,8 +46,9 @@ export class AccountsScannerService implements IScannerService {
           `Processed ${accountsIdsForProcessing.length} accounts`,
         );
       }
-    } catch (err) {
-      this.logger.error(err);
+    } catch (error) {
+      this.logger.error(error);
+      this.sentry.instance().captureException({ error });
     }
 
     this.logger.log(`Processed ${accountsIds.length} active accounts`);
@@ -73,17 +78,14 @@ export class AccountsScannerService implements IScannerService {
 
       // Write data into db
       await this.accountsRepository.upsert(dataToWrite, ['account_id']);
-    } catch (err) {
-      this.logger.error({ ...log, error: err.message });
+    } catch (error) {
+      this.logger.error({ ...log, error: error.message });
+      this.sentry.instance().captureException({ ...log, error });
     }
   }
 
-  private async getBalancesData(
-    accountId: string,
-  ): Promise<AllBalances | null> {
-    const result = await this.sdkService.getAccountBalances(accountId);
-
-    return result ? result : null;
+  private async getBalancesData(accountId: string): Promise<AllBalances> {
+    return this.sdkService.getAccountBalances(accountId);
   }
 
   private prepareDataToWrite(params: {
@@ -104,9 +106,6 @@ export class AccountsScannerService implements IScannerService {
       locked_balance: lockedBalance.amount,
       timestamp: String(timestamp),
       block_height: String(blockNumber),
-
-      // todo: no data from sdk? Critical?
-      nonce: null,
     };
   }
 }

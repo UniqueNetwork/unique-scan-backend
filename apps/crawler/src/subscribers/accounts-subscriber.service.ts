@@ -67,9 +67,6 @@ export class AccountsSubscriberService implements ISubscriberService {
       locked_balance: lockedBalance.amount,
       timestamp: String(timestamp),
       block_height: String(blockNumber),
-
-      // todo: no data from sdk? Critical?
-      nonce: null,
     };
   }
 
