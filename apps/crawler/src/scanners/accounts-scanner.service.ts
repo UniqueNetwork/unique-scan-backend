@@ -22,7 +22,7 @@ export class AccountsScannerService implements IScannerService {
   async scan() {
     this.logger.log('Start full scan...');
 
-    const PARALLEL_TASKS = this.configService.get('PARALLEL_TASKS') | 10;
+    const PARALLEL_TASKS = this.configService.get('PARALLEL_TASKS') || 10;
     const currentBlockNumber = await this.sdkService.getCurrentBlockNumber();
     const accountsIds = await this.sdkService.getAccountsIds();
 
