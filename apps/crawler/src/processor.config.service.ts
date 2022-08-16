@@ -41,4 +41,8 @@ export class ProcessorConfigService {
   public getForceMode() {
     return this.configService.get('SCAN_FORCE_RESCAN');
   }
+
+  public getPrometheusPort(): number {
+    return this.configService.get('PROMETHEUS_PORT', 9090);
+  }
 }

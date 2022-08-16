@@ -81,6 +81,9 @@ export class ProcessorService {
     });
 
     this.substrateProcessor = new SubstrateProcessor(db);
+    this.substrateProcessor.setPrometheusPort(
+      this.processorConfigService.getPrometheusPort(),
+    );
 
     this.substrateProcessor
       .setDataSource(this.processorConfigService.getDataSource())
