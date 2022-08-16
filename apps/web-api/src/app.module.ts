@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApolloDriver } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -18,6 +18,7 @@ import { BlockModule } from './block/block.module';
 import { TimestampTransformInterceptor } from './timestamp.interceptor';
 import { StatisticsModule } from './statistics/statistics.module';
 import { TransactionModule } from './transaction/transaction.module';
+import { SentryModule } from '@ntegral/nestjs-sentry';
 
 @Module({
   imports: [
@@ -32,6 +33,19 @@ import { TransactionModule } from './transaction/transaction.module';
       playground: true,
       sortSchema: true,
       path: '/v1/graphql',
+    }),
+    SentryModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (config: ConfigService) => ({
+        dsn: config.get('SENTRY_DSN'),
+        debug: config.get('SENTRY_DEBUG') === '1',
+        environment: process.env.NODE_ENV ?? 'development',
+        logLevels: config.get('SENTRY_LOG_LEVELS')
+          ? config.get('SENTRY_LOG_LEVELS').split(',')
+          : ['error'], // ['log' | 'error' | 'warn' | 'debug' | 'verbose'];
+        enabled: !!config.get('SENTRY_DSN'),
+      }),
+      inject: [ConfigService],
     }),
     HolderModule,
     TransferModule,

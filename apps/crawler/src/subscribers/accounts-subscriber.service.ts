@@ -10,6 +10,7 @@ import { EventMethod, EventSection } from '@common/constants';
 import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import ISubscriberService from './subscriber.interface';
 import { AllBalances } from '@unique-nft/sdk/types';
+import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
@@ -20,7 +21,10 @@ export class AccountsSubscriberService implements ISubscriberService {
     private accountsRepository: Repository<Account>,
     private processorService: ProcessorService,
     private sdkService: SdkService,
-  ) {}
+    @InjectSentry() private readonly sentry: SentryService,
+  ) {
+    this.sentry.setContext(AccountsSubscriberService.name);
+  }
 
   subscribe() {
     const EVENTS_TO_UPDATE = [
@@ -125,8 +129,9 @@ export class AccountsSubscriberService implements ISubscriberService {
       await this.accountsRepository.upsert(dataToWrite, ['account_id']);
 
       this.logger.verbose({ ...log });
-    } catch (err) {
-      this.logger.error({ ...log, error: err.message });
+    } catch (error) {
+      this.logger.error({ ...log, error: error.message });
+      this.sentry.instance().captureException({ ...log, error });
     }
   }
 }
