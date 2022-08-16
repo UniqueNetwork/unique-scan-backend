@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Account } from '@entities/Account';
 import { AccountsScannerService } from './accounts-scanner.service';
-import { SdkModule } from '../skd/sdk.module';
+import { SdkModule } from '../sdk/sdk.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Account]), ConfigModule, SdkModule],
