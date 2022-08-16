@@ -8,13 +8,13 @@ import { SubscribersModule } from './subscribers/subscribers.module';
 import { ScannersModule } from './scanners/scanners.module';
 
 @Module({
-  providers: [Logger, CrawlerService, ProcessorConfigService],
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(typeormConfig),
     ScannersModule,
     SubscribersModule,
   ],
+  providers: [Logger, CrawlerService, ProcessorConfigService],
   controllers: [],
 })
 export class CrawlerModule {}

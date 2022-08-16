@@ -23,9 +23,7 @@ export class AccountsScannerService implements IScannerService {
     this.logger.log('Start full scan...');
 
     const PARALLEL_TASKS = this.configService.get('PARALLEL_TASKS') | 10;
-
     const currentBlockNumber = await this.sdkService.getCurrentBlockNumber();
-
     const accountsIds = await this.sdkService.getAccountsIds();
 
     try {
@@ -58,9 +56,7 @@ export class AccountsScannerService implements IScannerService {
     accountId: string;
     blockNumber: number;
   }) {
-    const log = {
-      accountId,
-    };
+    const log = { accountId };
 
     try {
       const balancesData = await this.getBalancesData(accountId);
@@ -74,8 +70,6 @@ export class AccountsScannerService implements IScannerService {
         timestamp: normalizeTimestamp(Date.now()),
         balancesData,
       });
-
-      log.accountId = dataToWrite.account_id;
 
       // Write data into db
       await this.accountsRepository.upsert(dataToWrite, ['account_id']);
