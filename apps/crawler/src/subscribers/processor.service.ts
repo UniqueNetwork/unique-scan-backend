@@ -7,6 +7,7 @@ import {
   TypeormDatabaseOptions,
 } from '@subsquid/typeorm-store';
 import { Connection, DataSource } from 'typeorm';
+import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorConfigService } from '../processor.config.service';
 
 interface IScanDatabaseOptions extends TypeormDatabaseOptions {
@@ -15,6 +16,8 @@ interface IScanDatabaseOptions extends TypeormDatabaseOptions {
 }
 
 class ScanDatabase extends TypeormDatabase {
+  private readonly sentry = new SentryService();
+
   constructor(options: IScanDatabaseOptions) {
     const { con, ...typeormDatabaseOptions } = options;
     super(typeormDatabaseOptions);
@@ -47,6 +50,7 @@ class ScanDatabase extends TypeormDatabase {
     } catch (e: any) {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       await this.con.destroy().catch(() => {}); // ignore error
+      this.sentry.instance().captureException(e);
       throw e;
     }
   }
@@ -64,6 +68,7 @@ export class ProcessorService {
     private dataSource: DataSource,
     private connection: Connection,
     private processorConfigService: ProcessorConfigService,
+    @InjectSentry() private readonly sentry: SentryService,
   ) {
     this.stateSchema =
       this.processorConfigService.getForceMode() === 'true'
@@ -99,6 +104,7 @@ export class ProcessorService {
         );
       } catch (err) {
         // First run, no schema yet
+        this.sentry.instance().captureException(err);
       }
     }
 

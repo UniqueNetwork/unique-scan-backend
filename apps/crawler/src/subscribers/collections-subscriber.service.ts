@@ -20,6 +20,7 @@ import {
 import { SdkService } from '../sdk.service';
 import { ProcessorService } from './processor.service';
 import ISubscriberService from './subscriber.interface';
+import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 
 type ParsedSchemaFields = {
   collectionCover?: string;
@@ -28,6 +29,7 @@ type ParsedSchemaFields = {
   constOnChainSchema?: object;
   variableOnChainSchema?: object;
 };
+
 @Injectable()
 export class CollectionsSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(CollectionsSubscriberService.name);
@@ -39,7 +41,10 @@ export class CollectionsSubscriberService implements ISubscriberService {
     private tokensRepository: Repository<Tokens>,
     private processorService: ProcessorService,
     private sdkService: SdkService,
-  ) {}
+    @InjectSentry() private readonly sentry: SentryService,
+  ) {
+    this.sentry.setContext(CollectionsSubscriberService.name);
+  }
 
   subscribe() {
     // todo: Remove some items when models rework is done
@@ -324,8 +329,9 @@ export class CollectionsSubscriberService implements ISubscriberService {
       await this.deleteCollection(collectionId);
 
       this.logger.verbose({ ...log });
-    } catch (err) {
-      this.logger.error({ ...log, error: err.message });
+    } catch (error) {
+      this.logger.error({ ...log, error: error.message });
+      this.sentry.instance().captureException({ ...log, error });
     }
   }
 

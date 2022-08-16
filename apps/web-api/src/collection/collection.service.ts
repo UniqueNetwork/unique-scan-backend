@@ -15,6 +15,7 @@ import {
 import { CollectionDTO } from './collection.dto';
 import { TokenDTO } from '../tokens/token.dto';
 import { TokenService } from '../tokens/token.service';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 const relationsFields = {
   tokens_count: 'Statistics',
@@ -32,6 +33,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     super({ relationsFields, relations: ['tokens'] });
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<CollectionDTO>,
   ): Promise<IDataListResponse<CollectionDTO>> {
