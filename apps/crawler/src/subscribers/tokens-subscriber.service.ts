@@ -107,7 +107,7 @@ export class TokensSubscriberService implements ISubscriberService {
       image,
       attributes,
       properties: tokenProperties
-        ? sanitizePropertiesValues(tokenProperties)
+        ? sanitizePropertiesValues(tokenProperties.properties)
         : [],
       parent_id: parentId,
       is_sold: owner !== collectionOwner,
