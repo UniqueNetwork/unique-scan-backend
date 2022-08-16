@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Account } from '@entities/Account';
-import { SdkService } from '../sdk.service';
+import { SdkService } from '../sdk/sdk.service';
 import { ProcessorService } from './processor.service';
 import { EventMethod, EventSection } from '@common/constants';
 import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
@@ -29,6 +29,8 @@ export class AccountsSubscriberService implements ISubscriberService {
   subscribe() {
     const EVENTS_TO_UPDATE = [
       `${EventSection.BALANCES}.${EventMethod.ENDOWED}`,
+      `${EventSection.COMMON}.${EventMethod.ITEM_CREATED}`,
+      `${EventSection.COMMON}.${EventMethod.TRANSFER}`,
     ];
 
     EVENTS_TO_UPDATE.forEach((eventName) =>
@@ -65,10 +67,23 @@ export class AccountsSubscriberService implements ISubscriberService {
       locked_balance: lockedBalance.amount,
       timestamp: String(timestamp),
       block_height: String(blockNumber),
-
-      // todo: no data from sdk? Critical?
-      nonce: null,
     };
+  }
+
+  private getAddressFromArgs(eventName: string, args: object) {
+    let address = null;
+    switch (eventName) {
+      case `${EventSection.BALANCES}.${EventMethod.ENDOWED}`:
+        address = args['account'];
+        break;
+      case `${EventSection.COMMON}.${EventMethod.ITEM_CREATED}`:
+        address = args[2]['value'];
+        break;
+      case `${EventSection.COMMON}.${EventMethod.TRANSFER}`:
+        address = args[3]['value'];
+        break;
+    }
+    return address;
   }
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
@@ -80,20 +95,20 @@ export class AccountsSubscriberService implements ISubscriberService {
     const log = {
       eventName,
       blockNumber,
-      accountIdHex: null as null | string,
+      rawAccountId: null as null | string,
       accountId: null as null | string,
     };
 
     try {
-      const { account: accountIdHex } = args;
+      const rawAccountId = this.getAddressFromArgs(eventName, args);
 
-      if (!accountIdHex) {
+      if (!rawAccountId) {
         throw new Error('Bad accountId');
       }
 
-      log.accountIdHex = accountIdHex;
+      log.rawAccountId = rawAccountId;
 
-      const balancesData = await this.getBalancesData(accountIdHex);
+      const balancesData = await this.getBalancesData(rawAccountId);
 
       if (!balancesData) {
         throw new Error('No balances data');

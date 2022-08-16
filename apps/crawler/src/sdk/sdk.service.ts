@@ -8,14 +8,15 @@ import {
   TokenByIdResult,
   TokenPropertiesResult,
 } from '@unique-nft/sdk/tokens';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class SdkService {
   private sdkPromise: Promise<Sdk>;
 
-  constructor() {
+  constructor(private configService: ConfigService) {
     this.sdkPromise = Sdk.create({
-      chainWsUrl: process.env.CHAIN_WS_URL,
+      chainWsUrl: this.configService.get('CHAIN_WS_URL'),
     } as SdkOptions);
   }
 
@@ -65,5 +66,23 @@ export class SdkService {
     const sdk = await this.getSdk();
 
     return sdk.balance.get({ address: accountId });
+  }
+
+  async getCurrentBlockNumber(): Promise<number> {
+    const sdk = await this.getSdk();
+
+    const { block } = await sdk.api.rpc.chain.getBlock();
+
+    return block.header.number.toNumber();
+  }
+
+  async getAccountsIds(): Promise<string[]> {
+    const sdk = await this.getSdk();
+
+    const accounts = await sdk.api.query.system.account.keys();
+
+    const accountsIds = accounts.map((account) => account.args[0].toString());
+
+    return accountsIds;
   }
 }

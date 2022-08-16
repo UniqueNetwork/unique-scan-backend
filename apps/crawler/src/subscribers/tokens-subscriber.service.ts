@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Tokens } from '@entities/Tokens';
-import { SdkService } from '../sdk.service';
+import { SdkService } from '../sdk/sdk.service';
 import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
 import {
@@ -111,7 +111,7 @@ export class TokensSubscriberService implements ISubscriberService {
       image,
       attributes,
       properties: tokenProperties
-        ? sanitizePropertiesValues(tokenProperties)
+        ? sanitizePropertiesValues(tokenProperties.properties)
         : [],
       parent_id: parentId,
       is_sold: owner !== collectionOwner,

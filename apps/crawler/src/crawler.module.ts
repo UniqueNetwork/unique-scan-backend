@@ -5,12 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProcessorConfigService } from './processor.config.service';
 import { CrawlerService } from './crawler.service';
 import { SubscribersModule } from './subscribers/subscribers.module';
+import { ScannersModule } from './scanners/scanners.module';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot(typeormConfig),
+    ScannersModule,
     SentryModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({
