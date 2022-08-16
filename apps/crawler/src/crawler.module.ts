@@ -14,7 +14,7 @@ import { ScannersModule } from './scanners/scanners.module';
     ScannersModule,
     SubscribersModule,
   ],
-  providers: [Logger, CrawlerService, ProcessorConfigService],
   controllers: [],
+  providers: [Logger, CrawlerService, ProcessorConfigService],
 })
 export class CrawlerModule {}
