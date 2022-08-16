@@ -17,7 +17,7 @@ import {
   CollectionProperty,
   UniqueCollectionSchemaDecoded,
 } from '@unique-nft/sdk/tokens';
-import { SdkService } from '../skd/sdk.service';
+import { SdkService } from '../sdk/sdk.service';
 import { ProcessorService } from './processor.service';
 import ISubscriberService from './subscriber.interface';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';

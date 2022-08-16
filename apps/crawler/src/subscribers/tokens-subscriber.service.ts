@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Tokens } from '@entities/Tokens';
-import { SdkService } from '../skd/sdk.service';
+import { SdkService } from '../sdk/sdk.service';
 import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
 import {

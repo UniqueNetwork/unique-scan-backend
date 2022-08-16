@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from '@entities/Account';
-import { SdkService } from '../skd/sdk.service';
+import { SdkService } from '../sdk/sdk.service';
 import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import { AllBalances } from '@unique-nft/sdk/types';
 import IScannerService from './scanner.interface';
