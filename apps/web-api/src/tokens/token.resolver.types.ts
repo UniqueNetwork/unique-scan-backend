@@ -33,6 +33,12 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
   collection_name?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
+  collection_owner?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  collection_owner_normalized?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
   parent_id?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
