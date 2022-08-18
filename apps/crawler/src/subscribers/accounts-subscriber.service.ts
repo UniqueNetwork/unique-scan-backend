@@ -31,7 +31,7 @@ export class AccountsSubscriberService implements ISubscriberService {
       `${EventSection.SYSTEM}.${EventMethod.NEW_ACCOUNT}`,
       `${EventSection.BALANCES}.${EventMethod.ENDOWED}`,
       `${EventSection.COMMON}.${EventMethod.ITEM_CREATED}`,
-      // `${EventSection.COMMON}.${EventMethod.TRANSFER}`,
+      `${EventSection.COMMON}.${EventMethod.TRANSFER}`,
     ];
 
     EVENTS_TO_UPDATE.forEach((eventName) =>
