@@ -120,12 +120,12 @@ export class BaseService<T, S> {
       const operator = this.getOrmWhereOperation(op);
 
       if (operator) {
-        qb[operator](
-          this.addSubQuery(
-            where,
-            operator === OperatorMethods.AND ? Operator.AND : Operator.OR,
-            filterCb,
-          ),
+        this.addSubQuery(
+          qb,
+          where,
+          operator === OperatorMethods.AND ? Operator.AND : Operator.OR,
+          operator,
+          filterCb,
         );
       } else {
         const method =
@@ -169,24 +169,28 @@ export class BaseService<T, S> {
   }
 
   private addSubQuery(
+    qb: SelectQueryBuilder<T>,
     where: TWhere<S>,
     operator: Operator,
+    method: OperatorMethods,
     filterCb?: (
       qb: SelectQueryBuilder<T>,
       where: TWhere<S>,
       method: OperatorMethods,
     ) => void,
   ) {
-    return new Brackets((qb) =>
-      where[operator].map((queryArray) => {
-        this.applyConditionTree(
-          qb as SelectQueryBuilder<T>,
-          queryArray,
-          operator,
-          filterCb,
-        );
-      }),
-    );
+    where[operator].forEach((queryArray) => {
+      qb[method](
+        new Brackets((qb) =>
+          this.applyConditionTree(
+            qb as SelectQueryBuilder<T>,
+            queryArray,
+            operator,
+            filterCb,
+          ),
+        ),
+      );
+    });
   }
 
   private createWhereConditionExpression(
