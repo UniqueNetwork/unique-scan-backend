@@ -4,7 +4,6 @@ export enum EventSection {
   SYSTEM = 'System',
   TREASURY = 'Treasury',
   UNIQUE = 'Unique',
-  RMK_CORE = 'RmrkCore',
 }
 
 export enum EventMethod {
@@ -30,13 +29,15 @@ export enum EventMethod {
   PROPERTY_PERMISSION_SET = 'PropertyPermissionSet',
   TOKEN_PERMISSION_SET = 'TokenPropertySet',
   TOKEN_PERMISSION_DELETED = 'TokenPropertyDeleted',
-  NFT_MINTED = 'NftMinted',
   SPONSORSHIP_CONFIRMED = 'SponsorshipConfirmed',
   TRANSFER = 'Transfer',
   WITHDRAW = 'Withdraw',
 }
 
 export const EventName = {
+  // System
+  NEW_ACCOUNT: `${EventSection.SYSTEM}.${EventMethod.NEW_ACCOUNT}`,
+
   // Common
   COLLECTION_CREATED: `${EventSection.COMMON}.${EventMethod.COLLECTION_CREATED}`,
   COLLECTION_DESTROYED: `${EventSection.COMMON}.${EventMethod.COLLECTION_DESTROYED}`,
@@ -59,6 +60,12 @@ export const EventName = {
   COLLECTION_LIMIT_SET: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_LIMIT_SET}`,
   COLLECTION_SPONSOR_SET: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_SPONSOR_SET}`,
   SPONSORSHIP_CONFIRMED: `${EventSection.UNIQUE}.${EventMethod.SPONSORSHIP_CONFIRMED}`,
+
+  // Balances
+  BALANCES_DEPOSIT: `${EventSection.BALANCES}.${EventMethod.TRANSFER}`,
+  BALANCES_ENDOWED: `${EventSection.BALANCES}.${EventMethod.ENDOWED}`,
+  BALANCES_WITHDRAW: `${EventSection.BALANCES}.${EventMethod.WITHDRAW}`,
+  BALANCES_TRANSFER: `${EventSection.BALANCES}.${EventMethod.TRANSFER}`,
 };
 
 export enum ExtrinsicSection {
