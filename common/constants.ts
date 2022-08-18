@@ -40,6 +40,7 @@ export enum EventMethod {
   ENDOWED = 'Endowed',
   EXTRINSIC_SUCCESS = 'ExtrinsicSuccess',
   ITEM_CREATED = 'ItemCreated',
+  NEW_ACCOUNT = 'NewAccount',
 }
 
 export enum ExtrinsicSection {

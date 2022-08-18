@@ -28,9 +28,10 @@ export class AccountsSubscriberService implements ISubscriberService {
 
   subscribe() {
     const EVENTS_TO_UPDATE = [
+      `${EventSection.SYSTEM}.${EventMethod.NEW_ACCOUNT}`,
       `${EventSection.BALANCES}.${EventMethod.ENDOWED}`,
       `${EventSection.COMMON}.${EventMethod.ITEM_CREATED}`,
-      `${EventSection.COMMON}.${EventMethod.TRANSFER}`,
+      // `${EventSection.COMMON}.${EventMethod.TRANSFER}`,
     ];
 
     EVENTS_TO_UPDATE.forEach((eventName) =>
@@ -73,6 +74,7 @@ export class AccountsSubscriberService implements ISubscriberService {
   private getAddressFromArgs(eventName: string, args: object) {
     let address = null;
     switch (eventName) {
+      case `${EventSection.SYSTEM}.${EventMethod.NEW_ACCOUNT}`:
       case `${EventSection.BALANCES}.${EventMethod.ENDOWED}`:
         address = args['account'];
         break;
