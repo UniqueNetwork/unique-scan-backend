@@ -41,11 +41,17 @@ export class TokenDTO implements Partial<Tokens> {
   @Field(() => String)
   collection_name?: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   collection_description?: string;
 
   @Field(() => String, { nullable: true })
   collection_cover?: string;
+
+  @Field(() => String, { nullable: true })
+  collection_owner?: string;
+
+  @Field(() => String, { nullable: true })
+  collection_owner_normalized?: string;
 
   @Field(() => String, { nullable: true })
   token_name?: string;
