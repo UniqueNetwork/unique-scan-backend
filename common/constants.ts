@@ -1,47 +1,65 @@
-export enum EventName {
-  COLLECTION_CREATED = 'Common.CollectionCreated',
-  COLLECTION_DESTROYED = 'Common.CollectionDestroyed',
-  ITEM_CREATED = 'Common.ItemCreated',
-  ITEM_DESTROYED = 'Common.ItemDestroyed',
-  COLLECTION_PROPERTY_SET = 'Common.CollectionPropertySet',
-  COLLECTION_PROPERTY_DELETED = 'Common.CollectionPropertyDeleted',
-  PROPERTY_PERMISSION_SET = 'Common.PropertyPermissionSet',
-  TOKEN_PROPERTY_SET = 'Common.TokenPropertySet',
-  TOKEN_PROPERTY_DELETED = 'Common.TokenPropertyDeleted',
-  TRANSFER = 'Common.Transfer',
-
-  ALLOW_LIST_ADDRESS_ADDED = 'Unique.AllowListAddressAdded',
-  ALLOW_LIST_ADDRESS_REMOVED = 'Unique.AllowListAddressRemoved',
-  COLLECTION_SPONSOR_REMOVED = 'Unique.CollectionSponsorRemoved',
-  COLLECTION_ADMIN_ADDED = 'Unique.CollectionAdminAdded',
-  COLLECTION_ADMIN_REMOVED = 'Unique.CollectionAdminRemoved',
-  COLLECTION_OWNED_CHANGED = 'Unique.CollectionOwnedChanged',
-  COLLECTION_LIMIT_SET = 'Unique.CollectionLimitSet',
-  COLLECTION_SPONSOR_SET = 'Unique.CollectionSponsorSet',
-  SPONSORSHIP_CONFIRMED = 'Unique.SponsorshipConfirmed',
-}
-
-export enum SchemaVersion {
-  IMAGE_URL = 'ImageURL',
-  UNIQUE = 'Unique',
-}
-
 export enum EventSection {
+  BALANCES = 'Balances',
   COMMON = 'Common',
   SYSTEM = 'System',
-  BALANCES = 'Balances',
   TREASURY = 'Treasury',
+  UNIQUE = 'Unique',
+  RMK_CORE = 'RmrkCore',
 }
 
 export enum EventMethod {
-  TRANSFER = 'Transfer',
+  ALLOW_LIST_ADDRESS_ADDDED = 'AllowListAddressAdded',
+  ALLOW_LIST_ADDRESS_REMOVED = 'AllowListAddressRemoved',
+  COLLECTION_ADMIN_ADDED = 'CollectionAdminAdded',
+  COLLECTION_ADMIN_REMOVED = 'CollectionAdminRemoved',
+  COLLECTION_OWNER_CHANGED = 'CollectionOwnedChanged',
+  COLLECTION_PERMISSION_CHANGED = 'CollectionPermissionSet',
+  COLLECTION_PROPERTY_SET = 'CollectionPropertySet',
+  COLLECTION_PROPERTY_DELETED = 'CollectionPropertyDeleted',
+  COLLECTION_SPONSOR_SET = 'CollectionSponsorSet',
+  COLLECTION_SPONSOR_REMOVED = 'CollectionSponsorRemoved',
   DEPOSIT = 'Deposit',
-  WITHDRAW = 'Withdraw',
   ENDOWED = 'Endowed',
-  EXTRINSIC_SUCCESS = 'ExtrinsicSuccess',
   ITEM_CREATED = 'ItemCreated',
+  ITEM_DESTROYED = 'ItemDestroyed',
   NEW_ACCOUNT = 'NewAccount',
+  EXTRINSIC_SUCCESS = 'ExtrinsicSuccess',
+  COLLECTION_CREATED = 'CollectionCreated',
+  COLLECTION_DESTROYED = 'CollectionDestroyed',
+  COLLECTION_LIMIT_SET = 'CollectionLimitSet',
+  PROPERTY_PERMISSION_SET = 'PropertyPermissionSet',
+  TOKEN_PERMISSION_SET = 'TokenPropertySet',
+  TOKEN_PERMISSION_DELETED = 'TokenPropertyDeleted',
+  NFT_MINTED = 'NftMinted',
+  SPONSORSHIP_CONFIRMED = 'SponsorshipConfirmed',
+  TRANSFER = 'Transfer',
+  WITHDRAW = 'Withdraw',
 }
+
+export const EventName = {
+  // Common
+  COLLECTION_CREATED: `${EventSection.COMMON}.${EventMethod.COLLECTION_CREATED}`,
+  COLLECTION_DESTROYED: `${EventSection.COMMON}.${EventMethod.COLLECTION_DESTROYED}`,
+  ITEM_CREATED: `${EventSection.COMMON}.${EventMethod.ITEM_CREATED}`,
+  ITEM_DESTROYED: `${EventSection.COMMON}.${EventMethod.ITEM_DESTROYED}`,
+  COLLECTION_PROPERTY_SET: `${EventSection.COMMON}.${EventMethod.COLLECTION_PROPERTY_SET}`,
+  COLLECTION_PROPERTY_DELETED: `${EventSection.COMMON}.${EventMethod.COLLECTION_PROPERTY_DELETED}`,
+  PROPERTY_PERMISSION_SET: `${EventSection.COMMON}.${EventMethod.PROPERTY_PERMISSION_SET}`,
+  TOKEN_PROPERTY_SET: `${EventSection.COMMON}.${EventMethod.TOKEN_PERMISSION_SET}`,
+  TOKEN_PROPERTY_DELETED: `${EventSection.COMMON}.${EventMethod.TOKEN_PERMISSION_DELETED}`,
+  TRANSFER: `${EventSection.COMMON}.${EventMethod.TRANSFER}`,
+
+  // Unique
+  ALLOW_LIST_ADDRESS_ADDED: `${EventSection.UNIQUE}.${EventMethod.ALLOW_LIST_ADDRESS_ADDDED}`,
+  ALLOW_LIST_ADDRESS_REMOVED: `${EventSection.UNIQUE}.${EventMethod.ALLOW_LIST_ADDRESS_REMOVED}`,
+  COLLECTION_SPONSOR_REMOVED: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_SPONSOR_REMOVED}`,
+  COLLECTION_ADMIN_ADDED: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_ADMIN_ADDED}`,
+  COLLECTION_ADMIN_REMOVED: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_ADMIN_REMOVED}`,
+  COLLECTION_OWNED_CHANGED: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_OWNER_CHANGED}`,
+  COLLECTION_LIMIT_SET: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_LIMIT_SET}`,
+  COLLECTION_SPONSOR_SET: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_SPONSOR_SET}`,
+  SPONSORSHIP_CONFIRMED: `${EventSection.UNIQUE}.${EventMethod.SPONSORSHIP_CONFIRMED}`,
+};
 
 export enum ExtrinsicSection {
   UNIQUE = 'Unique',
