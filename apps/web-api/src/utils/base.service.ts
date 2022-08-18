@@ -179,18 +179,22 @@ export class BaseService<T, S> {
       method: OperatorMethods,
     ) => void,
   ) {
-    where[operator].forEach((queryArray) => {
-      qb[method](
-        new Brackets((qb) =>
-          this.applyConditionTree(
-            qb as SelectQueryBuilder<T>,
-            queryArray,
-            operator,
-            filterCb,
-          ),
-        ),
-      );
-    });
+    qb[method](
+      new Brackets((qb) => {
+        where[operator].forEach((queryArray) => {
+          qb[method](
+            new Brackets((qb) =>
+              this.applyConditionTree(
+                qb as SelectQueryBuilder<T>,
+                queryArray,
+                operator,
+                filterCb,
+              ),
+            ),
+          );
+        });
+      }),
+    );
   }
 
   private createWhereConditionExpression(
