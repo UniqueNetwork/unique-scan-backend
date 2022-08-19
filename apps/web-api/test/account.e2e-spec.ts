@@ -50,7 +50,6 @@ describe('Account (e2e)', () => {
               block_height
               free_balance
               locked_balance
-              nonce
               timestamp
             }
           }
