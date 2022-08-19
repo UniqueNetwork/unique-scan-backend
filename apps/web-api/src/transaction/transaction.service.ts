@@ -35,8 +35,7 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
     qb.addSelect('"Collection".name', 'collection_name');
     qb.addSelect('"Collection".token_prefix', 'token_prefix');
 
-    // todo: Check this field when working on transactions resolver. See TokenByIdResult type.
-    // qb.addSelect(`"Token".data ->> 'name'::text`, 'token_name');
+    qb.addSelect('"Token".image', 'image');
 
     qb.addSelect('"Extrinsic".to_owner', 'to_owner');
     qb.addSelect('"Extrinsic".to_owner_normalized', 'to_owner_normalized');
