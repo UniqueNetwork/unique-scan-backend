@@ -27,7 +27,7 @@ export class AccountsSubscriberService implements ISubscriberService {
   }
 
   subscribe() {
-    const EVENTS_TO_UPDATE = [
+    [
       EventName.NEW_ACCOUNT,
       EventName.COLLECTION_CREATED,
       EventName.ITEM_CREATED,
@@ -38,9 +38,7 @@ export class AccountsSubscriberService implements ISubscriberService {
       EventName.BALANCES_ENDOWED,
       EventName.BALANCES_WITHDRAW,
       EventName.BALANCES_TRANSFER,
-    ];
-
-    EVENTS_TO_UPDATE.forEach((eventName) =>
+    ].forEach((eventName) =>
       this.processorService.processor.addEventHandler(
         eventName,
         this.upsertHandler.bind(this),
@@ -162,8 +160,8 @@ export class AccountsSubscriberService implements ISubscriberService {
     const log = {
       eventName,
       blockNumber,
-      rawAddressValues: null as null | string[],
-      processedAccounts: null as null | string[],
+      rawAddressValues: [],
+      processedAccounts: [],
     };
 
     try {

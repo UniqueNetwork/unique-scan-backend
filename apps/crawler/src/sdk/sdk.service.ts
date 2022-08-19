@@ -62,9 +62,8 @@ export class SdkService {
     return sdk.tokens.properties({ collectionId, tokenId });
   }
 
-  async getBalances(accountId: string) {
+  getBalances = async (rawAddress: string) => {
     const sdk = await this.getSdk();
-
-    return sdk.balance.get({ address: accountId });
-  }
+    return sdk.balance.get({ address: rawAddress });
+  };
 }
