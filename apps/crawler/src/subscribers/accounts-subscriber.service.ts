@@ -48,33 +48,11 @@ export class AccountsSubscriberService implements ISubscriberService {
     );
   }
 
-  private async getBalancesData(
-    accountId: string,
-  ): Promise<AllBalances | null> {
-    const result = await this.sdkService.getAccountBalances(accountId);
-
-    return result ? result : null;
-  }
-
-  private prepareDataToWrite(params: {
-    timestamp: number;
-    blockNumber: number;
-    balancesData: AllBalances;
-  }) {
-    const { blockNumber, timestamp, balancesData } = params;
-
-    const { address, availableBalance, lockedBalance, freeBalance } =
-      balancesData;
-
-    return {
-      account_id: address,
-      account_id_normalized: normalizeSubstrateAddress(address),
-      available_balance: availableBalance.amount,
-      free_balance: freeBalance.amount,
-      locked_balance: lockedBalance.amount,
-      timestamp: String(timestamp),
-      block_height: String(blockNumber),
-    };
+  /**
+   * Gets balances data for every raw address value passed.
+   */
+  private getBalances(rawAddressValues: string[]): Promise<AllBalances[]> {
+    return Promise.all(rawAddressValues.map(this.sdkService.getBalances));
   }
 
   /**
@@ -114,7 +92,7 @@ export class AccountsSubscriberService implements ISubscriberService {
    * - System.NewAccount
    *   {"account":"0x42xxx"}
    */
-  private getAddressFromArgs(
+  private getAddressValues(
     eventName: string,
     args: object | (string | number)[],
   ): string[] {
@@ -150,6 +128,31 @@ export class AccountsSubscriberService implements ISubscriberService {
     return addresses;
   }
 
+  /**
+   * Prepares event and balances data to write into db.
+   */
+  private prepareDataForDb(params: {
+    timestamp: number;
+    blockNumber: number;
+    balances: AllBalances;
+  }): Account {
+    const {
+      blockNumber,
+      timestamp,
+      balances: { address, availableBalance, lockedBalance, freeBalance },
+    } = params;
+
+    return {
+      block_height: String(blockNumber),
+      timestamp: String(timestamp),
+      account_id: address,
+      account_id_normalized: normalizeSubstrateAddress(address),
+      available_balance: availableBalance.amount,
+      free_balance: freeBalance.amount,
+      locked_balance: lockedBalance.amount,
+    };
+  }
+
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
       block: { height: blockNumber, timestamp: rawTimestamp },
@@ -159,35 +162,46 @@ export class AccountsSubscriberService implements ISubscriberService {
     const log = {
       eventName,
       blockNumber,
-      rawAccountId: null as null | string,
-      accountId: null as null | string,
+      rawAddressValues: null as null | string[],
+      processedAccounts: null as null | string[],
     };
 
     try {
-      const rawAccountId = this.getAddressFromArgs(eventName, args);
+      const rawAddressValues = this.getAddressValues(eventName, args);
+      log.rawAddressValues = rawAddressValues;
 
-      if (!rawAccountId) {
-        throw new Error('Bad accountId');
+      if (!rawAddressValues.length) {
+        throw new Error('No addresses found');
       }
 
-      log.rawAccountId = rawAccountId;
+      // Get balances and converted address from sdk
+      const balancesData = await this.getBalances(rawAddressValues);
 
-      const balancesData = await this.getBalancesData(rawAccountId);
+      const timestamp = normalizeTimestamp(rawTimestamp);
 
-      if (!balancesData) {
-        throw new Error('No balances data');
-      }
+      await Promise.all(
+        balancesData.map((balances, addressIndex) => {
+          if (!balances) {
+            this.logger.warn({
+              message: 'No balances data',
+              addressIndex,
+              ...log,
+            });
+            return null;
+          }
 
-      const dataToWrite = this.prepareDataToWrite({
-        blockNumber,
-        timestamp: normalizeTimestamp(rawTimestamp),
-        balancesData,
-      });
+          log.processedAccounts.push(balances.address);
 
-      log.accountId = dataToWrite.account_id;
+          const dataToWrite = this.prepareDataForDb({
+            blockNumber,
+            timestamp,
+            balances,
+          });
 
-      // Write data into db
-      await this.accountsRepository.upsert(dataToWrite, ['account_id']);
+          // Write data into db
+          return this.accountsRepository.upsert(dataToWrite, ['account_id']);
+        }),
+      );
 
       this.logger.verbose({ ...log });
     } catch (error) {
