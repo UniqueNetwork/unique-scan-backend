@@ -11,6 +11,7 @@ import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import ISubscriberService from './subscriber.interface';
 import { AllBalances } from '@unique-nft/sdk/types';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
+import { Severity } from '@sentry/node';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
@@ -50,7 +51,11 @@ export class AccountsSubscriberService implements ISubscriberService {
    * Gets balances data for every raw address value passed.
    */
   private getBalances(rawAddressValues: string[]): Promise<AllBalances[]> {
-    return Promise.all(rawAddressValues.map(this.sdkService.getBalances));
+    return Promise.all(
+      rawAddressValues.map((rawAddress) =>
+        this.sdkService.getBalances(rawAddress),
+      ),
+    );
   }
 
   /**
@@ -185,6 +190,12 @@ export class AccountsSubscriberService implements ISubscriberService {
               addressIndex,
               ...log,
             });
+            this.sentry
+              .instance()
+              .captureMessage(
+                `No balances data for block ${blockNumber}, event: "${eventName}", addressIndex: ${addressIndex}`,
+                Severity.Warning,
+              );
             return null;
           }
 
