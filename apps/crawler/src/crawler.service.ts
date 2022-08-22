@@ -5,7 +5,6 @@ import { AccountsSubscriberService } from './subscribers/accounts-subscriber.ser
 import { BlocksSubscriberService } from './subscribers/blocks-subscriber.service';
 import { CollectionsSubscriberService } from './subscribers/collections-subscriber.service';
 import { TokensSubscriberService } from './subscribers/tokens-subscriber.service';
-import { AccountsScannerService } from './scanners/accounts-scanner.service';
 
 @Injectable()
 export class CrawlerService {
@@ -16,10 +15,9 @@ export class CrawlerService {
     private blocksSubscriberService: BlocksSubscriberService,
     private collectionsSubscriberService: CollectionsSubscriberService,
     private tokensSubscriberService: TokensSubscriberService,
-    private accountsScannerService: AccountsScannerService,
   ) {}
 
-  async run(forceRescan = false) {
+  run(forceRescan = false) {
     if (this.configService.get('ACCOUNTS_SUBSCRIBER_DISABLE') !== 'true') {
       this.accountsSubscriberService.subscribe();
     }
@@ -36,14 +34,6 @@ export class CrawlerService {
       this.tokensSubscriberService.subscribe();
     }
 
-    const scanners = [];
-    if (forceRescan) {
-      // Run scanners only in rescan mode
-      if (this.configService.get('ACCOUNTS_SCANNER_DISABLE') !== 'true') {
-        scanners.push(this.accountsScannerService.scan());
-      }
-    }
-
-    return Promise.all([this.processorService.run(forceRescan), ...scanners]);
+    return this.processorService.run(forceRescan);
   }
 }

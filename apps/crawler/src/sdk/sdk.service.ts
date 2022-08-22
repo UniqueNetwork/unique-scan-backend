@@ -62,27 +62,8 @@ export class SdkService {
     return sdk.tokens.properties({ collectionId, tokenId });
   }
 
-  async getAccountBalances(accountId: string) {
+  async getBalances(rawAddress: string) {
     const sdk = await this.getSdk();
-
-    return sdk.balance.get({ address: accountId });
-  }
-
-  async getCurrentBlockNumber(): Promise<number> {
-    const sdk = await this.getSdk();
-
-    const { block } = await sdk.api.rpc.chain.getBlock();
-
-    return block.header.number.toNumber();
-  }
-
-  async getAccountsIds(): Promise<string[]> {
-    const sdk = await this.getSdk();
-
-    const accounts = await sdk.api.query.system.account.keys();
-
-    const accountsIds = accounts.map((account) => account.args[0].toString());
-
-    return accountsIds;
+    return sdk.balance.get({ address: rawAddress });
   }
 }

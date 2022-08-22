@@ -16,9 +16,6 @@ export class Account {
   @Column('text', { name: 'locked_balance' })
   locked_balance: string;
 
-  @Column('text', { name: 'nonce', nullable: true })
-  nonce: string | null;
-
   @Column('bigint', { name: 'timestamp' })
   timestamp: string;
 

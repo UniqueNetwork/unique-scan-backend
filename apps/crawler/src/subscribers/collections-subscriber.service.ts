@@ -141,8 +141,6 @@ export class CollectionsSubscriberService implements ISubscriberService {
           rawVariableOnChainSchema,
         ),
       };
-    } else {
-      this.logger.warn(`Unknown schema name ${schemaName}`);
     }
 
     return result;
