@@ -95,7 +95,7 @@ export class TokensSubscriberService implements ISubscriberService {
       owner,
     } = tokenDecoded;
 
-    const { owner: collectionOwner } = collection;
+    const { owner: collectionOwner, tokenPrefix } = collection;
 
     let parentId = null;
     if (nestingParentToken) {
@@ -115,6 +115,7 @@ export class TokensSubscriberService implements ISubscriberService {
         : [],
       parent_id: parentId,
       is_sold: owner !== collectionOwner,
+      token_name: `${tokenPrefix} #${token_id}`,
     };
   }
 
