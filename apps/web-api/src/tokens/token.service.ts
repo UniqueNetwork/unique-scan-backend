@@ -132,6 +132,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       `concat(Collection.token_prefix, ' #', Tokens.token_id)`,
       'token_name',
     );
-    qb.leftJoin('tokens_stats', 'Statistics', '"Tokens".id = "Statistics".id');
+    qb.leftJoin(
+      'tokens_stats',
+      'Statistics',
+      '"Tokens".token_id  = "Statistics".token_id and "Tokens".collection_id  = "Statistics".collection_id',
+    );
   }
 }
