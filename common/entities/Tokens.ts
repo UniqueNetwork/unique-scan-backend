@@ -41,4 +41,7 @@ export class Tokens {
 
   @Column('boolean', { name: 'is_sold', default: false })
   is_sold: boolean;
+
+  @Column('text', { name: 'token_name', nullable: true })
+  token_name: string;
 }
