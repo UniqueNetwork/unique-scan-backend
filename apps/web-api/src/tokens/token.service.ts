@@ -113,6 +113,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
     qb.addSelect('Tokens.parent_id', 'parent_id');
     qb.addSelect('Tokens.is_sold', 'is_sold');
+    qb.addSelect('Tokens.token_name', 'token_name');
     qb.leftJoinAndSelect(
       'collections',
       'Collection',
@@ -127,10 +128,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect(
       `COALESCE("Statistics".transfers_count, 0::bigint)`,
       'transfers_count',
-    );
-    qb.addSelect(
-      `concat(Collection.token_prefix, ' #', Tokens.token_id)`,
-      'token_name',
     );
     qb.leftJoin('tokens_stats', 'Statistics', '"Tokens".id = "Statistics".id');
   }
