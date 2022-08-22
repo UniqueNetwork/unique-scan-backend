@@ -129,10 +129,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       `COALESCE("Statistics".transfers_count, 0::bigint)`,
       'transfers_count',
     );
-    qb.addSelect(
-      `concat(Collection.token_prefix, ' #', Tokens.token_id)`,
-      'token_name',
-    );
     qb.leftJoin(
       'tokens_stats',
       'Statistics',
