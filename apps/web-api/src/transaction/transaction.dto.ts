@@ -30,10 +30,10 @@ export class TransactionDTO {
   @Field(() => String, { nullable: true })
   token_name?: string;
 
-  @Field(() => String, { nullable: true }) // Collection can be not scaned yet
+  @Field(() => String, { nullable: true }) // Token could be not scaned at the moment
   token_prefix?: string;
 
-  @Field(() => String, { nullable: true }) // Collection can be not scaned yet
+  @Field(() => String, { nullable: true }) // Collection could be not scaned at the moment
   collection_name?: string;
 
   @Field(() => GraphQLJSONObject, { nullable: true })
