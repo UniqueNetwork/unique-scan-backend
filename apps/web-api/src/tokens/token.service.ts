@@ -129,6 +129,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       `COALESCE("Statistics".transfers_count, 0::bigint)`,
       'transfers_count',
     );
-    qb.leftJoin('tokens_stats', 'Statistics', '"Tokens".id = "Statistics".id');
+    qb.leftJoin(
+      'tokens_stats',
+      'Statistics',
+      '"Tokens".token_id  = "Statistics".token_id and "Tokens".collection_id  = "Statistics".collection_id',
+    );
   }
 }
