@@ -86,4 +86,7 @@ export class CollectionDTO implements Partial<Collections> {
 
   @Field(() => GraphQLJSON, { nullable: true })
   variable_on_chain_schema?: object;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  attributes_schema?: object;
 }
