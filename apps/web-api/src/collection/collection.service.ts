@@ -123,6 +123,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.collection_cover', 'collection_cover');
     qb.addSelect('Collections.mode', 'type');
     qb.addSelect('Collections.mint_mode', 'mint_mode');
+    qb.addSelect('Collections.attributes_schema', 'attributes_schema');
     qb.addSelect(
       'Collections.limits_account_ownership',
       'limits_account_ownership',
