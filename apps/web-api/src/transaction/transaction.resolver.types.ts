@@ -22,12 +22,36 @@ export class TransactionsOrderByParams
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   block_index?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  owner_normalized?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  to_owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  to_owner_normalized?: GQLOrderByParamsArgs;
 }
 
 @InputType()
 class TransactionWhereParams implements TWhereParams<TransactionDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   block_index?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  owner?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  owner_normalized?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  to_owner?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  to_owner_normalized?: GQLWhereOpsString;
 
   @Field(() => [TransactionWhereParams], { nullable: true })
   _and?: TransactionWhereParams[];

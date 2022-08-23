@@ -12,14 +12,21 @@ import { TransactionDTO } from './transaction.dto';
 import { SentryWrapper } from '../utils/sentry.decorator';
 
 const aliasFields = {
-  from_owner: 'signer',
-  from_owner_normalized: 'signer_normalized',
+  owner: 'signer',
+  owner_normalized: 'signer_normalized',
+};
+
+const relationsFields = {
+  owner: 'Extrinsic',
+  owner_normalized: 'Extrinsic',
+  to_owner: 'Extrinsic',
+  to_owner_normalized: 'Extrinsic',
 };
 
 @Injectable()
 export class TransactionService extends BaseService<Event, TransactionDTO> {
   constructor(@InjectRepository(Event) private repo: Repository<Event>) {
-    super({ aliasFields });
+    super({ aliasFields, relationsFields });
   }
 
   @SentryWrapper({ data: [], count: 0 })
@@ -61,16 +68,14 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
       `"Extrinsic".block_index = "Event".block_index AND to_owner IS NOT NULL`,
     );
 
-    qb.where({
+    this.applyWhereCondition(qb, queryArgs);
+    this.applyOrderCondition(qb, queryArgs);
+    this.applyLimitOffset(qb, queryArgs);
+
+    qb.andWhere({
       section: EventSection.COMMON,
       method: EventMethod.TRANSFER,
     });
-
-    this.applyWhereCondition(qb, queryArgs);
-
-    this.applyOrderCondition(qb, queryArgs);
-
-    this.applyLimitOffset(qb, queryArgs);
 
     const count = await qb.getCount();
     const data = await qb.getRawMany();
