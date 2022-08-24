@@ -1,17 +1,16 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { Config } from './config/config.module';
 import { CrawlerModule } from './crawler.module';
 import { CrawlerService } from './crawler.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(CrawlerModule);
 
-  const configService = app.get(ConfigService);
+  const configService = app.get(ConfigService) as ConfigService<Config>;
 
-  const logLevels = configService.get('LOG_LEVELS')
-    ? configService.get('LOG_LEVELS').split(',')
-    : ['log', 'error', 'warn'];
+  const logLevels = configService.get('logLevels');
 
   Logger.overrideLogger(logLevels);
 
