@@ -2,28 +2,28 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource as SubscquidDataSource } from '@subsquid/substrate-processor';
 import { Range } from '@subsquid/substrate-processor/lib/util/range';
+import { Config } from './config/config.module';
 
 @Injectable()
 export class ProcessorConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService<Config>) {}
 
   public getDataSource(): SubscquidDataSource {
     return {
-      archive: this.configService.get('ARCHIVE_GQL_URL'),
-      chain: this.configService.get('CHAIN_WS_URL'),
+      archive: this.configService.get('archiveGqlUrl'),
+      chain: this.configService.get('chainWsUrl'),
     };
   }
 
   public getRange(): Range {
-    const to = this.configService.get('SCAN_RANGE_TO');
     return {
-      from: this.configService.get('SCAN_RANGE_FROM', 0),
-      to,
+      from: this.configService.get('scanRangeFrom'),
+      to: this.configService.get('scanRangeTo'),
     };
   }
 
   public getTypesBundle(): string {
-    return this.configService.get('SCAN_TYPES_BUNDLE');
+    return this.configService.get('scanTypesBundle');
   }
 
   public getAllParams(): {
@@ -38,11 +38,11 @@ export class ProcessorConfigService {
     };
   }
 
-  public getForceMode() {
-    return this.configService.get('SCAN_FORCE_RESCAN');
+  public isRescan() {
+    return this.configService.get('rescan');
   }
 
   public getPrometheusPort(): number {
-    return this.configService.get('PROMETHEUS_PORT', 9090);
+    return this.configService.get('prometheusPort');
   }
 }

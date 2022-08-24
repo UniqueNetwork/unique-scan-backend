@@ -70,10 +70,9 @@ export class ProcessorService {
     private processorConfigService: ProcessorConfigService,
     @InjectSentry() private readonly sentry: SentryService,
   ) {
-    this.stateSchema =
-      this.processorConfigService.getForceMode() === 'true'
-        ? STATE_SCHEMA_NAME_BY_MODE.RESCAN
-        : STATE_SCHEMA_NAME_BY_MODE.SCAN;
+    this.stateSchema = this.processorConfigService.isRescan()
+      ? STATE_SCHEMA_NAME_BY_MODE.RESCAN
+      : STATE_SCHEMA_NAME_BY_MODE.SCAN;
 
     const db = new ScanDatabase({
       stateSchema: this.stateSchema,

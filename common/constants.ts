@@ -88,3 +88,10 @@ export const STATE_SCHEMA_NAME_BY_MODE = {
   SCAN: 'scan_status',
   RESCAN: 'rescan_status',
 };
+
+export enum SubscriberName {
+  ACCOUNTS = 'account',
+  BLOCKS = 'blocks',
+  COLLECTIONS = 'collections',
+  TOKENS = 'tokens',
+}

@@ -6,22 +6,17 @@ import { ProcessorConfigService } from './processor.config.service';
 import { CrawlerService } from './crawler.service';
 import { SubscribersModule } from './subscribers/subscribers.module';
 import { SentryModule } from '@ntegral/nestjs-sentry';
+import { Config, GlobalConfigModule } from './config/config.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    GlobalConfigModule,
     TypeOrmModule.forRoot(typeormConfig),
     SentryModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => ({
-        dsn: config.get('SENTRY_DSN'),
-        debug: config.get('SENTRY_DEBUG') === '1',
-        environment: process.env.NODE_ENV ?? 'development',
-        logLevels: config.get('SENTRY_LOG_LEVELS')
-          ? config.get('SENTRY_LOG_LEVELS').split(',')
-          : ['error'],
-        enabled: !!config.get('SENTRY_DSN'),
-      }),
+      useFactory: async (configService: ConfigService<Config>) => {
+        return configService.get('sentry');
+      },
       inject: [ConfigService],
     }),
     SubscribersModule,

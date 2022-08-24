@@ -6,6 +6,7 @@ import { Sdk } from '@unique-nft/sdk';
 import '@unique-nft/sdk/extrinsics';
 import '@unique-nft/sdk/tokens';
 import '@unique-nft/sdk/balance';
+import { Config } from '../config/config.module';
 
 @Global()
 @Module({
@@ -13,8 +14,8 @@ import '@unique-nft/sdk/balance';
   providers: [
     {
       provide: Sdk,
-      useFactory: async (configService: ConfigService) =>
-        sdkFactory(configService.get('CHAIN_WS_URL')),
+      useFactory: async (configService: ConfigService<Config>) =>
+        sdkFactory(configService.get('chainWsUrl')),
       inject: [ConfigService],
     },
     SdkService,

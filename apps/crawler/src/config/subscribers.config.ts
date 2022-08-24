@@ -1,15 +1,10 @@
-export enum SubscriberName {
-  ACCOUNTS = 'account',
-  BLOCKS = 'blocks',
-  COLLECTIONS = 'collections',
-  TOKENS = 'tokens',
-}
+import { SubscriberName } from '@common/constants';
 
 export type SubscribersConfig = { [key in SubscriberName]: boolean };
 
 export function createSubscribersConfig(
   env: Record<string, string>,
-): ActiveSubscribersConfig {
+): SubscribersConfig {
   return {
     [SubscriberName.ACCOUNTS]: env.ACCOUNTS_SUBSCRIBER_DISABLE !== 'true',
     [SubscriberName.BLOCKS]: env.BLOCKS_SUBSCRIBER_DISABLE !== 'true',
