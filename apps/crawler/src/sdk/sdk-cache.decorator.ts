@@ -19,13 +19,13 @@ export function SdkCache(key?: string) {
     const method = descriptor.value;
 
     descriptor.value = async function (...args: Array<any>) {
-      const entryKey = `${key}[${args
-        .map((res) => JSON.stringify(res))
-        .join(',')}]`;
-
       const configService = this.configService as ConfigService<Config>;
 
       const cacheManager = this.cacheManager as Cache;
+
+      const entryKey = `${key}[${args
+        .map((res) => JSON.stringify(res))
+        .join(',')}]`;
 
       // Get data from cache only while rescan mode
       if (configService.get('rescan')) {

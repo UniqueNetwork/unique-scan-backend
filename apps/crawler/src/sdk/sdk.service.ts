@@ -47,8 +47,7 @@ export class SdkService {
   }
 
   @SdkCache('getBalances')
-  async getBalances(rawAddress: string) {
-    const result = await this.sdk.balance.get({ address: rawAddress });
-    return result;
+  getBalances(rawAddress: string) {
+    return this.sdk.balance.get({ address: rawAddress });
   }
 }
