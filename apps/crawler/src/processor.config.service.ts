@@ -45,4 +45,8 @@ export class ProcessorConfigService {
   public getPrometheusPort(): number {
     return this.configService.get('prometheusPort');
   }
+
+  public getBatchSize(): number {
+    return this.configService.get('BATCH_SIZE') || 10;
+  }
 }
