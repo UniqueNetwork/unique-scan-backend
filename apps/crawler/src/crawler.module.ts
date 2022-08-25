@@ -7,10 +7,12 @@ import { CrawlerService } from './crawler.service';
 import { SubscribersModule } from './subscribers/subscribers.module';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { Config, GlobalConfigModule } from './config/config.module';
+import { CacheProviderModule } from './cache/cache-provider.module';
 
 @Module({
   imports: [
     GlobalConfigModule,
+    CacheProviderModule,
     TypeOrmModule.forRoot(typeormConfig),
     SentryModule.forRootAsync({
       imports: [ConfigModule],

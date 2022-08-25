@@ -1,26 +1,33 @@
-import { Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import { Sdk } from '@unique-nft/sdk';
 import {
   CollectionInfoWithSchema,
   TokenByIdResult,
   TokenPropertiesResult,
 } from '@unique-nft/sdk/tokens';
+import { SdkCache } from './sdk-cache.decorator';
 
 @Injectable()
 export class SdkService {
-  constructor(private sdk: Sdk) {}
+  constructor(
+    private sdk: Sdk,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
+  @SdkCache('getCollection')
   getCollection(
     collectionId: number,
   ): Promise<CollectionInfoWithSchema | null> {
     return this.sdk.collections.get_new({ collectionId });
   }
 
+  @SdkCache('getCollectionLimits')
   async getCollectionLimits(collectionId: number) {
     const result = await this.sdk.collections.getLimits({ collectionId });
     return result?.limits;
   }
 
+  @SdkCache('getToken')
   getToken(
     collectionId: number,
     tokenId: number,
@@ -28,6 +35,7 @@ export class SdkService {
     return this.sdk.tokens.get_new({ collectionId, tokenId });
   }
 
+  @SdkCache('getTokenProperties')
   getTokenProperties(
     collectionId: number,
     tokenId: number,
@@ -35,7 +43,9 @@ export class SdkService {
     return this.sdk.tokens.properties({ collectionId, tokenId });
   }
 
-  getBalances(rawAddress: string) {
-    return this.sdk.balance.get({ address: rawAddress });
+  @SdkCache('getBalances')
+  async getBalances(rawAddress: string) {
+    const result = await this.sdk.balance.get({ address: rawAddress });
+    return result;
   }
 }
