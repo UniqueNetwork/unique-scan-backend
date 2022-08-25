@@ -29,6 +29,8 @@ export type Config = {
   rescan: boolean;
 
   prometheusPort: number;
+
+  batchSize: number;
 };
 
 const loadConfig = (): Config => ({
@@ -55,6 +57,8 @@ const loadConfig = (): Config => ({
   rescan: process.env.SCAN_FORCE_RESCAN === 'true',
 
   prometheusPort: +process.env.PROMETHEUS_PORT || 9090,
+
+  batchSize: +process.env.BATCH_SIZE || 10,
 });
 
 export const GlobalConfigModule = ConfigModule.forRoot({
