@@ -1,14 +1,19 @@
 import { CACHE_MANAGER, Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cache } from 'cache-manager';
+import { Config } from '../config/config.module';
 
 export function SdkCache(key?: string) {
   const cacheManagerInjection = Inject(CACHE_MANAGER);
+  const configServiceInjection = Inject(ConfigService);
 
   return function (
     target: Record<string, any>,
     _,
     descriptor: PropertyDescriptor,
   ) {
+    configServiceInjection(target, 'configService');
+
     cacheManagerInjection(target, 'cacheManager');
 
     const method = descriptor.value;
@@ -18,18 +23,24 @@ export function SdkCache(key?: string) {
         .map((res) => JSON.stringify(res))
         .join(',')}]`;
 
+      const configService = this.configService as ConfigService<Config>;
+
       const cacheManager = this.cacheManager as Cache;
-      const cacheData = await cacheManager.get(entryKey);
 
-      if (cacheData) {
-        return cacheData;
+      // Get data from cache only while rescan mode
+      if (configService.get('rescan')) {
+        const cachedValue = await cacheManager.get(entryKey);
+
+        if (cachedValue !== undefined) {
+          return cachedValue;
+        }
       }
 
+      // If no cache found, get data by real sdk call.
       const result = await method.apply(this, args);
-      if (result) {
-        // Set cache
-        await cacheManager.set(entryKey, result);
-      }
+
+      // Set cache value.
+      await cacheManager.set(entryKey, result);
 
       return result;
     };
