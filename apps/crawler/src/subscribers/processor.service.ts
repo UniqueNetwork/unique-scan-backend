@@ -87,7 +87,8 @@ export class ProcessorService {
 
     this.substrateProcessor
       .setDataSource(this.processorConfigService.getDataSource())
-      .setBlockRange(this.processorConfigService.getRange());
+      .setBlockRange(this.processorConfigService.getRange())
+      .setBatchSize(this.processorConfigService.getBatchSize());
   }
 
   async run(forceRescan) {
