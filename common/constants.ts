@@ -95,5 +95,3 @@ export enum SubscriberName {
   COLLECTIONS = 'collections',
   TOKENS = 'tokens',
 }
-
-export const SDK_CACHE_INTERCEPTOR = 'sdkCacheInterceptor';
