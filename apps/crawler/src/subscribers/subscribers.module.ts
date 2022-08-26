@@ -1,5 +1,4 @@
 import { Block } from '@entities/Block';
-import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
 import { Event } from '@entities/Event';
 import { Module } from '@nestjs/common';
