@@ -15,19 +15,14 @@ import { Extrinsic } from '@entities/Extrinsic';
 import { Account } from '@entities/Account';
 import { AccountsSubscriberService } from './accounts-subscriber.service';
 import { SdkModule } from '../sdk/sdk.module';
+import { WritersModule } from '../writers/writers.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Account,
-      Block,
-      Collections,
-      Event,
-      Extrinsic,
-      Tokens,
-    ]),
+    TypeOrmModule.forFeature([Account, Block, Event, Extrinsic, Tokens]),
     ConfigModule,
     SdkModule,
+    WritersModule,
   ],
   providers: [
     SubstrateProcessor,

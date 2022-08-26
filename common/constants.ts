@@ -95,3 +95,8 @@ export enum SubscriberName {
   COLLECTIONS = 'collections',
   TOKENS = 'tokens',
 }
+
+export enum SubscriberAction {
+  UPSERT = 'UPSERT',
+  DELETE = 'DELETE',
+}
