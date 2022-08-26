@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource as SubscquidDataSource } from '@subsquid/substrate-processor';
 import { Range } from '@subsquid/substrate-processor/lib/util/range';
-import { Config } from './config/config.module';
+import { Config } from './config.module';
 
 @Injectable()
 export class ProcessorConfigService {
