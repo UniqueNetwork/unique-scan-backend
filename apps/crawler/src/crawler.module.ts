@@ -2,12 +2,12 @@ import typeormConfig from '@common/typeorm.config';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ProcessorConfigService } from './processor.config.service';
 import { CrawlerService } from './crawler.service';
 import { SubscribersModule } from './subscribers/subscribers.module';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { Config, GlobalConfigModule } from './config/config.module';
 import { CacheProviderModule } from './cache/cache-provider.module';
+import { ProcessorConfigService } from './config/processor.config.service';
 
 @Module({
   imports: [

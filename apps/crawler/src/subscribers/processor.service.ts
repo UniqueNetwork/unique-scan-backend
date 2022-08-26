@@ -8,7 +8,7 @@ import {
 } from '@subsquid/typeorm-store';
 import { Connection, DataSource } from 'typeorm';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
-import { ProcessorConfigService } from '../processor.config.service';
+import { ProcessorConfigService } from '../config/processor.config.service';
 
 interface IScanDatabaseOptions extends TypeormDatabaseOptions {
   stateSchema: string;
