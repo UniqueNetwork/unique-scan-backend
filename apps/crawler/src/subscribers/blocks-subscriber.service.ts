@@ -339,7 +339,7 @@ export class BlocksSubscriberService implements ISubscriberService {
     };
 
     try {
-      const ss58Prefix = ctx?._chain.getConstant(
+      const ss58Prefix = ctx._chain?.getConstant(
         'System',
         'SS58Prefix',
       ) as Prefix;
