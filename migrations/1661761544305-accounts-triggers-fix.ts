@@ -93,6 +93,7 @@ export class accountsTriggersFix1661761544305 implements MigrationInterface {
         EXECUTE FUNCTION update_account_supply();
         `,
       );
+      await queryRunner.commitTransaction();
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
