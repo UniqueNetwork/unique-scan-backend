@@ -1,13 +1,12 @@
-import typeormConfig from '@common/typeorm.config';
-import { Logger, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SentryModule } from '@ntegral/nestjs-sentry';
+import typeormConfig from '@common/typeorm.config';
 import { CrawlerService } from './crawler.service';
 import { SubscribersModule } from './subscribers/subscribers.module';
-import { SentryModule } from '@ntegral/nestjs-sentry';
 import { Config, GlobalConfigModule } from './config/config.module';
 import { CacheProviderModule } from './cache/cache-provider.module';
-import { ProcessorConfigService } from './config/processor.config.service';
 
 @Module({
   imports: [
@@ -15,7 +14,6 @@ import { ProcessorConfigService } from './config/processor.config.service';
     CacheProviderModule,
     TypeOrmModule.forRoot(typeormConfig),
     SentryModule.forRootAsync({
-      imports: [ConfigModule],
       useFactory: async (configService: ConfigService<Config>) => {
         return configService.get('sentry');
       },
@@ -24,6 +22,6 @@ import { ProcessorConfigService } from './config/processor.config.service';
     SubscribersModule,
   ],
   controllers: [],
-  providers: [Logger, CrawlerService, ProcessorConfigService],
+  providers: [CrawlerService],
 })
 export class CrawlerModule {}
