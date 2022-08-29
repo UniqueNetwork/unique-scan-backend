@@ -1,114 +1,103 @@
 import { normalizeSubstrateAddress } from '../common/utils';
-import { MigrationInterface, QueryRunner } from 'typeorm';
-import { BREAK } from 'graphql';
+import { MigrationInterface, QueryResult, QueryRunner } from 'typeorm';
+import { Sdk } from '@unique-nft/sdk';
 
-function getStringOrNull(str) {
-  return str ? `'${str}'` : 'NULL';
+interface IExtrinsic {
+  block_number: string;
+  extrinsic_index: number;
+  signer: string;
+  signer_normalized: string;
+  to_owner: string;
+  to_owner_normalized: string;
 }
 
-async function convertChunk({ queryRunner, ss58Prefix, limit, offset }) {
-  const qSelect = `SELECT 
+async function getChainPrefix(): Promise<number> {
+  const chainWsUrl = process.env.CHAIN_WS_URL;
+  const sdk = new Sdk({
+    chainWsUrl,
+  });
+
+  await sdk.connect();
+
+  const chainProperties = sdk.chainProperties();
+  return chainProperties.SS58Prefix;
+}
+
+async function getChunk(queryRunner: QueryRunner): Promise<IExtrinsic[]> {
+  const qSelect = `SELECT
         block_number,
         extrinsic_index,
         signer,
         to_owner
     FROM
-        extrinsic 
-    WHERE 
+        extrinsic
+    WHERE
         (signer LIKE '0x%' AND LENGTH(signer) > 42) OR
-        (to_owner LIKE '0x%' AND LENGTH(to_owner) > 42) 
-    LIMIT ${limit} OFFSET ${offset}`;
+        (to_owner LIKE '0x%' AND LENGTH(to_owner) > 42)
+    LIMIT 100;
+  `;
+  return await queryRunner.query(qSelect);
+}
 
-  const rows = await queryRunner.query(qSelect);
-
-  if (!rows.length) {
-    return false;
+async function convertExtrinsicAddress(
+  queryRunner: QueryRunner,
+  extrinsic: IExtrinsic,
+  ss58Prefix: number,
+): Promise<QueryResult> {
+  if (extrinsic?.signer?.length > 42 && extrinsic?.signer?.startsWith('0x')) {
+    extrinsic.signer = normalizeSubstrateAddress(extrinsic.signer, ss58Prefix);
+    extrinsic.signer_normalized = normalizeSubstrateAddress(extrinsic.signer);
   }
 
-  // console.log(rows);
-  await Promise.all(
-    rows.map((row) => {
-      const { signer: rawSigner, to_owner: rawToOwner } = row;
-      const result = {};
-      if (rawSigner) {
-        const signer = normalizeSubstrateAddress(rawSigner, ss58Prefix);
-        const signerNormalized = normalizeSubstrateAddress(signer);
-        Object.assign(result, {
-          signer,
-          signer_normalized: signerNormalized,
-        });
-      }
+  if (
+    extrinsic?.to_owner?.length > 42 &&
+    extrinsic?.to_owner?.startsWith('0x')
+  ) {
+    extrinsic.to_owner = normalizeSubstrateAddress(
+      extrinsic.to_owner,
+      ss58Prefix,
+    );
+    extrinsic.to_owner_normalized = normalizeSubstrateAddress(
+      extrinsic.to_owner,
+    );
+  }
 
-      if (rawToOwner) {
-        const toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix);
-        const toOwnerNormalized = normalizeSubstrateAddress(toOwner);
-        Object.assign(result, {
-          to_owner: toOwner,
-          to_owner_normalized: toOwnerNormalized,
-        });
-      }
-
-      const resultRow = Object.assign(row, result);
-
-      //   console.log('resultRow', resultRow);
-
-      const {
-        block_number,
-        extrinsic_index,
-        signer = null,
-        signer_normalized = null,
-        to_owner = null,
-        to_owner_normalized = null,
-      } = resultRow;
-
-      const qUpdate = `
-        UPDATE extrinsic SET 
-            (signer, signer_normalized, to_owner, to_owner_normalized) = 
-            (${getStringOrNull(signer)},
-            ${getStringOrNull(signer_normalized)}, ${getStringOrNull(
-        to_owner,
-      )}, ${getStringOrNull(to_owner_normalized)})
-        WHERE 
-            block_number = ${block_number} 
-            AND extrinsic_index = ${extrinsic_index}`;
-
-      //   console.log(qUpdate);
-      //   return queryRunner.query(qUpdate);
-    }),
-  );
-
-  return true;
+  return queryRunner.query(`
+    UPDATE extrinsic SET
+    (
+      "signer",
+      "signer_normalized",
+      "to_owner",
+      "to_owner_normalized"
+    ) =
+    (
+      '${extrinsic.signer}',
+      '${extrinsic.signer_normalized}',
+      '${extrinsic.to_owner}',
+      '${extrinsic.to_owner_normalized}'
+    )
+    WHERE
+      block_number = ${extrinsic.block_number}
+      AND extrinsic_index = ${extrinsic.extrinsic_index};
+  `);
 }
 
 export class extrinsicsAddressesEncode1661763490773
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    const limit = 200;
-    let offset = 0;
-    let iterations = 0;
-    const ss58Prefix = 42; // todo: Get chain specific prefix
+    const ss58Prefix = await getChainPrefix();
 
-    while (iterations < 10000000) {
-      const result = await convertChunk({
-        queryRunner,
-        ss58Prefix,
-        limit,
-        offset,
-      });
+    let extrinsics = await getChunk(queryRunner);
 
-      console.log(result);
-
-      if (!result) {
-        console.log({ iterations });
-        return;
-      }
-
-      offset += limit;
-      iterations += 1;
+    while (extrinsics.length > 0) {
+      await Promise.all([
+        extrinsics.map((extrinsic) =>
+          convertExtrinsicAddress(queryRunner, extrinsic, ss58Prefix),
+        ),
+      ]);
+      extrinsics = await getChunk(queryRunner);
     }
-
-    console.log('Too much iterations', iterations);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
