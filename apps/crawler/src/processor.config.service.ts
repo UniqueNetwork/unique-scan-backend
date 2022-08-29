@@ -47,6 +47,6 @@ export class ProcessorConfigService {
   }
 
   public getBatchSize(): number {
-    return this.configService.get('BATCH_SIZE') || 10;
+    return Number(this.configService.get('BATCH_SIZE', 10));
   }
 }
