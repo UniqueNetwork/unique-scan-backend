@@ -5,13 +5,13 @@ import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Account } from '@entities/Account';
 import { SdkService } from '../sdk/sdk.service';
-import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
 import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
-import ISubscriberService from './subscriber.interface';
 import { AllBalances } from '@unique-nft/sdk/types';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { Severity } from '@sentry/node';
+import { ProcessorService } from './processor/processor.service';
+import { ISubscriberService } from './subscribers.service';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
@@ -20,14 +20,16 @@ export class AccountsSubscriberService implements ISubscriberService {
   constructor(
     @InjectRepository(Account)
     private accountsRepository: Repository<Account>,
-    private processorService: ProcessorService,
+
     private sdkService: SdkService,
-    @InjectSentry() private readonly sentry: SentryService,
+
+    @InjectSentry()
+    private readonly sentry: SentryService,
   ) {
     this.sentry.setContext(AccountsSubscriberService.name);
   }
 
-  subscribe() {
+  subscribe(processorService: ProcessorService) {
     [
       EventName.NEW_ACCOUNT,
       EventName.COLLECTION_CREATED,
@@ -40,7 +42,7 @@ export class AccountsSubscriberService implements ISubscriberService {
       EventName.BALANCES_WITHDRAW,
       EventName.BALANCES_TRANSFER,
     ].forEach((eventName) =>
-      this.processorService.processor.addEventHandler(
+      processorService.processor.addEventHandler(
         eventName,
         this.upsertHandler.bind(this),
       ),

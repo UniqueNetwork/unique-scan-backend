@@ -7,28 +7,27 @@ import {
   CollectionLimits,
 } from '@unique-nft/sdk/tokens';
 import { SdkService } from '../sdk/sdk.service';
-import { ProcessorService } from './processor.service';
-import ISubscriberService from './subscriber.interface';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { CollectionWriterService } from '../writers/collection-writer.service';
+import { ProcessorService } from './processor/processor.service';
+import { ISubscriberService } from './subscribers.service';
 
 @Injectable()
 export class CollectionsSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(CollectionsSubscriberService.name);
 
   constructor(
-    private processorService: ProcessorService,
-
     private sdkService: SdkService,
 
     private collectionWriterService: CollectionWriterService,
 
-    @InjectSentry() private readonly sentry: SentryService,
+    @InjectSentry()
+    private readonly sentry: SentryService,
   ) {
     this.sentry.setContext(CollectionsSubscriberService.name);
   }
 
-  subscribe() {
+  subscribe(processorService: ProcessorService) {
     [
       EventName.COLLECTION_CREATED,
       EventName.COLLECTION_PROPERTY_SET,
@@ -40,13 +39,13 @@ export class CollectionsSubscriberService implements ISubscriberService {
       EventName.COLLECTION_LIMIT_SET,
       EventName.COLLECTION_SPONSOR_SET,
     ].forEach((eventName) =>
-      this.processorService.processor.addEventHandler(
+      processorService.processor.addEventHandler(
         eventName,
         this.upsertHandler.bind(this),
       ),
     );
 
-    this.processorService.processor.addEventHandler(
+    processorService.processor.addEventHandler(
       EventName.COLLECTION_DESTROYED,
       this.destroyHandler.bind(this),
     );

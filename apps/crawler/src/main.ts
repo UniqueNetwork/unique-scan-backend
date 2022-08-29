@@ -17,7 +17,7 @@ async function bootstrap() {
   try {
     const crawlerService = app.get(CrawlerService);
 
-    await crawlerService.run(process.env.SCAN_FORCE_RESCAN === 'true');
+    await crawlerService.run();
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);

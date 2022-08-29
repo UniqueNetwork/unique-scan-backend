@@ -5,20 +5,20 @@ import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Tokens } from '@entities/Tokens';
 import { SdkService } from '../sdk/sdk.service';
-import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
 import {
   normalizeSubstrateAddress,
   normalizeTimestamp,
   sanitizePropertiesValues,
 } from '@common/utils';
-import ISubscriberService from './subscriber.interface';
 import {
   CollectionInfoWithSchema,
   TokenPropertiesResult,
   TokenByIdResult,
 } from '@unique-nft/sdk/tokens';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
+import { ProcessorService } from './processor/processor.service';
+import { ISubscriberService } from './subscribers.service';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
@@ -27,14 +27,16 @@ export class TokensSubscriberService implements ISubscriberService {
   constructor(
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
-    private processorService: ProcessorService,
+
     private sdkService: SdkService,
-    @InjectSentry() private readonly sentry: SentryService,
+
+    @InjectSentry()
+    private readonly sentry: SentryService,
   ) {
     this.sentry.setContext(TokensSubscriberService.name);
   }
 
-  subscribe() {
+  subscribe(processorService: ProcessorService) {
     const EVENTS_TO_UPDATE = [
       // Insert
       EventName.ITEM_CREATED,
@@ -48,13 +50,13 @@ export class TokensSubscriberService implements ISubscriberService {
     ];
 
     EVENTS_TO_UPDATE.forEach((eventName) =>
-      this.processorService.processor.addEventHandler(
+      processorService.processor.addEventHandler(
         eventName,
         this.upsertHandler.bind(this),
       ),
     );
 
-    this.processorService.processor.addEventHandler(
+    processorService.processor.addEventHandler(
       EventName.ITEM_DESTROYED,
       this.destroyHandler.bind(this),
     );
