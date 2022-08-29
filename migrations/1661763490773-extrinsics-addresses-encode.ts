@@ -91,11 +91,14 @@ export class extrinsicsAddressesEncode1661763490773
     let extrinsics = await getChunk(queryRunner);
 
     while (extrinsics.length > 0) {
+      await queryRunner.startTransaction();
       await Promise.all([
         extrinsics.map((extrinsic) =>
           convertExtrinsicAddress(queryRunner, extrinsic, ss58Prefix),
         ),
       ]);
+
+      await queryRunner.commitTransaction();
       extrinsics = await getChunk(queryRunner);
     }
   }
