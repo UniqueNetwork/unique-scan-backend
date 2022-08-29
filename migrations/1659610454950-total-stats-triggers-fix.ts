@@ -7,7 +7,6 @@ export class totalStatsTriggersFix1659610454950 implements MigrationInterface {
     await queryRunner.startTransaction();
 
     try {
-      await queryRunner.query(`drop trigger if exists update_total on total;`);
       await queryRunner.query(`drop trigger if exists blocks_total ON block;`);
       await queryRunner.query(
         `drop trigger if exists extrinsic_total on extrinsic;`,
@@ -338,9 +337,6 @@ export class totalStatsTriggersFix1659610454950 implements MigrationInterface {
     await queryRunner.query(`drop function update_transfers_total;`);
 
     await queryRunner.query(`drop trigger update_supply on account;`);
-    await queryRunner.query(`drop function update_account_supply0;`);
-
-    await queryRunner.query(`drop trigger update_total on extrinsic;`);
-    await queryRunner.query(`drop function update_total_supply;`);
+    await queryRunner.query(`drop function update_account_supply;`);
   }
 }
