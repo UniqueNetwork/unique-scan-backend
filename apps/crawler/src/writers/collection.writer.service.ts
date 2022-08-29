@@ -8,7 +8,6 @@ import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import {
   CollectionInfoWithSchema,
   CollectionLimits,
@@ -35,11 +34,7 @@ export class CollectionWriterService {
 
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
-
-    @InjectSentry() private readonly sentry: SentryService,
-  ) {
-    this.sentry.setContext(CollectionWriterService.name);
-  }
+  ) {}
 
   private processJsonStringifiedValue(rawValue) {
     let result: object | null = null;

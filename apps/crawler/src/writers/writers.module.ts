@@ -7,7 +7,8 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Account } from '@entities/Account';
-import { CollectionWriterService } from './collection-writer.service';
+import { CollectionWriterService } from './collection.writer.service';
+import { AccountWriterService } from './account.writer.service copy';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { CollectionWriterService } from './collection-writer.service';
     ]),
     ConfigModule,
   ],
-  providers: [CollectionWriterService],
-  exports: [CollectionWriterService],
+  providers: [AccountWriterService, CollectionWriterService],
+  exports: [AccountWriterService, CollectionWriterService],
 })
 export class WritersModule {}

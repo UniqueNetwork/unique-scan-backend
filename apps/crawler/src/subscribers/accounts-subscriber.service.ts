@@ -1,27 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { Account } from '@entities/Account';
 import { SdkService } from '../sdk/sdk.service';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import { AllBalances } from '@unique-nft/sdk/types';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { Severity } from '@sentry/node';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
+import { AccountWriterService } from '../writers/account.writer.service copy';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(AccountsSubscriberService.name);
 
   constructor(
-    @InjectRepository(Account)
-    private accountsRepository: Repository<Account>,
-
     private sdkService: SdkService,
+
+    private accountWriterService: AccountWriterService,
 
     @InjectSentry()
     private readonly sentry: SentryService,
@@ -151,40 +147,14 @@ export class AccountsSubscriberService implements ISubscriberService {
     return addresses;
   }
 
-  /**
-   * Prepares event and balances data to write into db.
-   */
-  private prepareDataForDb(params: {
-    timestamp: number;
-    blockNumber: number;
-    balances: AllBalances;
-  }): Account {
-    const {
-      blockNumber,
-      timestamp,
-      balances: { address, availableBalance, lockedBalance, freeBalance },
-    } = params;
-
-    return {
-      block_height: String(blockNumber),
-      timestamp: String(timestamp),
-      account_id: address,
-      account_id_normalized: normalizeSubstrateAddress(address),
-      available_balance: availableBalance.amount,
-      free_balance: freeBalance.amount,
-      locked_balance: lockedBalance.amount,
-    };
-  }
-
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: rawTimestamp },
+      block: { height: blockNumber, timestamp: blockTimestamp },
       event: { name: eventName, args },
     } = ctx;
 
     const log = {
       eventName,
-      blockNumber,
       rawAddressValues: [],
       processedAccounts: [],
     };
@@ -199,8 +169,6 @@ export class AccountsSubscriberService implements ISubscriberService {
 
       // Get balances and converted address from sdk
       const balancesData = await this.getBalances(rawAddressValues);
-
-      const timestamp = normalizeTimestamp(rawTimestamp);
 
       await Promise.all(
         balancesData.map((balances, addressIndex) => {
@@ -221,14 +189,11 @@ export class AccountsSubscriberService implements ISubscriberService {
 
           log.processedAccounts.push(balances.address);
 
-          const dataToWrite = this.prepareDataForDb({
+          return this.accountWriterService.upsert({
             blockNumber,
-            timestamp,
+            blockTimestamp,
             balances,
           });
-
-          // Write data into db
-          return this.accountsRepository.upsert(dataToWrite, ['account_id']);
         }),
       );
 

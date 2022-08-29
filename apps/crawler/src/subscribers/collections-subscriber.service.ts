@@ -8,7 +8,7 @@ import {
 } from '@unique-nft/sdk/tokens';
 import { SdkService } from '../sdk/sdk.service';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
-import { CollectionWriterService } from '../writers/collection-writer.service';
+import { CollectionWriterService } from '../writers/collection.writer.service';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
 

@@ -5,7 +5,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Extrinsic } from '@entities/Extrinsic';
-import { Account } from '@entities/Account';
 import { CollectionsSubscriberService } from './collections-subscriber.service';
 import { TokensSubscriberService } from './tokens-subscriber.service';
 import { BlocksSubscriberService } from './blocks-subscriber.service';
@@ -18,7 +17,7 @@ import { SubscribersService } from './subscribers.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Account, Block, Event, Extrinsic, Tokens]),
+    TypeOrmModule.forFeature([Block, Event, Extrinsic, Tokens]),
     ConfigModule,
     SdkModule,
     WritersModule,
