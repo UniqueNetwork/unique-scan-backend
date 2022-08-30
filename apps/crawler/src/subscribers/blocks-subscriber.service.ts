@@ -22,8 +22,9 @@ import {
 } from '@common/constants';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Event } from '@entities/Event';
-import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
+import { Prefix } from '@unique-nft/api/.';
+import { ProcessorService } from './processor/processor.service';
 
 const EVENT_TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
 const EVENT_ENDOWED = `${EventSection.BALANCES}.${EventMethod.ENDOWED}`;
@@ -69,6 +70,7 @@ interface IExtrinsicRecipient {
 interface IBlockCommonData {
   timestamp: number;
   blockNumber: number;
+  ss58Prefix: Prefix;
 }
 
 @Injectable()
@@ -154,14 +156,26 @@ export class BlocksSubscriberService implements ISubscriberService {
     };
   }
 
-  private processContextData(block: SubstrateBlock, items: IBlockItem[]) {
+  private processContextData({
+    block,
+    items,
+    ss58Prefix,
+  }: {
+    block: SubstrateBlock;
+    items: IBlockItem[];
+    ss58Prefix: Prefix;
+  }) {
     const processedEventsItems = this.processEventItems(items);
 
     const processedExtrinsicsItems = this.processExtrinsicItems(items);
 
     const { height: blockNumber, timestamp: rawTimestamp } = block;
     const timestamp = normalizeTimestamp(rawTimestamp);
-    const blockCommonData = { blockNumber, timestamp } as IBlockCommonData;
+    const blockCommonData = {
+      blockNumber,
+      timestamp,
+      ss58Prefix,
+    } as IBlockCommonData;
 
     // Create extrinsics data to write
     const { extrinsicsValues } = processedEventsItems;
@@ -237,12 +251,16 @@ export class BlocksSubscriberService implements ISubscriberService {
           ExtrinsicMethod,
         ];
 
+        const { timestamp, blockNumber, ss58Prefix } = blockCommonData;
+
         let signer = null;
         const { signature } = extrinsic;
         if (signature) {
-          ({
-            address: { value: signer },
-          } = signature);
+          const {
+            address: { value: rawSigner },
+          } = signature;
+
+          signer = normalizeSubstrateAddress(rawSigner, ss58Prefix);
         }
 
         const {
@@ -252,15 +270,14 @@ export class BlocksSubscriberService implements ISubscriberService {
         let toOwner = null;
         if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
           const recipientAddress = args as IExtrinsicRecipient;
-          toOwner =
+          const rawToOwner =
             recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
+          toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix);
         }
 
         const { id, hash, indexInBlock, success } = extrinsic;
 
         const { amount = '0', fee = '0' } = extrinsicsEventValues[id] || {};
-
-        const { timestamp, blockNumber } = blockCommonData;
 
         return {
           timestamp: String(timestamp),
@@ -320,7 +337,6 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: BlockHandlerContext<Store>): Promise<void> {
     const { block, items } = ctx;
-
     const { height: blockNumber } = block;
 
     const log = {
@@ -328,9 +344,17 @@ export class BlocksSubscriberService implements ISubscriberService {
     };
 
     try {
+      const ss58Prefix = ctx._chain?.getConstant(
+        'System',
+        'SS58Prefix',
+      ) as Prefix;
+
       const { blockData, extrinsicsData, eventsData } = this.processContextData(
-        block,
-        items,
+        {
+          block,
+          items,
+          ss58Prefix,
+        },
       );
 
       await Promise.all([
