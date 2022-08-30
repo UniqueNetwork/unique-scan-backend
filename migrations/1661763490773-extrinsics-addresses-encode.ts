@@ -121,6 +121,7 @@ export class extrinsicsAddressesEncode1661763490773
       );
 
       await queryRunner.commitTransaction();
+      extrinsics.length = 0;
       extrinsics = await getChunk(queryRunner);
     }
   }
