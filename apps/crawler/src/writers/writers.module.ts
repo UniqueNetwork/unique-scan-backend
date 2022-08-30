@@ -8,7 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Account } from '@entities/Account';
 import { CollectionWriterService } from './collection.writer.service';
-import { AccountWriterService } from './account.writer.service copy';
+import { AccountWriterService } from './account.writer.service';
 
 @Module({
   imports: [

@@ -8,7 +8,7 @@ import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { Severity } from '@sentry/node';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
-import { AccountWriterService } from '../writers/account.writer.service copy';
+import { AccountWriterService } from '../writers/account.writer.service';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
