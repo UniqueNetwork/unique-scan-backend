@@ -11,6 +11,10 @@ interface IExtrinsic {
   to_owner_normalized: string;
 }
 
+function getStringOrNull(str) {
+  return str ? `'${str}'` : 'NULL';
+}
+
 async function getChainPrefix(): Promise<number> {
   const chainWsUrl = process.env.CHAIN_WS_URL;
   const sdk = new Sdk({
@@ -36,8 +40,10 @@ async function getChunk(queryRunner: QueryRunner): Promise<IExtrinsic[]> {
     WHERE
         (signer LIKE '0x%' AND LENGTH(signer) > 42) OR
         (to_owner LIKE '0x%' AND LENGTH(to_owner) > 42) OR
-        to_owner_normalized = 'undefined' OR 
-        signer_normalized = 'undefined'
+
+        -- Strings 'null' or 'undefined'
+        (to_owner_normalized IS NOT NULL AND LENGTH(to_owner_normalized) < 10) OR 
+        (signer_normalized IS NOT NULL AND LENGTH(signer_normalized) < 10)
     ORDER BY block_index
     LIMIT 100;
   `;
@@ -51,6 +57,8 @@ async function convertExtrinsicAddress(
 ): Promise<QueryResult> {
   if (extrinsic.signer?.startsWith('0x')) {
     extrinsic.signer = normalizeSubstrateAddress(extrinsic.signer, ss58Prefix);
+  } else if (extrinsic.signer?.length < 10) {
+    extrinsic.signer = null;
   }
 
   if (extrinsic.to_owner?.startsWith('0x')) {
@@ -58,16 +66,22 @@ async function convertExtrinsicAddress(
       extrinsic.to_owner,
       ss58Prefix,
     );
+  } else if (extrinsic.to_owner?.length < 10) {
+    extrinsic.to_owner = null;
   }
 
   if (extrinsic.signer) {
     extrinsic.signer_normalized = normalizeSubstrateAddress(extrinsic.signer);
+  } else {
+    extrinsic.signer_normalized = null;
   }
 
   if (extrinsic.to_owner) {
     extrinsic.to_owner_normalized = normalizeSubstrateAddress(
       extrinsic.to_owner,
     );
+  } else {
+    extrinsic.to_owner_normalized = null;
   }
 
   return queryRunner.query(`
@@ -79,10 +93,10 @@ async function convertExtrinsicAddress(
       "to_owner_normalized"
     ) =
     (
-      '${extrinsic.signer || null}',
-      '${extrinsic.signer_normalized || null}',
-      '${extrinsic.to_owner || null}',
-      '${extrinsic.to_owner_normalized || null}'
+      ${getStringOrNull(extrinsic.signer || null)},
+      ${getStringOrNull(extrinsic.signer_normalized || null)},
+      ${getStringOrNull(extrinsic.to_owner || null)},
+      ${getStringOrNull(extrinsic.to_owner_normalized || null)}
     )
     WHERE
       block_number = ${extrinsic.block_number}
