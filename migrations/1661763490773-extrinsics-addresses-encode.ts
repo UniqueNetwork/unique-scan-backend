@@ -28,12 +28,17 @@ async function getChunk(queryRunner: QueryRunner): Promise<IExtrinsic[]> {
         block_number,
         extrinsic_index,
         signer,
-        to_owner
+        signer_normalized,
+        to_owner,
+        to_owner_normalized
     FROM
         extrinsic
     WHERE
         (signer LIKE '0x%' AND LENGTH(signer) > 42) OR
-        (to_owner LIKE '0x%' AND LENGTH(to_owner) > 42)
+        (to_owner LIKE '0x%' AND LENGTH(to_owner) > 42) OR
+        to_owner_normalized = 'undefined' OR 
+        signer_normalized = 'undefined'
+    ORDER BY block_index
     LIMIT 100;
   `;
   return await queryRunner.query(qSelect);
@@ -44,19 +49,22 @@ async function convertExtrinsicAddress(
   extrinsic: IExtrinsic,
   ss58Prefix: number,
 ): Promise<QueryResult> {
-  if (extrinsic?.signer?.length > 42 && extrinsic?.signer?.startsWith('0x')) {
+  if (extrinsic.signer?.startsWith('0x')) {
     extrinsic.signer = normalizeSubstrateAddress(extrinsic.signer, ss58Prefix);
-    extrinsic.signer_normalized = normalizeSubstrateAddress(extrinsic.signer);
   }
 
-  if (
-    extrinsic?.to_owner?.length > 42 &&
-    extrinsic?.to_owner?.startsWith('0x')
-  ) {
+  if (extrinsic.to_owner?.startsWith('0x')) {
     extrinsic.to_owner = normalizeSubstrateAddress(
       extrinsic.to_owner,
       ss58Prefix,
     );
+  }
+
+  if (extrinsic.signer) {
+    extrinsic.signer_normalized = normalizeSubstrateAddress(extrinsic.signer);
+  }
+
+  if (extrinsic.to_owner) {
     extrinsic.to_owner_normalized = normalizeSubstrateAddress(
       extrinsic.to_owner,
     );
@@ -71,10 +79,10 @@ async function convertExtrinsicAddress(
       "to_owner_normalized"
     ) =
     (
-      '${extrinsic.signer}',
-      '${extrinsic.signer_normalized}',
-      '${extrinsic.to_owner}',
-      '${extrinsic.to_owner_normalized}'
+      '${extrinsic.signer || null}',
+      '${extrinsic.signer_normalized || null}',
+      '${extrinsic.to_owner || null}',
+      '${extrinsic.to_owner_normalized || null}'
     )
     WHERE
       block_number = ${extrinsic.block_number}
