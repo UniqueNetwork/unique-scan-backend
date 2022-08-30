@@ -129,7 +129,7 @@ export class CollectionWriterService {
 
   private prepareDataForDb(
     collectionData: [CollectionInfoWithSchema, CollectionLimits],
-  ) {
+  ): Collections {
     const [collectionInfo, collectionLimits] = collectionData;
     const {
       id: collection_id,

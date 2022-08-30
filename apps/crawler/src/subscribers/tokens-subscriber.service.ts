@@ -19,16 +19,16 @@ import {
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
+import { TokenWriterService } from '../writers/token.writer.service';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(TokensSubscriberService.name);
 
   constructor(
-    @InjectRepository(Tokens)
-    private tokensRepository: Repository<Tokens>,
-
     private sdkService: SdkService,
+
+    private tokenWriterService: TokenWriterService,
 
     @InjectSentry()
     private readonly sentry: SentryService,
@@ -37,19 +37,15 @@ export class TokensSubscriberService implements ISubscriberService {
   }
 
   subscribe(processorService: ProcessorService) {
-    const EVENTS_TO_UPDATE = [
+    [
       // Insert
       EventName.ITEM_CREATED,
 
       // Update
       EventName.TRANSFER,
-
-      // todo: Or maybe these events are reletad to collection?
       EventName.TOKEN_PROPERTY_SET,
       EventName.TOKEN_PROPERTY_DELETED,
-    ];
-
-    EVENTS_TO_UPDATE.forEach((eventName) =>
+    ].forEach((eventName) =>
       processorService.processor.addEventHandler(
         eventName,
         this.upsertHandler.bind(this),
@@ -60,6 +56,20 @@ export class TokensSubscriberService implements ISubscriberService {
       EventName.ITEM_DESTROYED,
       this.destroyHandler.bind(this),
     );
+  }
+
+  /**
+   * Extracts collection id and token id from archive event.
+   */
+  private extractCollectionAndTokenId(args: [number, number]): {
+    collectionId: number;
+    tokenId: number;
+  } {
+    const [collectionId, tokenId] = args;
+    return {
+      collectionId,
+      tokenId,
+    };
   }
 
   private async getTokenData(
@@ -80,44 +90,6 @@ export class TokensSubscriberService implements ISubscriberService {
       tokenDecoded,
       tokenProperties,
       collection,
-    };
-  }
-
-  prepareDataToWrite(
-    tokenDecoded: TokenByIdResult,
-    tokenProperties: TokenPropertiesResult,
-    collection: CollectionInfoWithSchema,
-  ) {
-    const {
-      tokenId: token_id,
-      collectionId: collection_id,
-      image,
-      attributes,
-      nestingParentToken,
-      owner,
-    } = tokenDecoded;
-
-    const { owner: collectionOwner, tokenPrefix } = collection;
-
-    let parentId = null;
-    if (nestingParentToken) {
-      const { collectionId, tokenId } = nestingParentToken;
-      parentId = `${collectionId}_${tokenId}`;
-    }
-
-    return {
-      token_id,
-      collection_id,
-      owner,
-      owner_normalized: normalizeSubstrateAddress(owner),
-      image,
-      attributes,
-      properties: tokenProperties
-        ? sanitizePropertiesValues(tokenProperties.properties)
-        : [],
-      parent_id: parentId,
-      is_sold: owner !== collectionOwner,
-      token_name: `${tokenPrefix} #${token_id}`,
     };
   }
 
@@ -188,14 +160,13 @@ export class TokensSubscriberService implements ISubscriberService {
 
   private async destroyHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: blockTimestamp },
+      block: { height: blockNumber },
       event: { name: eventName, args },
     } = ctx;
 
     const log = {
       eventName,
       blockNumber,
-      blockTimestamp,
       collectionId: null as null | number,
       tokenId: null as null | number,
     };
