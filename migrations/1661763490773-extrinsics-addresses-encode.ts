@@ -42,10 +42,10 @@ async function getChunk(queryRunner: QueryRunner): Promise<IExtrinsic[]> {
         (to_owner LIKE '0x%' AND LENGTH(to_owner) > 42) OR
 
         -- Strings 'null' or 'undefined'
-        (to_owner_normalized IS NOT NULL AND LENGTH(to_owner_normalized) < 10) OR 
+        (to_owner_normalized IS NOT NULL AND LENGTH(to_owner_normalized) < 10) OR
         (signer_normalized IS NOT NULL AND LENGTH(signer_normalized) < 10)
     ORDER BY block_index
-    LIMIT 100;
+    LIMIT 50;
   `;
   return await queryRunner.query(qSelect);
 }
@@ -121,6 +121,7 @@ export class extrinsicsAddressesEncode1661763490773
       );
 
       await queryRunner.commitTransaction();
+      extrinsics.length = 0;
       extrinsics = await getChunk(queryRunner);
     }
   }
