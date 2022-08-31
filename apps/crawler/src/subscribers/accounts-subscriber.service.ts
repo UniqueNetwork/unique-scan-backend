@@ -97,7 +97,7 @@ export class AccountsSubscriberService implements ISubscriberService {
    *   "0xc89axxx"
    *
    */
-  private getAddressValues(
+  private extractAddressValues(
     eventName: string,
     args: string | object | (string | number)[],
   ): string[] {
@@ -160,7 +160,7 @@ export class AccountsSubscriberService implements ISubscriberService {
     };
 
     try {
-      const rawAddressValues = this.getAddressValues(eventName, args);
+      const rawAddressValues = this.extractAddressValues(eventName, args);
       log.rawAddressValues = rawAddressValues;
 
       if (!rawAddressValues.length) {

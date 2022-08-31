@@ -9,6 +9,7 @@ import { Extrinsic } from '@entities/Extrinsic';
 import { Account } from '@entities/Account';
 import { CollectionWriterService } from './collection.writer.service';
 import { AccountWriterService } from './account.writer.service';
+import { TokenWriterService } from './token.writer.service';
 
 @Module({
   imports: [
@@ -22,7 +23,11 @@ import { AccountWriterService } from './account.writer.service';
     ]),
     ConfigModule,
   ],
-  providers: [AccountWriterService, CollectionWriterService],
-  exports: [AccountWriterService, CollectionWriterService],
+  providers: [
+    AccountWriterService,
+    CollectionWriterService,
+    TokenWriterService,
+  ],
+  exports: [AccountWriterService, CollectionWriterService, TokenWriterService],
 })
 export class WritersModule {}

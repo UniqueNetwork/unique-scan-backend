@@ -37,7 +37,7 @@ export class AccountWriterService {
     };
   }
 
-  upsert({
+  async upsert({
     blockNumber,
     blockTimestamp,
     balances,

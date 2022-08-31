@@ -99,4 +99,5 @@ export enum SubscriberName {
 export enum SubscriberAction {
   UPSERT = 'UPSERT',
   DELETE = 'DELETE',
+  DELETE_NOT_FOUND = 'DELETE: NOT FOUND',
 }

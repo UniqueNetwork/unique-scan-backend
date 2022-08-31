@@ -94,7 +94,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
       const collectionData = await this.getCollectionData(collectionId);
 
-      if (collectionData[0]) {
+      if (collectionData.collectionDecoded) {
         await this.collectionWriterService.upsert({
           eventName,
           blockTimestamp,
@@ -106,7 +106,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
         // No entity returned from sdk. Most likely it was destroyed in a future block.
         await this.collectionWriterService.delete(collectionId);
 
-        log.action = SubscriberAction.DELETE;
+        log.action = SubscriberAction.DELETE_NOT_FOUND;
       }
 
       this.logger.verbose({ ...log });

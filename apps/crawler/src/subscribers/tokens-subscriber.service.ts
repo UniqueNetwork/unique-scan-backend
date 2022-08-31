@@ -107,7 +107,7 @@ export class TokensSubscriberService implements ISubscriberService {
 
       const tokenData = await this.getTokenData(collectionId, tokenId);
 
-      if (tokenData[0]) {
+      if (tokenData.tokenDecoded) {
         await this.tokenWriterService.upsert({
           eventName,
           blockTimestamp,
@@ -121,7 +121,7 @@ export class TokensSubscriberService implements ISubscriberService {
         // Delete db record
         await this.tokenWriterService.delete(collectionId, tokenId);
 
-        log.action = SubscriberAction.DELETE;
+        log.action = SubscriberAction.DELETE_NOT_FOUND;
       }
 
       this.logger.verbose({ ...log });

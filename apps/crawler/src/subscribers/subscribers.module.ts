@@ -1,5 +1,4 @@
 import { Block } from '@entities/Block';
-import { Tokens } from '@entities/Tokens';
 import { Event } from '@entities/Event';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -17,7 +16,7 @@ import { SubscribersService } from './subscribers.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Block, Event, Extrinsic, Tokens]),
+    TypeOrmModule.forFeature([Block, Event, Extrinsic]),
     ConfigModule,
     SdkModule,
     WritersModule,
