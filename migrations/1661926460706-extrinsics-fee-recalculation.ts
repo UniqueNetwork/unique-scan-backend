@@ -1,4 +1,4 @@
-import { getAmount } from '@common/utils';
+import { getAmount } from '../common/utils';
 import { MigrationInterface, QueryResult, QueryRunner } from 'typeorm';
 
 interface IExtrinsicData {
