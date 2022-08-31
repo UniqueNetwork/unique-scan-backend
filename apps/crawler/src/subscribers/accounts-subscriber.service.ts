@@ -81,7 +81,8 @@ export class AccountsSubscriberService implements ISubscriberService {
    *   [number,"0xf7xxx"]
    *
    * - Balances.Deposit
-   *   {"amount":"88476999937090000","who":"0x6dxxx"}
+   *   {"amount":"88476999937090000","who":"0x6dxxx"} // Both formats possible
+   *   ['0xb892xxxx', '7911651004843']
    *
    * - Balances.Endowed
    *   {"account":"0xacxxx","freeBalance":"100000000000000000000"}
@@ -90,23 +91,36 @@ export class AccountsSubscriberService implements ISubscriberService {
    *   {"amount":"1267650600228140924496766115376","from":"0x1cbxxx","to":"0x36xxx"}
    *
    * - Balances.Withdraw
-   *   {"amount":"88476999937090000","who":"0x90xxx"}
+   *   {"amount":"88476999937090000","who":"0x90xxx"} // Both formats possible
+   *   ['0xb892xxxx', '7937051004605']
    *
    * - System.NewAccount
-   *   {"account":"0x42xxx"}
+   *   {"amount":"88476999937090000","who":"0x90xxx"} // Both formats possible
+   *   "0xc89axxx"
+   *
    */
   private getAddressValues(
     eventName: string,
-    args: object | (string | number)[],
+    args: string | object | (string | number)[],
   ): string[] {
     const addresses = [];
-    const argsObj = Array.isArray(args)
-      ? ({} as { account?: string; from?: string; to?: string })
-      : { ...args };
 
-    if (Array.isArray(args)) {
-      // Convert array arguments into object format
+    const argsObj = {} as {
+      account?: string;
+      from?: string;
+      to?: string;
+      who?: string;
+    };
+
+    // Convert array arguments into object format
+    if (typeof args === 'string') {
+      argsObj.account = args;
+    } else if (Array.isArray(args)) {
       switch (eventName) {
+        case EventName.BALANCES_WITHDRAW:
+        case EventName.BALANCES_DEPOSIT:
+          argsObj.account = args[0] as string;
+          break;
         case EventName.COLLECTION_ADMIN_ADDED:
         case EventName.COLLECTION_OWNED_CHANGED:
           argsObj.account = args[1] as string;
@@ -119,8 +133,12 @@ export class AccountsSubscriberService implements ISubscriberService {
           argsObj.from = args[2] as string;
           argsObj.to = args[3] as string;
       }
+    } else {
+      // Args are in object format already.
+      Object.assign(argsObj, args);
     }
 
+    // Process object formatted args.
     ['account', 'who', 'from', 'to'].forEach((k) => {
       const v = argsObj[k];
       if (v) {

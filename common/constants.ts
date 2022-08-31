@@ -62,7 +62,7 @@ export const EventName = {
   SPONSORSHIP_CONFIRMED: `${EventSection.UNIQUE}.${EventMethod.SPONSORSHIP_CONFIRMED}`,
 
   // Balances
-  BALANCES_DEPOSIT: `${EventSection.BALANCES}.${EventMethod.TRANSFER}`,
+  BALANCES_DEPOSIT: `${EventSection.BALANCES}.${EventMethod.DEPOSIT}`,
   BALANCES_ENDOWED: `${EventSection.BALANCES}.${EventMethod.ENDOWED}`,
   BALANCES_WITHDRAW: `${EventSection.BALANCES}.${EventMethod.WITHDRAW}`,
   BALANCES_TRANSFER: `${EventSection.BALANCES}.${EventMethod.TRANSFER}`,
