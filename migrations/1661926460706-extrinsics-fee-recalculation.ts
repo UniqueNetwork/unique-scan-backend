@@ -32,12 +32,12 @@ async function recalculateExtrinsicFee(
 ): Promise<QueryResult> {
   const { args } = extrinsic;
   let argsParsed = null;
-  console.log(extrinsic, argsParsed);
+
   try {
     argsParsed = JSON.parse(args);
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.log(`Can not parse event args: ${JSON.stringify(extrinsic)}`);
+    console.warn(`Can not parse event args: ${JSON.stringify(extrinsic)}`);
   }
   if (!argsParsed) {
     extrinsic.fee = '0';
@@ -50,12 +50,11 @@ async function recalculateExtrinsicFee(
   }
 
   return queryRunner.query(`
-      UPDATE extrinsic SET 
-        fee=${extrinsic.fee}
-      WHERE
+    UPDATE extrinsic SET
+        fee='${extrinsic.fee}'
+    WHERE
         block_number = ${extrinsic.block_number}
-        AND extrinsic_index = ${extrinsic.extrinsic_index};
-    `);
+        AND extrinsic_index = ${extrinsic.extrinsic_index};`);
 }
 
 export class extrinsicsFeeRecalculation1661926460706
