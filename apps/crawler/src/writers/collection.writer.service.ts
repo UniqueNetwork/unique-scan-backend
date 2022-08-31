@@ -24,6 +24,11 @@ type ParsedSchemaFields = {
   variableOnChainSchema?: object;
 };
 
+export interface ICollectionData {
+  collectionDecoded: CollectionInfoWithSchema | null;
+  collectionLimits: CollectionLimits | null;
+}
+
 @Injectable()
 export class CollectionWriterService {
   private readonly logger = new Logger(CollectionWriterService.name);
@@ -127,10 +132,8 @@ export class CollectionWriterService {
     return result as UniqueCollectionSchemaDecoded;
   }
 
-  private prepareDataForDb(
-    collectionData: [CollectionInfoWithSchema, CollectionLimits],
-  ): Collections {
-    const [collectionInfo, collectionLimits] = collectionData;
+  private prepareDataForDb(collectionData: ICollectionData): Collections {
+    const { collectionDecoded, collectionLimits } = collectionData;
     const {
       id: collection_id,
       owner,
@@ -142,7 +145,7 @@ export class CollectionWriterService {
       schema,
       permissions: { mintMode: mint_mode },
       properties = [],
-    } = collectionInfo;
+    } = collectionDecoded;
 
     let schemaFromProperties = {} as UniqueCollectionSchemaDecoded;
     if (!schema) {
@@ -198,20 +201,20 @@ export class CollectionWriterService {
     };
   }
 
-  upsert({
+  async upsert({
     eventName,
     blockTimestamp,
     collectionData,
   }: {
     eventName: string;
     blockTimestamp: number;
-    collectionData: [CollectionInfoWithSchema, CollectionLimits];
+    collectionData: ICollectionData;
   }) {
-    const dataToWrite = this.prepareDataForDb(collectionData);
+    const preparedData = this.prepareDataForDb(collectionData);
 
     return this.collectionsRepository.upsert(
       {
-        ...dataToWrite,
+        ...preparedData,
         date_of_creation:
           eventName === EventName.COLLECTION_CREATED
             ? normalizeTimestamp(blockTimestamp)
@@ -221,12 +224,12 @@ export class CollectionWriterService {
     );
   }
 
-  delete(collectionId: number) {
-    return this.deleteCollection(collectionId);
+  async delete(collectionId: number) {
+    return this.deleteCollectionWithTokens(collectionId);
   }
 
   // Delete db collection record and related tokens
-  private deleteCollection(collectionId: number) {
+  private async deleteCollectionWithTokens(collectionId: number) {
     return Promise.all([
       this.collectionsRepository.delete(collectionId),
       this.tokensRepository.delete({ collection_id: collectionId }),

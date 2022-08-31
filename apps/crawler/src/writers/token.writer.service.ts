@@ -1,4 +1,9 @@
-// import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import { EventName } from '@common/constants';
+import {
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+  sanitizePropertiesValues,
+} from '@common/utils';
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +14,11 @@ import {
 } from '@unique-nft/sdk/tokens';
 import { Repository } from 'typeorm';
 
+export interface ITokenData {
+  tokenDecoded: TokenByIdResult | null;
+  tokenProperties: TokenPropertiesResult | null;
+  collectionDecoded: CollectionInfoWithSchema | null;
+}
 @Injectable()
 export class TokenWriterService {
   constructor(
@@ -16,11 +26,8 @@ export class TokenWriterService {
     private tokensRepository: Repository<Tokens>,
   ) {}
 
-  prepareDataForDb(
-    tokenDecoded: TokenByIdResult,
-    tokenProperties: TokenPropertiesResult,
-    collection: CollectionInfoWithSchema,
-  ) {
+  prepareDataForDb(tokenData: ITokenData) {
+    const { tokenDecoded, tokenProperties, collectionDecoded } = tokenData;
     const {
       tokenId: token_id,
       collectionId: collection_id,
@@ -30,7 +37,7 @@ export class TokenWriterService {
       owner,
     } = tokenDecoded;
 
-    const { owner: collectionOwner, tokenPrefix } = collection;
+    const { owner: collectionOwner, tokenPrefix } = collectionDecoded;
 
     let parentId = null;
     if (nestingParentToken) {
@@ -54,26 +61,31 @@ export class TokenWriterService {
     };
   }
 
-  upsert({
-    blockNumber,
+  async upsert({
+    eventName,
     blockTimestamp,
-    balances,
+    tokenData,
   }: {
-    blockNumber: number;
+    eventName: string;
     blockTimestamp: number;
-    balances: AllBalances;
+    tokenData: ITokenData;
   }) {
-    const dataToWrite = this.prepareDataForDb({
-      blockNumber,
-      timestamp: normalizeTimestamp(blockTimestamp),
-      balances,
-    });
+    const preparedData = this.prepareDataForDb(tokenData);
 
-    // Write data into db
-    return this.accountsRepository.upsert(dataToWrite, ['account_id']);
+    // Write token data into db
+    return this.tokensRepository.upsert(
+      {
+        ...preparedData,
+        date_of_creation:
+          eventName === EventName.ITEM_CREATED
+            ? normalizeTimestamp(blockTimestamp)
+            : undefined,
+      },
+      ['collection_id', 'token_id'],
+    );
   }
 
-  delete(collectionId: number, tokenId: number) {
+  async delete(collectionId: number, tokenId: number) {
     return this.tokensRepository.delete({
       collection_id: collectionId,
       token_id: tokenId,

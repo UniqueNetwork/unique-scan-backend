@@ -2,13 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Store } from '@subsquid/typeorm-store';
 import { EventName, SubscriberAction } from '@common/constants';
-import {
-  CollectionInfoWithSchema,
-  CollectionLimits,
-} from '@unique-nft/sdk/tokens';
 import { SdkService } from '../sdk/sdk.service';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
-import { CollectionWriterService } from '../writers/collection.writer.service';
+import {
+  ICollectionData,
+  CollectionWriterService,
+} from '../writers/collection.writer.service';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
 
@@ -63,11 +62,16 @@ export class CollectionsSubscriberService implements ISubscriberService {
    */
   private async getCollectionData(
     collectionId: number,
-  ): Promise<[CollectionInfoWithSchema | null, CollectionLimits | null]> {
-    return Promise.all([
+  ): Promise<ICollectionData> {
+    const [collectionDecoded, collectionLimits] = await Promise.all([
       this.sdkService.getCollection(collectionId),
       this.sdkService.getCollectionLimits(collectionId),
     ]);
+
+    return {
+      collectionDecoded,
+      collectionLimits,
+    };
   }
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
@@ -122,7 +126,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
       eventName,
       blockNumber,
       collectionId: null as null | number,
-      action: null as null | SubscriberAction,
+      action: SubscriberAction.DELETE,
     };
 
     try {
@@ -131,8 +135,6 @@ export class CollectionsSubscriberService implements ISubscriberService {
       log.collectionId = collectionId;
 
       await this.collectionWriterService.delete(collectionId);
-
-      log.action = SubscriberAction.DELETE;
 
       this.logger.verbose({ ...log });
     } catch (error) {

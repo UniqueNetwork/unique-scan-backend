@@ -1,25 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { Tokens } from '@entities/Tokens';
 import { SdkService } from '../sdk/sdk.service';
-import { EventName } from '@common/constants';
-import {
-  normalizeSubstrateAddress,
-  normalizeTimestamp,
-  sanitizePropertiesValues,
-} from '@common/utils';
-import {
-  CollectionInfoWithSchema,
-  TokenPropertiesResult,
-  TokenByIdResult,
-} from '@unique-nft/sdk/tokens';
+import { EventName, SubscriberAction } from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
-import { TokenWriterService } from '../writers/token.writer.service';
+import {
+  ITokenData,
+  TokenWriterService,
+} from '../writers/token.writer.service';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
@@ -66,6 +56,7 @@ export class TokensSubscriberService implements ISubscriberService {
     tokenId: number;
   } {
     const [collectionId, tokenId] = args;
+
     return {
       collectionId,
       tokenId,
@@ -75,21 +66,18 @@ export class TokensSubscriberService implements ISubscriberService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
-  ): Promise<{
-    tokenDecoded: TokenByIdResult | null;
-    tokenProperties: TokenPropertiesResult | null;
-    collection: CollectionInfoWithSchema | null;
-  }> {
-    const [tokenDecoded, tokenProperties, collection] = await Promise.all([
-      this.sdkService.getToken(collectionId, tokenId),
-      this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.getCollection(collectionId),
-    ]);
+  ): Promise<ITokenData> {
+    const [tokenDecoded, tokenProperties, collectionDecoded] =
+      await Promise.all([
+        this.sdkService.getToken(collectionId, tokenId),
+        this.sdkService.getTokenProperties(collectionId, tokenId),
+        this.sdkService.getCollection(collectionId),
+      ]);
 
     return {
       tokenDecoded,
       tokenProperties,
-      collection,
+      collectionDecoded,
     };
   }
 
@@ -102,14 +90,13 @@ export class TokensSubscriberService implements ISubscriberService {
     const log = {
       eventName,
       blockNumber,
-      blockTimestamp,
-      entity: null as null | object | string,
       collectionId: null as null | number,
       tokenId: null as null | number,
+      action: null as null | SubscriberAction,
     };
 
     try {
-      const [collectionId, tokenId] = args as [number, number];
+      const { collectionId, tokenId } = this.extractCollectionAndTokenId(args);
 
       log.collectionId = collectionId;
       log.tokenId = tokenId;
@@ -118,38 +105,23 @@ export class TokensSubscriberService implements ISubscriberService {
         throw new Error('Bad tokenId');
       }
 
-      const { tokenDecoded, tokenProperties, collection } =
-        await this.getTokenData(collectionId, tokenId);
+      const tokenData = await this.getTokenData(collectionId, tokenId);
 
-      if (tokenDecoded) {
-        const dataToWrite = this.prepareDataToWrite(
-          tokenDecoded,
-          tokenProperties,
-          collection,
-        );
+      if (tokenData[0]) {
+        await this.tokenWriterService.upsert({
+          eventName,
+          blockTimestamp,
+          tokenData,
+        });
 
-        log.entity = String(dataToWrite); // Just to know that data is not null
-
-        // Write collection data into db
-        await this.tokensRepository.upsert(
-          {
-            ...dataToWrite,
-            date_of_creation:
-              eventName === EventName.ITEM_CREATED
-                ? normalizeTimestamp(blockTimestamp)
-                : undefined,
-          },
-          ['collection_id', 'token_id'],
-        );
+        log.action = SubscriberAction.UPSERT;
       } else {
         // No entity returned from sdk. Most likely it was destroyed in a future block.
-        log.entity = null;
 
         // Delete db record
-        await this.tokensRepository.delete({
-          collection_id: collectionId,
-          token_id: tokenId,
-        });
+        await this.tokenWriterService.delete(collectionId, tokenId);
+
+        log.action = SubscriberAction.DELETE;
       }
 
       this.logger.verbose({ ...log });
@@ -169,19 +141,17 @@ export class TokensSubscriberService implements ISubscriberService {
       blockNumber,
       collectionId: null as null | number,
       tokenId: null as null | number,
+      action: SubscriberAction.DELETE,
     };
 
     try {
-      const [collectionId, tokenId] = args as [number, number];
+      const { collectionId, tokenId } = this.extractCollectionAndTokenId(args);
 
       log.collectionId = collectionId;
       log.tokenId = tokenId;
 
       // Delete db record
-      await this.tokensRepository.delete({
-        collection_id: collectionId,
-        token_id: tokenId,
-      });
+      await this.tokenWriterService.delete(collectionId, tokenId);
 
       this.logger.verbose({ ...log });
     } catch (error) {
