@@ -125,7 +125,8 @@ export class BlocksSubscriberService implements ISubscriberService {
         return acc;
       }
 
-      const rawAmount = args?.amount || args?.value;
+      const rawAmount =
+        typeof args === 'string' ? args : args?.amount || args?.value;
 
       if (name === `${EventSection.BALANCES}.${EventMethod.TRANSFER}`) {
         // Save extrinsic amount
