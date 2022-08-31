@@ -4,7 +4,7 @@ import { MigrationInterface, QueryResult, QueryRunner } from 'typeorm';
 interface IExtrinsicData {
   block_number: number;
   extrinsic_index: number;
-  args: null | string | object;
+  args: null | string;
   fee: string;
 }
 
@@ -31,11 +31,21 @@ async function recalculateExtrinsicFee(
   extrinsic: IExtrinsicData,
 ): Promise<QueryResult> {
   const { args } = extrinsic;
-  if (!args) {
+  let argsParsed = null;
+  console.log(extrinsic, argsParsed);
+  try {
+    argsParsed = JSON.parse(args);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.log(`Can not parse event args: ${JSON.stringify(extrinsic)}`);
+  }
+  if (!argsParsed) {
     extrinsic.fee = '0';
   } else {
     const rawAmount =
-      typeof args === 'string' ? args : args['amount'] || args['value'];
+      typeof argsParsed === 'string'
+        ? argsParsed
+        : argsParsed['amount'] || argsParsed['value'];
     extrinsic.fee = getAmount(rawAmount);
   }
 
