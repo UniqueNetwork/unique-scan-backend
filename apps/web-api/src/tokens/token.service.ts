@@ -93,10 +93,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     queryArgs: IGQLQueryArgs<TokenDTO>,
   ): void {
     this.select(qb);
+    this.applyDistinctOn(qb, queryArgs);
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    this.applyDistinctOn(qb, queryArgs);
   }
 
   private select(qb: SelectQueryBuilder<Tokens>): void {

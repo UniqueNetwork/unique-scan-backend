@@ -25,10 +25,6 @@ export class StatisticsService extends BaseService<Total, StatisticsDTO> {
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
 
-    // const data = await qb.getRawMany();
-    // const count = await qb.getCount();
-    //
-    // return { data, count };
     return this.getDataAndCount(qb, queryArgs);
   }
 }

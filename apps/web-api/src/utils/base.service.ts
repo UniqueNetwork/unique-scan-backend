@@ -49,6 +49,20 @@ export class BaseService<T, S> {
   ): void {
     if (args.distinct_on) {
       qb.distinctOn([this.getConditionField(qb, args.distinct_on)]);
+
+      // if order_by: {[args.distinct_on]: undefined | null} condition
+      // order_by required args.distinct_on in condition
+      // and he should be first order
+      if (
+        args.order_by &&
+        !args.order_by[args.distinct_on] &&
+        Object.keys(args.order_by).length
+      ) {
+        const { order } = GQLToORMOrderByOperatorsMap.desc;
+        qb.orderBy();
+        qb.addOrderBy(this.getConditionField(qb, args.distinct_on), order);
+        this.applyOrderCondition(qb, args);
+      }
     }
   }
 
@@ -57,16 +71,21 @@ export class BaseService<T, S> {
     args: IGQLQueryArgs<S>,
   ): Promise<number> {
     if (args.distinct_on) {
-      qb.distinctOn([]);
-      qb.offset();
+      const query = qb.clone();
 
-      const { count } = (await qb
+      query
+        .distinctOn([])
+        .orderBy()
+        .offset(undefined)
+        .limit(undefined)
+        .skip(undefined)
+        .take(undefined)
         .select(
           `COUNT(DISTINCT(${this.getConditionField(qb, args.distinct_on)}))`,
           'count',
-        )
-        .getRawOne()) as { count: number };
+        );
 
+      const { count } = (await query.getRawOne()) as { count: number };
       return count;
     }
 
