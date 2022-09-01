@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
-import { Sdk } from '@unique-nft/sdk';
+import { Sdk } from '@unique-nft/substrate-client';
 import {
   CreateTokenArguments,
   SignTxResult,
   SubmitTxArguments,
   UnsignedTxPayload,
-} from '@unique-nft/sdk/types';
-import '@unique-nft/sdk/tokens';
-import '@unique-nft/sdk/extrinsics';
+} from '@unique-nft/substrate-client/types';
+import '@unique-nft/substrate-client/tokens';
+import '@unique-nft/substrate-client/extrinsics';
 
 export async function createToken(
   sdk: Sdk,

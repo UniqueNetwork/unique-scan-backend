@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Sdk } from '@unique-nft/sdk';
+import { Sdk } from '@unique-nft/substrate-client';
 import {
   CollectionInfoWithSchema,
   TokenByIdResult,
   TokenPropertiesResult,
-} from '@unique-nft/sdk/tokens';
+} from '@unique-nft/substrate-client/tokens';
 
 @Injectable()
 export class SdkService {

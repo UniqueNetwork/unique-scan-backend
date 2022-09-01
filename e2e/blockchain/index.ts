@@ -1,6 +1,6 @@
-import { SdkSigner } from '@unique-nft/sdk/types';
-import { createSigner } from '@unique-nft/sdk/sign';
-import { Sdk } from '@unique-nft/sdk';
+import { SdkSigner } from '@unique-nft/substrate-client/types';
+import { createSigner } from '@unique-nft/substrate-client/sign';
+import { Sdk } from '@unique-nft/substrate-client';
 
 export async function createSdk(seed = '//Alice'): Promise<Sdk> {
   const options = {

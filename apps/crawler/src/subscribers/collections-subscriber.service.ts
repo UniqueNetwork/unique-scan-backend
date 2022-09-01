@@ -16,7 +16,7 @@ import {
   CollectionLimits,
   CollectionProperty,
   UniqueCollectionSchemaDecoded,
-} from '@unique-nft/sdk/tokens';
+} from '@unique-nft/substrate-client/tokens';
 import { SdkService } from '../sdk/sdk.service';
 import { ProcessorService } from './processor.service';
 import ISubscriberService from './subscriber.interface';
