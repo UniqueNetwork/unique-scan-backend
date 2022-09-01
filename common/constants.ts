@@ -82,8 +82,6 @@ export enum ExtrinsicMethod {
   VESTED_TRANSFER = 'vested_transfer',
 }
 
-export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
-
 export const STATE_SCHEMA_NAME_BY_MODE = {
   SCAN: 'scan_status',
   RESCAN: 'rescan_status',
