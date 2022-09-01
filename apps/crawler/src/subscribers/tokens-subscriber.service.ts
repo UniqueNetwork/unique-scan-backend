@@ -17,7 +17,7 @@ import {
   CollectionInfoWithSchema,
   TokenPropertiesResult,
   TokenByIdResult,
-} from '@unique-nft/sdk/tokens';
+} from '@unique-nft/substrate-client/tokens';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 
 @Injectable()
