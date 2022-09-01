@@ -24,7 +24,7 @@ export function getAmount(strNum: string) {
   const result = new BigNumber(strNum);
   const dividedBy = result.dividedBy('1000000000000000000').toString();
 
-  return dividedBy;
+  return dividedBy === 'NaN' ? '0' : dividedBy;
 }
 
 export function sanitizeUnicodeString(str) {
