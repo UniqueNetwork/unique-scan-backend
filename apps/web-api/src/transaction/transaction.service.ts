@@ -77,9 +77,10 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
       method: EventMethod.TRANSFER,
     });
 
-    const count = await qb.getCount();
-    const data = await qb.getRawMany();
-
-    return { data, count };
+    // const count = await qb.getCount();
+    // const data = await qb.getRawMany();
+    //
+    // return { data, count };
+    return this.getDataAndCount(qb, queryArgs);
   }
 }

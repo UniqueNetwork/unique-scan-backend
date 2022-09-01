@@ -34,9 +34,9 @@ export class AccountService extends BaseService<Account, AccountDTO> {
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    const data = await qb.getRawMany();
-    const count = await qb.getCount();
-    return { data, count };
+    // const data = await qb.getRawMany();
+    // const count = await qb.getCount();
+    return this.getDataAndCount(qb, queryArgs);
   }
 
   public async statistic({

@@ -29,14 +29,17 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     qb.addGroupBy('owner_normalized');
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    const { count } = await this.getCount(qb.getQuery(), qb.getParameters());
     this.applyLimitOffset(qb, queryArgs);
+    const { count } = await this.getHandleCount(
+      qb.getQuery(),
+      qb.getParameters(),
+    );
     const data = await qb.getRawMany();
 
     return { data, count };
   }
 
-  private async getCount(
+  private async getHandleCount(
     queryString: string,
     params: IQueryParameters,
   ): Promise<{ count: number }> {
@@ -57,7 +60,10 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     for (const key in params) {
       queryString = queryString.replace(`:${key}`, `'${params[key]}'`);
     }
-
+    queryString = queryString
+      .replace(/limit.\S{1,100}/i, '')
+      .replace(/offset.\S{1,100}/i, '')
+      .trim();
     return queryString;
   }
 }

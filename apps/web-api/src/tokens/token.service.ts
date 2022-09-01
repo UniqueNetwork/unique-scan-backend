@@ -40,10 +40,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, queryArgs);
-    const data = await qb.getRawMany();
-    const count = await this.getCountByFilters(qb, queryArgs);
-
-    return { data, count };
+    return this.getDataAndCount(qb, queryArgs);
   }
 
   public getByCollectionId(id: number, queryArgs: IGQLQueryArgs<TokenDTO>) {
