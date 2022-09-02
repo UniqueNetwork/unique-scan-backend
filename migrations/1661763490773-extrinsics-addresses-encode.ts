@@ -1,6 +1,6 @@
 import { normalizeSubstrateAddress } from '../common/utils';
 import { MigrationInterface, QueryResult, QueryRunner } from 'typeorm';
-import { Sdk } from '@unique-nft/sdk';
+import { Sdk } from '@unique-nft/substrate-client';
 
 interface IExtrinsic {
   block_number: string;

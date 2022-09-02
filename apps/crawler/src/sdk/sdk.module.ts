@@ -1,12 +1,12 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Sdk } from '@unique-nft/substrate-client';
 import { sdkFactory } from './sdk-factory';
 import { SdkService } from './sdk.service';
-import { Sdk } from '@unique-nft/sdk';
-import '@unique-nft/sdk/extrinsics';
-import '@unique-nft/sdk/tokens';
-import '@unique-nft/sdk/balance';
 import { Config } from '../config/config.module';
+import '@unique-nft/substrate-client/extrinsics';
+import '@unique-nft/substrate-client/tokens';
+import '@unique-nft/substrate-client/balance';
 
 @Global()
 @Module({

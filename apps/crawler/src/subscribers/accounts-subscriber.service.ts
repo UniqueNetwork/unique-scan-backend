@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { SdkService } from '../sdk/sdk.service';
-import { EventName } from '@common/constants';
-import { AllBalances } from '@unique-nft/sdk/types';
-import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { Severity } from '@sentry/node';
+import { AllBalances } from '@unique-nft/substrate-client/types';
+import { EventName } from '@common/constants';
+import { SdkService } from '../sdk/sdk.service';
+import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
 import { AccountWriterService } from '../writers/account.writer.service';

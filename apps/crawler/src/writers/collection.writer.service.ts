@@ -13,7 +13,7 @@ import {
   CollectionLimits,
   CollectionProperty,
   UniqueCollectionSchemaDecoded,
-} from '@unique-nft/sdk/tokens';
+} from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
 
 type ParsedSchemaFields = {

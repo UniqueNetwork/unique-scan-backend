@@ -11,7 +11,7 @@ import {
   CollectionInfoWithSchema,
   TokenByIdResult,
   TokenPropertiesResult,
-} from '@unique-nft/sdk/tokens';
+} from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
 
 export interface ITokenData {

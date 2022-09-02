@@ -1,8 +1,11 @@
-import { Sdk } from '@unique-nft/sdk';
-import { CreateCollectionArguments } from '@unique-nft/sdk/tokens';
-import '@unique-nft/sdk/tokens';
-import '@unique-nft/sdk/extrinsics';
-import { CollectionFields, CollectionFieldTypes } from '@unique-nft/sdk/types';
+import { Sdk } from '@unique-nft/substrate-client';
+import { CreateCollectionArguments } from '@unique-nft/substrate-client/tokens';
+import '@unique-nft/substrate-client/tokens';
+import '@unique-nft/substrate-client/extrinsics';
+import {
+  CollectionFields,
+  CollectionFieldTypes,
+} from '@unique-nft/substrate-client/types';
 
 export async function createCollection(
   sdk: Sdk,

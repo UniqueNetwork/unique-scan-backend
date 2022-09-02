@@ -2,7 +2,7 @@ import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import { Account } from '@entities/Account';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AllBalances } from '@unique-nft/sdk/types';
+import { AllBalances } from '@unique-nft/substrate-client/types';
 import { Repository } from 'typeorm';
 
 @Injectable()
