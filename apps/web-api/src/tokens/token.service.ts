@@ -40,10 +40,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, queryArgs);
-    const data = await qb.getRawMany();
-    const count = await this.getCountByFilters(qb, queryArgs);
-
-    return { data, count };
+    return this.getDataAndCount(qb, queryArgs);
   }
 
   public getByCollectionId(id: number, queryArgs: IGQLQueryArgs<TokenDTO>) {
@@ -96,10 +93,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     queryArgs: IGQLQueryArgs<TokenDTO>,
   ): void {
     this.select(qb);
+    this.applyDistinctOn(qb, queryArgs);
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    this.applyDistinctOn(qb, queryArgs);
   }
 
   private select(qb: SelectQueryBuilder<Tokens>): void {
