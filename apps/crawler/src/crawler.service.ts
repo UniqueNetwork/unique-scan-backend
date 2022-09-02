@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SubscriberName } from '@common/constants';
 import { ProcessorService } from './subscribers/processor.service';
 import { AccountsSubscriberService } from './subscribers/accounts-subscriber.service';
 import { BlocksSubscriberService } from './subscribers/blocks-subscriber.service';
 import { CollectionsSubscriberService } from './subscribers/collections-subscriber.service';
 import { TokensSubscriberService } from './subscribers/tokens-subscriber.service';
+import { Config } from './config/config.module';
 
 @Injectable()
 export class CrawlerService {
   constructor(
-    private configService: ConfigService,
+    private configService: ConfigService<Config>,
     private processorService: ProcessorService,
     private accountsSubscriberService: AccountsSubscriberService,
     private blocksSubscriberService: BlocksSubscriberService,
@@ -18,19 +20,19 @@ export class CrawlerService {
   ) {}
 
   run(forceRescan = false) {
-    if (this.configService.get('ACCOUNTS_SUBSCRIBER_DISABLE') !== 'true') {
+    if (this.configService.get('subscribers')[SubscriberName.ACCOUNTS]) {
       this.accountsSubscriberService.subscribe();
     }
 
-    if (this.configService.get('BLOCKS_SUBSCRIBER_DISABLE') !== 'true') {
+    if (this.configService.get('subscribers')[SubscriberName.BLOCKS]) {
       this.blocksSubscriberService.subscribe();
     }
 
-    if (this.configService.get('COLLECTIONS_SUBSCRIBER_DISABLE') !== 'true') {
+    if (this.configService.get('subscribers')[SubscriberName.COLLECTIONS]) {
       this.collectionsSubscriberService.subscribe();
     }
 
-    if (this.configService.get('TOKENS_SUBSCRIBER_DISABLE') !== 'true') {
+    if (this.configService.get('subscribers')[SubscriberName.TOKENS]) {
       this.tokensSubscriberService.subscribe();
     }
 

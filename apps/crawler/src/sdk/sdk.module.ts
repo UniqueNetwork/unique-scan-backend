@@ -1,8 +1,9 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { sdkFactory } from './factory';
-import { SdkService } from './sdk.service';
 import { Sdk } from '@unique-nft/substrate-client';
+import { sdkFactory } from './sdk-factory';
+import { SdkService } from './sdk.service';
+import { Config } from '../config/config.module';
 import '@unique-nft/substrate-client/extrinsics';
 import '@unique-nft/substrate-client/tokens';
 import '@unique-nft/substrate-client/balance';
@@ -13,8 +14,8 @@ import '@unique-nft/substrate-client/balance';
   providers: [
     {
       provide: Sdk,
-      useFactory: async (configService: ConfigService) =>
-        sdkFactory(configService.get('CHAIN_WS_URL')),
+      useFactory: async (configService: ConfigService<Config>) =>
+        sdkFactory(configService.get('chainWsUrl')),
       inject: [ConfigService],
     },
     SdkService,
