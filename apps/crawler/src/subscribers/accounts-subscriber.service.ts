@@ -9,7 +9,7 @@ import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
 import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import ISubscriberService from './subscriber.interface';
-import { AllBalances } from '@unique-nft/sdk/types';
+import { AllBalances } from '@unique-nft/substrate-client/types';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { Severity } from '@sentry/node';
 

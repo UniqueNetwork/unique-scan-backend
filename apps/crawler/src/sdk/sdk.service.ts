@@ -1,11 +1,11 @@
 import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Sdk } from '@unique-nft/sdk';
+import { Sdk } from '@unique-nft/substrate-client';
 import {
   CollectionInfoWithSchema,
   TokenByIdResult,
   TokenPropertiesResult,
-} from '@unique-nft/sdk/tokens';
+} from '@unique-nft/substrate-client/tokens';
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 
