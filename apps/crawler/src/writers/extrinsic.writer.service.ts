@@ -16,7 +16,7 @@ import { Repository } from 'typeorm';
 import {
   IBlockCommonData,
   IBlockItem,
-} from '../subscribers/blocks-subscriber.service';
+} from '../subscribers/blocks.subscriber.service';
 import { EventWriterService } from './event.writer.service';
 
 const EXTRINSICS_TRANSFER_METHODS = [

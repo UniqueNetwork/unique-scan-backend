@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import {
   IBlockItem,
   IItemCounts,
-} from '../subscribers/blocks-subscriber.service';
+} from '../subscribers/blocks.subscriber.service';
 
 @Injectable()
 export class BlockWriterService {

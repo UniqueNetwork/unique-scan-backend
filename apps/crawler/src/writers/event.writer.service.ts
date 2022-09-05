@@ -8,7 +8,7 @@ import {
   IBlockCommonData,
   IBlockItem,
   IEvent,
-} from '../subscribers/blocks-subscriber.service';
+} from '../subscribers/blocks.subscriber.service';
 
 @Injectable()
 export class EventWriterService {
