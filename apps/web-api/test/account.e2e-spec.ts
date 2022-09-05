@@ -85,7 +85,6 @@ describe('Account (e2e)', () => {
             '226.064588',
           );
           expect(res.body.data.accounts.data[0].locked_balance).toBe('0');
-          expect(res.body.data.accounts.data[0].nonce).toBe('132');
           expect(res.body.data.accounts.data[0].timestamp).toBe(1653962324);
 
           expect(res.body.data.accounts.data[3].account_id).toBe(
@@ -104,7 +103,6 @@ describe('Account (e2e)', () => {
           expect(res.body.data.accounts.data[3].locked_balance).toBe(
             '56675997171744160000',
           );
-          expect(res.body.data.accounts.data[3].nonce).toBe('8');
           expect(res.body.data.accounts.data[3].timestamp).toBe(1653962322);
         });
     });
@@ -138,7 +136,6 @@ describe('Account (e2e)', () => {
             '226.064588',
           );
           expect(res.body.data.accounts.data[0].locked_balance).toBe('0');
-          expect(res.body.data.accounts.data[0].nonce).toBe('132');
           expect(res.body.data.accounts.data[0].timestamp).toBe(1653962324);
         });
     });
@@ -169,7 +166,6 @@ describe('Account (e2e)', () => {
           expect(res.body.data.accounts.data[0].block_height).toBe(123);
           expect(res.body.data.accounts.data[0].free_balance).toBe('1');
           expect(res.body.data.accounts.data[0].locked_balance).toBe('1');
-          expect(res.body.data.accounts.data[0].nonce).toBe('test_text');
           expect(res.body.data.accounts.data[0].timestamp).toBe(1653962321);
         });
     });
@@ -216,7 +212,6 @@ describe('Account (e2e)', () => {
             '226.064588',
           );
           expect(res.body.data.accounts.data[0].locked_balance).toBe('0');
-          expect(res.body.data.accounts.data[0].nonce).toBe('132');
           expect(res.body.data.accounts.data[0].timestamp).toBe(1653962324);
 
           expect(res.body.data.accounts.data[1].account_id).toBe(
@@ -229,7 +224,6 @@ describe('Account (e2e)', () => {
           expect(res.body.data.accounts.data[1].block_height).toBe(123);
           expect(res.body.data.accounts.data[1].free_balance).toBe('1');
           expect(res.body.data.accounts.data[1].locked_balance).toBe('1');
-          expect(res.body.data.accounts.data[1].nonce).toBe('test_text');
           expect(res.body.data.accounts.data[1].timestamp).toBe(1653962321);
         });
     });

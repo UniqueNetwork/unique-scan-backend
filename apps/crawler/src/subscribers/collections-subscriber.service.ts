@@ -278,8 +278,6 @@ export class CollectionsSubscriberService implements ISubscriberService {
           collectionLimits,
         );
 
-        // console.log('dataToWrite', dataToWrite);
-
         // Do not log the full entity because this object is quite big
         log.entity = dataToWrite.name;
 

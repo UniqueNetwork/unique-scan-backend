@@ -120,7 +120,7 @@ describe('Tokens (e2e)', () => {
             '0x2303410dcc766995e70b47beedda828b4486320b1',
           );
           expect(res.body.data.tokens.data[0].token_id).toBe(1);
-          expect(res.body.data.tokens.data[0].token_name).toBe('testSTa1 #1');
+          expect(res.body.data.tokens.data[0].token_name).toBe('token_name1');
           expect(res.body.data.tokens.data[0].token_prefix).toBe('testSTa1');
 
           expect(res.body.data.tokens.data[3].collection.collection_id).toBe(4);
@@ -154,7 +154,7 @@ describe('Tokens (e2e)', () => {
             '0x2303410dcc766995e70b47beedda828b4486320b4',
           );
           expect(res.body.data.tokens.data[3].token_id).toBe(4);
-          expect(res.body.data.tokens.data[3].token_name).toBe('testSTa4 #4');
+          expect(res.body.data.tokens.data[3].token_name).toBe('token_name4');
           expect(res.body.data.tokens.data[3].token_prefix).toBe('testSTa4');
         });
     });
