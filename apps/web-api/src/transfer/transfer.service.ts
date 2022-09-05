@@ -25,8 +25,6 @@ export class TransferService extends BaseService<Event, TransferDTO> {
     this.applyOrderCondition(qb, queryArgs);
     qb.andWhere({ method: 'Transfer' });
 
-    const data = await qb.getRawMany();
-    const count = await qb.getCount();
-    return { data, count };
+    return this.getDataAndCount(qb, queryArgs);
   }
 }
