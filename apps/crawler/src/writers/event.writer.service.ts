@@ -23,17 +23,25 @@ export class EventWriterService {
     return typeof args === 'string' ? args : args?.amount || args?.value;
   }
 
-  private extractEventItems(blockItems: IBlockItem[]): IEvent[] {
+  static extractEventItems(blockItems: IBlockItem[]): IEvent[] {
     return blockItems
-      .filter(({ kind }) => kind === 'event')
-      .map((item) => item.event as IEvent);
+      .map((item) => {
+        if (item.kind == 'event') {
+          return item.event as IEvent;
+        }
+        return null;
+      })
+      .filter((v) => !!v);
   }
 
-  private prepareDataForDb(
-    events: IEvent[],
-    blockCommonData: IBlockCommonData,
-  ) {
-    return events
+  private prepareDataForDb({
+    eventItems,
+    blockCommonData,
+  }: {
+    eventItems: IEvent[];
+    blockCommonData: IBlockCommonData;
+  }) {
+    return eventItems
       .map((event) => {
         const { name, indexInBlock, phase, extrinsic, args } = event;
         const { blockNumber, blockTimestamp } = blockCommonData;
@@ -71,9 +79,12 @@ export class EventWriterService {
     blockItems: IBlockItem[];
     blockCommonData: IBlockCommonData;
   }) {
-    const eventItems = this.extractEventItems(blockItems);
+    const eventItems = EventWriterService.extractEventItems(blockItems);
 
-    const eventsData = this.prepareDataForDb(eventItems, blockCommonData);
+    const eventsData = this.prepareDataForDb({
+      blockCommonData,
+      eventItems,
+    });
 
     return this.eventsRepository.upsert(eventsData, [
       'block_number',

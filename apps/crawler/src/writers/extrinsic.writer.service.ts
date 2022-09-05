@@ -16,8 +16,8 @@ import { Repository } from 'typeorm';
 import {
   IBlockCommonData,
   IBlockItem,
-  IEvent,
 } from '../subscribers/blocks-subscriber.service';
+import { EventWriterService } from './event.writer.service';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
@@ -27,7 +27,7 @@ const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.VESTED_TRANSFER,
 ];
 
-interface IExtrinsicExtended extends SubstrateExtrinsic {
+export interface IExtrinsicExtended extends SubstrateExtrinsic {
   name: string;
 }
 
@@ -49,19 +49,21 @@ export class ExtrinsicWriterService {
     private extrinsicsRepository: Repository<Extrinsic>,
   ) {}
 
-  private extractExtrinsicItems(items: IBlockItem[]): IExtrinsicExtended[] {
+  static extractExtrinsicItems(items: IBlockItem[]): IExtrinsicExtended[] {
     return items
-      .filter(({ kind }) => kind === 'call')
       .map((item) => {
-        const { name, extrinsic } = item;
-        return { name, ...extrinsic } as IExtrinsicExtended;
-      });
+        const { kind } = item;
+        if (kind === 'call') {
+          const { name, extrinsic } = item;
+          return { name, ...extrinsic } as IExtrinsicExtended;
+        }
+        return null;
+      })
+      .filter((v) => !!v);
   }
 
   private getAmountValues(blockItems: IBlockItem[]) {
-    const eventItems = blockItems
-      .filter(({ kind }) => kind === 'event')
-      .map((item) => item.event as IEvent);
+    const eventItems = EventWriterService.extractEventItems(blockItems);
 
     // Save 'amount' and 'fee' for extrinsic's events
     return eventItems.reduce((acc, curr) => {
@@ -166,14 +168,15 @@ export class ExtrinsicWriterService {
     blockItems: IBlockItem[];
     blockCommonData: IBlockCommonData;
   }) {
-    const extrinsicItems = this.extractExtrinsicItems(blockItems);
+    const extrinsicItems =
+      ExtrinsicWriterService.extractExtrinsicItems(blockItems);
 
     const amountValues = this.getAmountValues(blockItems);
 
     const extrinsicsData = this.prepareDataForDb({
+      blockCommonData,
       extrinsicItems,
       amountValues,
-      blockCommonData,
     });
 
     return this.extrinsicsRepository.upsert(extrinsicsData, [

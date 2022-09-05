@@ -8,19 +8,9 @@ import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ISubscriberService } from './subscribers.service';
 import { Prefix } from '@unique-nft/api/.';
 import { ProcessorService } from './processor/processor.service';
-import {
-  IBlockData,
-  BlockWriterService,
-} from '../writers/block.writer.service';
+import { BlockWriterService } from '../writers/block.writer.service';
 import { ExtrinsicWriterService } from '../writers/extrinsic.writer.service';
 import { EventWriterService } from '../writers/event.writer.service';
-
-export interface IBlockItem {
-  kind: 'event' | 'call';
-  name: string;
-  event?: object;
-  extrinsic?: object;
-}
 
 export interface IEvent {
   name: string;
@@ -29,10 +19,28 @@ export interface IEvent {
   phase: string;
   args: { value?: string; amount?: string };
 }
+export type IBlockItem =
+  | {
+      kind: 'event';
+      name: string;
+      event: IEvent;
+    }
+  | {
+      kind: 'call';
+      name: string;
+      extrinsic: SubstrateExtrinsic;
+    };
 export interface IBlockCommonData {
   blockNumber: number;
   blockTimestamp: number;
   ss58Prefix: Prefix;
+}
+
+export interface IItemCounts {
+  totalEvents: number;
+  totalExtrinsics: number;
+  numTransfers: number;
+  newAccounts: number;
 }
 
 @Injectable()
@@ -65,8 +73,9 @@ export class BlocksSubscriberService implements ISubscriberService {
   }
 
   private async upsertHandler(ctx: BlockHandlerContext<Store>): Promise<void> {
-    const { block, items: blockItems } = ctx;
+    const { block, items } = ctx;
     const { height: blockNumber, timestamp: blockTimestamp } = block;
+    const blockItems = items as unknown as IBlockItem[];
 
     const log = {
       blockNumber,
@@ -84,28 +93,25 @@ export class BlocksSubscriberService implements ISubscriberService {
         ss58Prefix,
       } as IBlockCommonData;
 
-      await Promise.all([
-        this.eventWriterService.upsert({
-          blockItems,
-          blockCommonData,
-        }),
-        this.extrinsicWriterService.upsert({
-          blockItems,
-          blockCommonData,
-        }),
+      const [itemCounts] = await Promise.all([
         this.blockWriterService.upsert({
           block,
           blockItems,
         }),
+        this.extrinsicWriterService.upsert({
+          blockCommonData,
+          blockItems,
+        }),
+        this.eventWriterService.upsert({
+          blockCommonData,
+          blockItems,
+        }),
       ]);
 
-      // const { totalEvents, totalExtrinsics } = result;
-
-      // this.logger.verbose({
-      //   ...log,
-      //   totalEvents,
-      //   totalExtrinsics,
-      // });
+      this.logger.verbose({
+        ...log,
+        ...itemCounts,
+      });
     } catch (error) {
       this.logger.error({ ...log, error: error.message || error });
       this.sentry.instance().captureException({ ...log, error });

@@ -1,57 +1,14 @@
-import {
-  EventMethod,
-  EventName,
-  EventSection,
-  ExtrinsicMethod,
-  ExtrinsicSection,
-} from '@common/constants';
-import {
-  getAmount,
-  normalizeSubstrateAddress,
-  normalizeTimestamp,
-} from '@common/utils';
+import { EventName } from '@common/constants';
+import { normalizeTimestamp } from '@common/utils';
 import { Block } from '@entities/Block';
-import { Event } from '@entities/Event';
-import { Extrinsic } from '@entities/Extrinsic';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Prefix } from '@polkadot/util-crypto/types';
-import {
-  SubstrateBlock,
-  SubstrateExtrinsic,
-} from '@subsquid/substrate-processor';
+import { SubstrateBlock } from '@subsquid/substrate-processor';
 import { Repository } from 'typeorm';
-import { IBlockCommonData } from '../subscribers/blocks-subscriber.service';
-
-interface IExtrinsicExtended extends SubstrateExtrinsic {
-  name: string;
-}
-
-interface IBlockItem {
-  kind: 'event' | 'call';
-  name: string;
-  event?: object;
-  extrinsic?: object;
-}
-
-interface IEvent {
-  name: string;
-  extrinsic: SubstrateExtrinsic;
-  indexInBlock: number;
-  phase: string;
-  args: { value?: string; amount?: string };
-}
-
-interface IExtrinsicRecipient {
-  // Unique.transfer
-  recipient?: { value: string };
-
-  // Balances.transfer
-  // Balances.transfer_all
-  // Balances.transfer_keep_alive
-  // Vesting.vested_transfer
-  dest?: { value: string };
-}
+import {
+  IBlockItem,
+  IItemCounts,
+} from '../subscribers/blocks-subscriber.service';
 
 @Injectable()
 export class BlockWriterService {
@@ -60,35 +17,39 @@ export class BlockWriterService {
     private blocksRepository: Repository<Block>,
   ) {}
 
-  private prepare({
+  private prepareDataForDb({
     block,
-    blockItems,
+    itemCounts,
   }: {
     block: SubstrateBlock;
-    blockItems: IBlockItem[];
-    blockCommonData: IBlockCommonData;
+    itemCounts: IItemCounts;
   }) {
-    const { height: blockNumber, timestamp: blockTimestamp } = block;
+    const {
+      specId,
+      parentHash,
+      hash: blockHash,
+      height: blockNumber,
+      timestamp: blockTimestamp,
+    } = block;
 
-    // Create block data to write
-    const { specId, hash, parentHash } = block;
     const [specName, specVersion] = specId.split('@') as [string, number];
+
+    const { totalEvents, totalExtrinsics, numTransfers, newAccounts } =
+      itemCounts;
 
     return {
       block_number: blockNumber,
-      block_hash: hash,
+      block_hash: blockHash,
       parent_hash: parentHash,
       spec_name: specName,
       spec_version: specVersion,
       timestamp: String(normalizeTimestamp(blockTimestamp)),
 
-      // events info
-      total_events: eventsCount,
+      // Item counts
+      total_events: totalEvents,
       num_transfers: numTransfers,
       new_accounts: newAccounts,
-
-      // extrinsics info
-      total_extrinsics: extrinsicsCount,
+      total_extrinsics: totalExtrinsics,
 
       // todo or not todo
       extrinsics_root: '',
@@ -99,60 +60,30 @@ export class BlockWriterService {
     };
   }
 
-  private processExtrinsicItems(items: IBlockItem[]) {
-    const extrinsics = items
-      .filter(({ kind }) => kind === 'call')
-      .map((item) => {
-        const { name, extrinsic } = item;
-        return { name, ...extrinsic } as IExtrinsicExtended;
-      });
-
-    return { count: extrinsics.length, extrinsics };
-  }
-
-  private processEventItems(items: IBlockItem[]) {
-    const events = items
-      .filter(({ kind }) => kind === 'event')
-      .map((item) => item.event as IEvent);
-
-    // Save 'amount' and 'fee' for extrinsic's events
-    const extrinsicsValues = events.reduce((acc, curr) => {
-      const { name, extrinsic, args } = curr;
-
-      const extrinsicId = extrinsic?.id;
-      if (!extrinsicId) {
-        return acc;
-      }
-
-      const rawAmount =
-        typeof args === 'string' ? args : args?.amount || args?.value;
-
-      if (name === `${EventSection.BALANCES}.${EventMethod.TRANSFER}`) {
-        // Save extrinsic amount
-        acc[extrinsicId] = acc[extrinsicId] || {};
-        acc[extrinsicId].amount = getAmount(rawAmount);
-      } else if (name === `${EventSection.TREASURY}.${EventMethod.DEPOSIT}`) {
-        // Save extrinsic fee
-        acc[extrinsicId] = acc[extrinsicId] || {};
-        acc[extrinsicId].fee = getAmount(rawAmount);
-      } else {
-        return acc;
-      }
-
-      return { ...acc };
-    }, {});
-
-    return {
-      count: events.length,
-      events,
-      extrinsicsValues,
-      numTransfers: events.filter(
-        ({ name }) => name === EventName.BALANCES_TRANSFER,
-      ).length,
-      newAccounts: events.filter(
-        ({ name }) => name === EventName.BALANCES_ENDOWED,
-      ).length,
+  private collectItemCounts(blockItems: IBlockItem[]) {
+    const itemCounts = {
+      totalEvents: 0,
+      totalExtrinsics: 0,
+      numTransfers: 0,
+      newAccounts: 0,
     };
+    blockItems.forEach((item) => {
+      const { kind } = item;
+      if (kind === 'event') {
+        itemCounts.totalEvents += 1;
+        const name = item.event['name'];
+
+        if (name === EventName.BALANCES_TRANSFER) {
+          itemCounts.numTransfers += 1;
+        } else if (name === EventName.BALANCES_ENDOWED) {
+          itemCounts.newAccounts += 1;
+        }
+      } else if (kind === 'call') {
+        itemCounts.totalExtrinsics += 1;
+      }
+    });
+
+    return itemCounts;
   }
 
   async upsert({
@@ -160,13 +91,14 @@ export class BlockWriterService {
     blockItems,
   }: {
     block: SubstrateBlock;
-    items: IBlockItem[];
-  }) {
-    const { blockData, extrinsicsData, eventsData } = this.processBlockData({
-      block,
-      blockItems,
-    });
+    blockItems: IBlockItem[];
+  }): Promise<IItemCounts> {
+    const itemCounts = this.collectItemCounts(blockItems);
 
-    return this.blocksRepository.upsert(blockData, ['block_number']);
+    const blockData = this.prepareDataForDb({ block, itemCounts });
+
+    await this.blocksRepository.upsert(blockData, ['block_number']);
+
+    return itemCounts;
   }
 }
