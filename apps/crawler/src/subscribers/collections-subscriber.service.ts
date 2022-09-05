@@ -102,19 +102,6 @@ export class CollectionsSubscriberService implements ISubscriberService {
         });
 
         log.action = SubscriberAction.UPSERT;
-        // Do not log the full entity because this object is quite big
-        log.entity = dataToWrite.name;
-
-        await this.collectionsRepository.upsert(
-          {
-            ...dataToWrite,
-            date_of_creation:
-              eventName === EventName.COLLECTION_CREATED
-                ? normalizeTimestamp(blockTimestamp)
-                : undefined,
-          },
-          ['collection_id'],
-        );
       } else {
         // No entity returned from sdk. Most likely it was destroyed in a future block.
         await this.collectionWriterService.delete(collectionId);
