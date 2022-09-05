@@ -1,14 +1,15 @@
 import BigNumber from 'bignumber.js';
-import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
-import { ETHEREUM_ADDRESS_MAX_LENGTH } from './constants';
+import {
+  encodeAddress,
+  decodeAddress,
+  isEthereumAddress,
+} from '@polkadot/util-crypto';
 import { Prefix } from '@polkadot/util-crypto/types';
 
 export function normalizeSubstrateAddress(address, ss58Format?: Prefix) {
-  if (address?.length <= ETHEREUM_ADDRESS_MAX_LENGTH) {
-    return address;
-  }
-
-  return encodeAddress(decodeAddress(address), ss58Format);
+  return isEthereumAddress(address)
+    ? address
+    : encodeAddress(decodeAddress(address), ss58Format);
 }
 
 export function normalizeTimestamp(timestamp: number) {

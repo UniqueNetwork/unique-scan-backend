@@ -8,8 +8,6 @@ import {
   SubstrateExtrinsic,
 } from '@subsquid/substrate-processor';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
-import { ProcessorService } from './processor.service';
-import ISubscriberService from './subscriber.interface';
 import { Block } from '@entities/Block';
 import {
   getAmount,
@@ -24,7 +22,9 @@ import {
 } from '@common/constants';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Event } from '@entities/Event';
+import { ISubscriberService } from './subscribers.service';
 import { Prefix } from '@unique-nft/api/.';
+import { ProcessorService } from './processor/processor.service';
 
 const EVENT_TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
 const EVENT_ENDOWED = `${EventSection.BALANCES}.${EventMethod.ENDOWED}`;
@@ -78,18 +78,23 @@ export class BlocksSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(BlocksSubscriberService.name);
 
   constructor(
-    @InjectRepository(Block) private blocksRepository: Repository<Block>,
+    @InjectRepository(Block)
+    private blocksRepository: Repository<Block>,
+
     @InjectRepository(Extrinsic)
     private extrinsicsRepository: Repository<Extrinsic>,
-    @InjectRepository(Event) private eventsRepository: Repository<Event>,
-    @InjectSentry() private readonly sentry: SentryService,
-    private processorService: ProcessorService,
+
+    @InjectRepository(Event)
+    private eventsRepository: Repository<Event>,
+
+    @InjectSentry()
+    private readonly sentry: SentryService,
   ) {
     this.sentry.setContext(BlocksSubscriberService.name);
   }
 
-  subscribe() {
-    this.processorService.processor.addPreHook(
+  subscribe(processorService: ProcessorService) {
+    processorService.processor.addPreHook(
       {
         data: {
           includeAllBlocks: true,
