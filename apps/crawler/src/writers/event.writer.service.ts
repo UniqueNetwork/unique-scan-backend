@@ -41,35 +41,30 @@ export class EventWriterService {
     eventItems: IEvent[];
     blockCommonData: IBlockCommonData;
   }) {
-    return eventItems
-      .map((event) => {
-        const { name, indexInBlock, phase, extrinsic, args } = event;
-        const { blockNumber, blockTimestamp } = blockCommonData;
+    return eventItems.map((event) => {
+      const { name, indexInBlock, phase, extrinsic, args } = event;
+      const { blockNumber, blockTimestamp } = blockCommonData;
 
-        const [section, method] = name.split('.') as [
-          EventSection,
-          EventMethod,
-        ];
+      const [section, method] = name.split('.') as [EventSection, EventMethod];
 
-        const rawAmount = EventWriterService.extractRawAmountValue(args);
+      const rawAmount = EventWriterService.extractRawAmountValue(args);
 
-        return {
-          timestamp: String(normalizeTimestamp(blockTimestamp)),
-          block_number: String(blockNumber),
-          event_index: indexInBlock,
-          block_index: `${blockNumber}-${
-            extrinsic ? extrinsic.indexInBlock : ''
-          }`,
-          section,
-          method,
-          // todo: Make more clean connect to extrinsic
-          phase:
-            phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
-          data: JSON.stringify(args),
-          amount: rawAmount ? getAmount(rawAmount) : null,
-        };
-      })
-      .filter((item) => !!item);
+      return {
+        timestamp: String(normalizeTimestamp(blockTimestamp)),
+        block_number: String(blockNumber),
+        event_index: indexInBlock,
+        block_index: `${blockNumber}-${
+          extrinsic ? extrinsic.indexInBlock : ''
+        }`,
+        section,
+        method,
+        // todo: Make more clean connect to extrinsic
+        phase:
+          phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
+        data: JSON.stringify(args),
+        amount: rawAmount ? getAmount(rawAmount) : null,
+      };
+    });
   }
 
   async upsert({

@@ -31,7 +31,10 @@ export class BlockWriterService {
       if (kind === 'event') {
         // Event
         itemCounts.totalEvents += 1;
-        const name = item.event['name'];
+
+        const {
+          event: { name },
+        } = item;
 
         if (name === EventName.BALANCES_TRANSFER) {
           itemCounts.numTransfers += 1;
