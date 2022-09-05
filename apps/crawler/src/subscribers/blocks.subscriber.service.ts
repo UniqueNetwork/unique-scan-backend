@@ -19,6 +19,7 @@ export interface IEvent {
   phase: string;
   args: { value?: string; amount?: string };
 }
+
 export type IBlockItem =
   | {
       kind: 'event';
@@ -30,6 +31,7 @@ export type IBlockItem =
       name: string;
       extrinsic: SubstrateExtrinsic;
     };
+
 export interface IBlockCommonData {
   blockNumber: number;
   blockTimestamp: number;

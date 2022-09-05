@@ -17,12 +17,6 @@ export class EventWriterService {
     private eventsRepository: Repository<Event>,
   ) {}
 
-  private extractAmountRawValue(
-    args: string | { amount?: string; value?: string },
-  ) {
-    return typeof args === 'string' ? args : args?.amount || args?.value;
-  }
-
   static extractEventItems(blockItems: IBlockItem[]): IEvent[] {
     return blockItems
       .map((item) => {
@@ -32,6 +26,12 @@ export class EventWriterService {
         return null;
       })
       .filter((v) => !!v);
+  }
+
+  static extractRawAmountValue(
+    args: string | { amount?: string; value?: string },
+  ) {
+    return typeof args === 'string' ? args : args?.amount || args?.value;
   }
 
   private prepareDataForDb({
@@ -51,7 +51,7 @@ export class EventWriterService {
           EventMethod,
         ];
 
-        const rawAmount = this.extractAmountRawValue(args);
+        const rawAmount = EventWriterService.extractRawAmountValue(args);
 
         return {
           timestamp: String(normalizeTimestamp(blockTimestamp)),

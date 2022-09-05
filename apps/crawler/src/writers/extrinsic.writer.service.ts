@@ -42,6 +42,11 @@ interface IExtrinsicRecipient {
   dest?: { value: string };
 }
 
+const EVENT_NAMES_WITH_AMOUNTS = [
+  EventName.BALANCES_TRANSFER,
+  EventName.TREASURY_DEPOSIT,
+];
+
 @Injectable()
 export class ExtrinsicWriterService {
   constructor(
@@ -70,23 +75,19 @@ export class ExtrinsicWriterService {
       const { name, extrinsic, args } = curr;
 
       const extrinsicId = extrinsic?.id;
-      if (!extrinsicId) {
+      if (!extrinsicId || !EVENT_NAMES_WITH_AMOUNTS.includes(name)) {
         return acc;
       }
 
-      const rawAmount =
-        typeof args === 'string' ? args : args?.amount || args?.value;
+      const rawAmount = EventWriterService.extractRawAmountValue(args);
+      const amount = getAmount(rawAmount);
+
+      acc[extrinsicId] = acc[extrinsicId] || {};
 
       if (name === EventName.BALANCES_TRANSFER) {
-        // Save extrinsic amount
-        acc[extrinsicId] = acc[extrinsicId] || {};
-        acc[extrinsicId].amount = getAmount(rawAmount);
+        acc[extrinsicId].amount = amount;
       } else if (name === EventName.TREASURY_DEPOSIT) {
-        // Save extrinsic fee
-        acc[extrinsicId] = acc[extrinsicId] || {};
-        acc[extrinsicId].fee = getAmount(rawAmount);
-      } else {
-        return acc;
+        acc[extrinsicId].fee = amount;
       }
 
       return { ...acc };

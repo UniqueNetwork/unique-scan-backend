@@ -17,6 +17,36 @@ export class BlockWriterService {
     private blocksRepository: Repository<Block>,
   ) {}
 
+  private collectItemCounts(blockItems: IBlockItem[]) {
+    const itemCounts = {
+      totalEvents: 0,
+      totalExtrinsics: 0,
+      numTransfers: 0,
+      newAccounts: 0,
+    };
+
+    blockItems.forEach((item) => {
+      const { kind } = item;
+
+      if (kind === 'event') {
+        // Event
+        itemCounts.totalEvents += 1;
+        const name = item.event['name'];
+
+        if (name === EventName.BALANCES_TRANSFER) {
+          itemCounts.numTransfers += 1;
+        } else if (name === EventName.BALANCES_ENDOWED) {
+          itemCounts.newAccounts += 1;
+        }
+      } else {
+        // Extrinsic
+        itemCounts.totalExtrinsics += 1;
+      }
+    });
+
+    return itemCounts;
+  }
+
   private prepareDataForDb({
     block,
     itemCounts,
@@ -58,32 +88,6 @@ export class BlockWriterService {
       total_issuance: '',
       need_rescan: false,
     };
-  }
-
-  private collectItemCounts(blockItems: IBlockItem[]) {
-    const itemCounts = {
-      totalEvents: 0,
-      totalExtrinsics: 0,
-      numTransfers: 0,
-      newAccounts: 0,
-    };
-    blockItems.forEach((item) => {
-      const { kind } = item;
-      if (kind === 'event') {
-        itemCounts.totalEvents += 1;
-        const name = item.event['name'];
-
-        if (name === EventName.BALANCES_TRANSFER) {
-          itemCounts.numTransfers += 1;
-        } else if (name === EventName.BALANCES_ENDOWED) {
-          itemCounts.newAccounts += 1;
-        }
-      } else if (kind === 'call') {
-        itemCounts.totalExtrinsics += 1;
-      }
-    });
-
-    return itemCounts;
   }
 
   async upsert({
