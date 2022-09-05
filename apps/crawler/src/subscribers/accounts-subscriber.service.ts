@@ -1,33 +1,31 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { Account } from '@entities/Account';
-import { SdkService } from '../sdk/sdk.service';
-import { ProcessorService } from './processor.service';
-import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
-import ISubscriberService from './subscriber.interface';
-import { AllBalances } from '@unique-nft/substrate-client/types';
-import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { Severity } from '@sentry/node';
+import { AllBalances } from '@unique-nft/substrate-client/types';
+import { EventName } from '@common/constants';
+import { SdkService } from '../sdk/sdk.service';
+import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
+import { ProcessorService } from './processor/processor.service';
+import { ISubscriberService } from './subscribers.service';
+import { AccountWriterService } from '../writers/account.writer.service';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(AccountsSubscriberService.name);
 
   constructor(
-    @InjectRepository(Account)
-    private accountsRepository: Repository<Account>,
-    private processorService: ProcessorService,
     private sdkService: SdkService,
-    @InjectSentry() private readonly sentry: SentryService,
+
+    private accountWriterService: AccountWriterService,
+
+    @InjectSentry()
+    private readonly sentry: SentryService,
   ) {
     this.sentry.setContext(AccountsSubscriberService.name);
   }
 
-  subscribe() {
+  subscribe(processorService: ProcessorService) {
     [
       EventName.NEW_ACCOUNT,
       EventName.COLLECTION_CREATED,
@@ -40,7 +38,7 @@ export class AccountsSubscriberService implements ISubscriberService {
       EventName.BALANCES_WITHDRAW,
       EventName.BALANCES_TRANSFER,
     ].forEach((eventName) =>
-      this.processorService.processor.addEventHandler(
+      processorService.processor.addEventHandler(
         eventName,
         this.upsertHandler.bind(this),
       ),
@@ -99,7 +97,7 @@ export class AccountsSubscriberService implements ISubscriberService {
    *   "0xc89axxx"
    *
    */
-  private getAddressValues(
+  private extractAddressValues(
     eventName: string,
     args: string | object | (string | number)[],
   ): string[] {
@@ -149,46 +147,20 @@ export class AccountsSubscriberService implements ISubscriberService {
     return addresses;
   }
 
-  /**
-   * Prepares event and balances data to write into db.
-   */
-  private prepareDataForDb(params: {
-    timestamp: number;
-    blockNumber: number;
-    balances: AllBalances;
-  }): Account {
-    const {
-      blockNumber,
-      timestamp,
-      balances: { address, availableBalance, lockedBalance, freeBalance },
-    } = params;
-
-    return {
-      block_height: String(blockNumber),
-      timestamp: String(timestamp),
-      account_id: address,
-      account_id_normalized: normalizeSubstrateAddress(address),
-      available_balance: availableBalance.amount,
-      free_balance: freeBalance.amount,
-      locked_balance: lockedBalance.amount,
-    };
-  }
-
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: rawTimestamp },
+      block: { height: blockNumber, timestamp: blockTimestamp },
       event: { name: eventName, args },
     } = ctx;
 
     const log = {
       eventName,
-      blockNumber,
       rawAddressValues: [],
       processedAccounts: [],
     };
 
     try {
-      const rawAddressValues = this.getAddressValues(eventName, args);
+      const rawAddressValues = this.extractAddressValues(eventName, args);
       log.rawAddressValues = rawAddressValues;
 
       if (!rawAddressValues.length) {
@@ -197,8 +169,6 @@ export class AccountsSubscriberService implements ISubscriberService {
 
       // Get balances and converted address from sdk
       const balancesData = await this.getBalances(rawAddressValues);
-
-      const timestamp = normalizeTimestamp(rawTimestamp);
 
       await Promise.all(
         balancesData.map((balances, addressIndex) => {
@@ -219,14 +189,11 @@ export class AccountsSubscriberService implements ISubscriberService {
 
           log.processedAccounts.push(balances.address);
 
-          const dataToWrite = this.prepareDataForDb({
+          return this.accountWriterService.upsert({
             blockNumber,
-            timestamp,
+            blockTimestamp,
             balances,
           });
-
-          // Write data into db
-          return this.accountsRepository.upsert(dataToWrite, ['account_id']);
         }),
       );
 

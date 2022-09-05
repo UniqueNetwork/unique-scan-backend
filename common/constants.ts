@@ -82,8 +82,6 @@ export enum ExtrinsicMethod {
   VESTED_TRANSFER = 'vested_transfer',
 }
 
-export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
-
 export const STATE_SCHEMA_NAME_BY_MODE = {
   SCAN: 'scan_status',
   RESCAN: 'rescan_status',
@@ -94,4 +92,10 @@ export enum SubscriberName {
   BLOCKS = 'blocks',
   COLLECTIONS = 'collections',
   TOKENS = 'tokens',
+}
+
+export enum SubscriberAction {
+  UPSERT = 'UPSERT',
+  DELETE = 'DELETE',
+  DELETE_NOT_FOUND = 'DELETE: NOT FOUND',
 }
