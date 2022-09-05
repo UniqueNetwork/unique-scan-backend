@@ -48,20 +48,44 @@ export class BaseService<T, S> {
     args: IGQLQueryArgs<S>,
   ): void {
     if (args.distinct_on) {
-      qb.distinctOn([args.distinct_on]);
+      qb.distinctOn([this.getConditionField(qb, args.distinct_on)]);
+
+      // if order_by: {[args.distinct_on]: undefined | null} condition
+      // order_by required args.distinct_on in condition
+      // and he should be first order
+      if (
+        args.order_by &&
+        !args.order_by[args.distinct_on] &&
+        Object.keys(args.order_by).length
+      ) {
+        const { order } = GQLToORMOrderByOperatorsMap.desc;
+        qb.orderBy();
+        qb.addOrderBy(this.getConditionField(qb, args.distinct_on), order);
+        this.applyOrderCondition(qb, args);
+      }
     }
   }
 
-  protected async getCountByFilters(
+  protected async getCount(
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,
   ): Promise<number> {
     if (args.distinct_on) {
-      qb.distinctOn([]);
-      const { count } = (await qb
-        .select(`COUNT(DISTINCT(${qb.alias}.${args.distinct_on}))`, 'count')
-        .getRawOne()) as { count: number };
+      const query = qb.clone();
 
+      query
+        .distinctOn([])
+        .orderBy()
+        .offset(undefined)
+        .limit(undefined)
+        .skip(undefined)
+        .take(undefined)
+        .select(
+          `COUNT(DISTINCT(${this.getConditionField(qb, args.distinct_on)}))`,
+          'count',
+        );
+
+      const { count } = (await query.getRawOne()) as { count: number };
       return count;
     }
 
@@ -106,6 +130,19 @@ export class BaseService<T, S> {
     }
   }
 
+  protected async getDataAndCount(
+    qb: SelectQueryBuilder<T>,
+    args: IGQLQueryArgs<S>,
+  ) {
+    const data = await qb.getRawMany();
+    let count = 0;
+    if (data?.length) {
+      count = await this.getCount(qb, args);
+    }
+
+    return { data, count };
+  }
+
   private applyConditionTree(
     qb: SelectQueryBuilder<T>,
     where: TWhere<S>,
@@ -120,12 +157,12 @@ export class BaseService<T, S> {
       const operator = this.getOrmWhereOperation(op);
 
       if (operator) {
-        qb[operator](
-          this.addSubQuery(
-            where,
-            operator === OperatorMethods.AND ? Operator.AND : Operator.OR,
-            filterCb,
-          ),
+        this.addSubQuery(
+          qb,
+          where,
+          operator === OperatorMethods.AND ? Operator.AND : Operator.OR,
+          operator,
+          filterCb,
         );
       } else {
         const method =
@@ -152,6 +189,10 @@ export class BaseService<T, S> {
       Object.entries(operators).forEach((parameters) => {
         const [operation, value] = parameters;
 
+        if (Array.isArray(value) && !value.length) {
+          return;
+        }
+
         const { query, params } = this.createWhereConditionExpression(
           qb,
           field,
@@ -165,22 +206,30 @@ export class BaseService<T, S> {
   }
 
   private addSubQuery(
+    qb: SelectQueryBuilder<T>,
     where: TWhere<S>,
     operator: Operator,
+    method: OperatorMethods,
     filterCb?: (
       qb: SelectQueryBuilder<T>,
       where: TWhere<S>,
       method: OperatorMethods,
     ) => void,
   ) {
-    return new Brackets((qb) =>
-      where[operator].map((queryArray) => {
-        this.applyConditionTree(
-          qb as SelectQueryBuilder<T>,
-          queryArray,
-          operator,
-          filterCb,
-        );
+    qb[method](
+      new Brackets((qb) => {
+        where[operator].forEach((queryArray) => {
+          qb[method](
+            new Brackets((qb) =>
+              this.applyConditionTree(
+                qb as SelectQueryBuilder<T>,
+                queryArray,
+                operator,
+                filterCb,
+              ),
+            ),
+          );
+        });
       }),
     );
   }
@@ -228,5 +277,9 @@ export class BaseService<T, S> {
     return `"${this.relationsFields[field] ?? qb.alias}"."${
       this.aliasFields[field] ?? field
     }"`;
+  }
+
+  protected formatDate(date: Date): number {
+    return Math.floor(date.getTime() / 1000);
   }
 }

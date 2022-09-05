@@ -3,33 +3,32 @@ items:
   tokens{1..45}:
     id: 21995($current)
     token_id: ($current)
-    owner: "0x2303410dcc766995e70b47beedda828b4486320b($current)"
+    owner: '0x2303410dcc766995e70b47beedda828b4486320b($current)'
     collection_id: ($current)
     date_of_creation: 1650433764
-    owner_normalized: "0x2303410dcc766995e70b47beedda828b4486320b($current)"
-    image_path: 'image_path_($current)'
+    owner_normalized: '0x2303410dcc766995e70b47beedda828b4486320b($current)'
+    image: { ipfsCid: '($current)' }
+    # attributes: "{}"
     token_prefix: 'token_prefix_($current)'
     token_name: 'token_name($current)'
     collection: '@collections($current)'
   tokens46:
     id: 2199546
     token_id: 46
-    owner: "0x2303410dcc766995e70b47beedda828b4486320b46"
+    owner: '0x2303410dcc766995e70b47beedda828b4486320b46'
     collection_id: 46
     date_of_creation: 1650433764
-    owner_normalized: "0x2303410dcc766995e70b47beedda828b4486320b46"
-    image_path: 'image_path_46'
+    owner_normalized: '0x2303410dcc766995e70b47beedda828b4486320b46'
     token_prefix: 'token_prefix_46'
     token_name: 'token_name46'
     collection: '@collections46'
   tokens47:
     id: 2199547
     token_id: 47
-    owner: "0x2303410dcc766995e70b47beedda828b4486320b47"
+    owner: '0x2303410dcc766995e70b47beedda828b4486320b47'
     collection_id: 47
     date_of_creation: 1650433764
-    owner_normalized: "0x2303410dcc766995e70b47beedda828b4486320b47"
-    image_path: 'image_path_47'
+    owner_normalized: '0x2303410dcc766995e70b47beedda828b4486320b47'
     token_prefix: 'token_prefix_47'
     token_name: 'token_name47'
     collection: '@collections47'
@@ -37,11 +36,10 @@ items:
   tokens48:
     id: 2199548
     token_id: 48
-    owner: "0x2303410dcc766995e70b47beedda828b4486320b48"
+    owner: '0x2303410dcc766995e70b47beedda828b4486320b48'
     collection_id: 48
     date_of_creation: 1650433764
-    owner_normalized: "0x2303410dcc766995e70b47beedda828b4486320b48"
-    image_path: 'image_path_48'
+    owner_normalized: '0x2303410dcc766995e70b47beedda828b4486320b48'
     token_prefix: 'token_prefix_48'
     token_name: 'token_name48'
     collection: '@collections48'
@@ -49,11 +47,10 @@ items:
   tokens49:
     id: 2199549
     token_id: 49
-    owner: "0x2303410dcc766995e70b47beedda828b4486320b49"
+    owner: '0x2303410dcc766995e70b47beedda828b4486320b49'
     collection_id: 49
     date_of_creation: 1650433764
-    owner_normalized: "0x2303410dcc766995e70b47beedda828b4486320b49"
-    image_path: 'image_path_49'
+    owner_normalized: '0x2303410dcc766995e70b47beedda828b4486320b49'
     token_prefix: 'token_prefix_49'
     token_name: 'token_name49'
     collection: '@collections49'
@@ -61,11 +58,10 @@ items:
   tokens50:
     id: 2199550
     token_id: 50
-    owner: "0x2303410dcc766995e70b47beedda828b4486320b50"
+    owner: '0x2303410dcc766995e70b47beedda828b4486320b50'
     collection_id: 50
     date_of_creation: 1650433764
-    owner_normalized: "0x2303410dcc766995e70b47beedda828b4486320b50"
-    image_path: 'image_path_50'
+    owner_normalized: '0x2303410dcc766995e70b47beedda828b4486320b50'
     token_prefix: 'token_prefix_50'
     token_name: 'token_name50'
     collection: '@collections50'

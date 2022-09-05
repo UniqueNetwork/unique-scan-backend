@@ -1,18 +1,27 @@
-import typeormConfig from '@common/typeorm.config';
-import { Logger, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ProcessorConfigService } from './processor.config.service';
+import { SentryModule } from '@ntegral/nestjs-sentry';
+import typeormConfig from '@common/typeorm.config';
 import { CrawlerService } from './crawler.service';
-import { ProcessorsModule } from './processors/processors.module';
+import { SubscribersModule } from './subscribers/subscribers.module';
+import { Config, GlobalConfigModule } from './config/config.module';
+import { CacheProviderModule } from './cache/cache-provider.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    GlobalConfigModule,
+    CacheProviderModule,
     TypeOrmModule.forRoot(typeormConfig),
-    ProcessorsModule,
+    SentryModule.forRootAsync({
+      useFactory: async (configService: ConfigService<Config>) => {
+        return configService.get('sentry');
+      },
+      inject: [ConfigService],
+    }),
+    SubscribersModule,
   ],
   controllers: [],
-  providers: [Logger, CrawlerService, ProcessorConfigService],
+  providers: [CrawlerService],
 })
 export class CrawlerModule {}

@@ -59,15 +59,15 @@ describe('Tokens (e2e)', () => {
               collection_description
               collection_id
               collection_name
-              data
+              image
               date_of_creation
-              image_path
               owner
               owner_normalized
               token_id
               token_name
               token_prefix
               parent_id
+              is_sold
             }
           }
         }
@@ -76,8 +76,8 @@ describe('Tokens (e2e)', () => {
 
     it('should return list of tokens with collection', async () => {
       const args = {
-        orderBy: {
-          token_id: 'desc',
+        order_by: {
+          token_id: 'asc',
         },
         limit: 5,
       };
@@ -110,7 +110,9 @@ describe('Tokens (e2e)', () => {
           expect(res.body.data.tokens.data[0].date_of_creation).toBe(
             1650433764,
           );
-          expect(res.body.data.tokens.data[0].image_path).toBe('1');
+
+          expect(res.body.data.tokens.data[0].image.ipfsCid).toBe('1');
+
           expect(res.body.data.tokens.data[0].owner).toBe(
             '0x2303410dcc766995e70b47beedda828b4486320b1',
           );
@@ -142,7 +144,9 @@ describe('Tokens (e2e)', () => {
           expect(res.body.data.tokens.data[3].date_of_creation).toBe(
             1650433764,
           );
-          expect(res.body.data.tokens.data[3].image_path).toBe('4');
+
+          expect(res.body.data.tokens.data[3].image.ipfsCid).toBe('1');
+
           expect(res.body.data.tokens.data[3].owner).toBe(
             '0x2303410dcc766995e70b47beedda828b4486320b4',
           );
@@ -159,8 +163,8 @@ describe('Tokens (e2e)', () => {
       const args = {
         limit: 7,
         offset: 10,
-        orderBy: {
-          token_id: 'desc',
+        order_by: {
+          token_id: 'asc',
         },
       };
 
@@ -179,8 +183,8 @@ describe('Tokens (e2e)', () => {
     it('page 1 limit 10 + _or', async () => {
       const args = {
         limit: 10,
-        orderBy: {
-          token_id: 'desc',
+        order_by: {
+          token_id: 'asc',
         },
         where: {
           _or: [
@@ -224,8 +228,8 @@ describe('Tokens (e2e)', () => {
     it('fiter by parent_id', async () => {
       const args = {
         limit: 10,
-        orderBy: {
-          token_id: 'desc',
+        order_by: {
+          token_id: 'asc',
         },
         where: {
           parent_id: { _eq: '46_46' },
@@ -251,8 +255,8 @@ describe('Tokens (e2e)', () => {
     it('fiter by parent_id', async () => {
       const args = {
         limit: 10,
-        orderBy: {
-          token_id: 'desc',
+        order_by: {
+          token_id: 'asc',
         },
         where: {
           parent_id: { _ilike: '4%' },

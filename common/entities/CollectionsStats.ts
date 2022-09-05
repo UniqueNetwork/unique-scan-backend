@@ -1,5 +1,4 @@
-import { Column, Entity, Index, OneToOne } from 'typeorm';
-import { Collections } from './Collections';
+import { Column, Entity, Index } from 'typeorm';
 
 @Index('collections_stats_pkey', ['collection_id'], { unique: true })
 @Entity('collections_stats', { schema: 'public' })
@@ -16,8 +15,6 @@ export class CollectionsStats {
   @Column('bigint', { name: 'actions_count' })
   actions_count: number;
 
-  @OneToOne(() => Collections, (collections) => collections.statistics, {
-    nullable: true,
-  })
-  collection: Collections;
+  @Column('bigint', { name: 'transfers_count', default: 0 })
+  transfers_count: number;
 }

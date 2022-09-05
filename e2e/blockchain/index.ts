@@ -1,5 +1,5 @@
-import { Sdk } from '@unique-nft/sdk';
 import { getAccount } from '../utils/accounts';
+import { Sdk } from '@unique-nft/substrate-client';
 
 export async function createSdk(seed = '//Alice'): Promise<Sdk> {
   const options = {

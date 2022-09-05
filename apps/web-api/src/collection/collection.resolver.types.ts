@@ -93,6 +93,9 @@ export class CollectionOrderByParams implements TOrderByParams<CollectionDTO> {
   holders_count?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  transfers_count?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
   owner_normalized?: GQLOrderByParamsArgs;
 }
 

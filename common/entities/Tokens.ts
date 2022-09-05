@@ -1,14 +1,6 @@
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import { Collections } from './Collections';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
-@Index('tokens_pkey', ['id'], { unique: true })
+@Index('tokens_pkey', ['token_id', 'collection_id'], { unique: true })
 @Index('tokens_collection_id_token_id_owner_idx', [
   'collection_id',
   'token_id',
@@ -26,17 +18,17 @@ export class Tokens {
   @Column('character varying', { name: 'owner', length: 255 })
   owner: string;
 
-  @Column('jsonb', { name: 'data', default: {} })
-  data: object;
+  @Column('jsonb', { name: 'properties', default: [] })
+  properties: object;
+
+  @Column('jsonb', { name: 'attributes', nullable: true, default: null })
+  attributes: object;
+
+  @Column('jsonb', { name: 'image', nullable: true, default: null })
+  image: object;
 
   @Column('bigint', { name: 'collection_id' })
   collection_id: number;
-
-  @ManyToOne(() => Collections, (collections) => collections.tokens)
-  @JoinColumn([
-    { name: 'collection_id', referencedColumnName: 'collection_id' },
-  ])
-  collection: Collections;
 
   @Column('bigint', { name: 'date_of_creation', nullable: true })
   date_of_creation?: number;
@@ -46,4 +38,10 @@ export class Tokens {
 
   @Column('text', { name: 'parent_id', nullable: true })
   parent_id: string;
+
+  @Column('boolean', { name: 'is_sold', default: false })
+  is_sold: boolean;
+
+  @Column('text', { name: 'token_name', nullable: true })
+  token_name: string;
 }

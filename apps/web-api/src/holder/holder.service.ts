@@ -1,10 +1,11 @@
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { HolderDTO } from './holder.dto';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 interface IQueryParameters {
   [key: string]: any;
@@ -16,6 +17,7 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     super();
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<HolderDTO>,
   ): Promise<IDataListResponse<Tokens>> {
@@ -27,28 +29,30 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     qb.addGroupBy('owner_normalized');
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    const { count } = await this.getCount(qb.getQuery(), qb.getParameters());
     this.applyLimitOffset(qb, queryArgs);
+    const { count } = await this.getHandleCount(qb);
     const data = await qb.getRawMany();
 
     return { data, count };
   }
 
-  private async getCount(
-    queryString: string,
-    params: IQueryParameters,
-  ): Promise<{ count: number }> {
-    const query = this.replaceQueryParams(queryString, params);
-    const countQueryResult: [{ count?: string }] = await this.repo.query(
-      `select count(1) as "count" from (${query}) "t1"`,
+  private async getHandleCount(qb: SelectQueryBuilder<Tokens>) {
+    const query = qb
+      .clone()
+      .distinctOn([])
+      .orderBy()
+      .offset(undefined)
+      .limit(undefined)
+      .skip(undefined)
+      .take(undefined);
+
+    const qs = this.replaceQueryParams(query.getQuery(), query.getParameters());
+
+    const result: [{ count?: number }] = await this.repo.query(
+      `select count(1) as "count" from (${qs}) "t1"`,
     );
 
-    if (countQueryResult.length === 1) {
-      const count = Number(countQueryResult[0].count);
-      return { count };
-    }
-
-    return { count: 0 };
+    return { count: result.length ? Number(result[0].count ?? 0) : 0 };
   }
 
   private replaceQueryParams(queryString: string, params: IQueryParameters) {

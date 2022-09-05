@@ -1,0 +1,90 @@
+version: "3"
+
+networks:
+ scan-api:
+   external: true
+
+services:
+  scan-web-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scan-web-api
+    ports:
+      - "3031:3031"
+    networks:
+      - scan-api
+    depends_on:
+      - postgres
+      - scan-crawler
+    restart: on-failure
+    environment:
+      - PORT=3031
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DATABASE=polkastats
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+
+  scan-crawler-migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile.crawler
+    container_name: scan-crawler-migrations
+    networks:
+      - scan-api
+    depends_on:
+      - postgres
+    restart: on-failure
+    environment:
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DATABASE=polkastats
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - ARCHIVE_GQL_URL=https://archive.dev.uniquenetwork.dev/graphql
+      - CHAIN_WS_URL=wss://ws-rc.unique.network
+    command: npm run db:migration:run
+
+  scan-crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile.crawler
+    container_name: scan-crawler
+    networks:
+      - scan-api
+    depends_on:
+      - scan-crawler-migrations
+      - postgres
+    restart: on-failure
+    environment:
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DATABASE=polkastats
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - ARCHIVE_GQL_URL=https://archive.dev.uniquenetwork.dev/graphql
+      - CHAIN_WS_URL=wss://ws-rc.unique.network
+
+  postgres:
+    image: postgres:14.2-alpine
+    container_name: scan-database
+    networks:
+      - scan-api
+    environment:
+      - POSTGRES_USER=polkastats
+      - POSTGRES_PASSWORD=polkastats
+      - POSTGRES_DATABASE=polkastats
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - TZ=Europe/Moscow
+      - PGTZ=Europe/Moscow
+    ports:
+      - "5432:5432"
+    volumes:
+      - scan-pgdata:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+
+volumes:
+  scan-pgdata:
+    external: false

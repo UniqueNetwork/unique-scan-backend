@@ -7,17 +7,21 @@ import { BaseService } from '../utils/base.service';
 import { OperatorMethods } from '../utils/base.service.types';
 import {
   IDataListResponse,
+  IDateRange,
   IGQLQueryArgs,
+  IStatsResponse,
   TWhere,
 } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 import { TokenDTO } from '../tokens/token.dto';
 import { TokenService } from '../tokens/token.service';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 const relationsFields = {
   tokens_count: 'Statistics',
   actions_count: 'Statistics',
   holders_count: 'Statistics',
+  transfers_count: 'Statistics',
 };
 
 @Injectable()
@@ -29,16 +33,14 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     super({ relationsFields, relations: ['tokens'] });
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<CollectionDTO>,
   ): Promise<IDataListResponse<CollectionDTO>> {
     const qb = this.repo.createQueryBuilder();
     this.applyFilters(qb, queryArgs);
 
-    const data = await qb.getRawMany();
-    const count = await this.getCountByFilters(qb, queryArgs);
-
-    return { data, count };
+    return this.getDataAndCount(qb, queryArgs);
   }
 
   public async findOne(
@@ -55,6 +57,25 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     return this.findOne({
       where: { collection_id: { _eq: id } },
     });
+  }
+
+  public async statistic({
+    fromDate,
+    toDate,
+  }: IDateRange): Promise<IStatsResponse[]> {
+    const qb = await this.repo.createQueryBuilder();
+    qb.select(`date_trunc('hour', TO_TIMESTAMP(date_of_creation))`, 'date');
+    qb.addSelect('count(*)', 'count');
+    qb.groupBy('date');
+
+    if (fromDate) {
+      qb.where(`"date_of_creation" >= ${this.formatDate(fromDate)}`);
+    }
+    if (toDate) {
+      qb.andWhere(`"date_of_creation" <= ${this.formatDate(fromDate)}`);
+    }
+
+    return qb.getRawMany();
   }
 
   private applyFilters(
@@ -99,6 +120,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.collection_cover', 'collection_cover');
     qb.addSelect('Collections.mode', 'type');
     qb.addSelect('Collections.mint_mode', 'mint_mode');
+    qb.addSelect('Collections.attributes_schema', 'attributes_schema');
     qb.addSelect(
       'Collections.limits_account_ownership',
       'limits_account_ownership',
@@ -117,27 +139,26 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.sponsorship', 'sponsorship');
     qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
     qb.addSelect(
-      `CASE
-        WHEN COALESCE("Statistics".tokens_count, 0::bigint) > 0 THEN COALESCE("Statistics".tokens_count, 0::bigint)
-        ELSE 0::bigint
-      END`,
+      `COALESCE("Statistics".tokens_count, 0::bigint)`,
       'tokens_count',
     );
     qb.addSelect(
-      `CASE
-        WHEN COALESCE("Statistics".holders_count, 0::bigint) > 0 THEN COALESCE("Statistics".holders_count, 0::bigint)
-        ELSE 0::bigint
-      END`,
+      `COALESCE("Statistics".holders_count, 0::bigint)`,
       'holders_count',
     );
     qb.addSelect(
-      `CASE
-        WHEN COALESCE("Statistics".actions_count, 0::bigint) > 0 THEN COALESCE("Statistics".actions_count, 0::bigint)
-        ELSE 0::bigint
-      END`,
+      `COALESCE("Statistics".actions_count, 0::bigint)`,
       'actions_count',
     );
+    qb.addSelect(
+      `COALESCE("Statistics".transfers_count, 0::bigint)`,
+      'transfers_count',
+    );
     qb.addSelect('Collections.date_of_creation', 'date_of_creation');
-    qb.leftJoin('Collections.statistics', 'Statistics');
+    qb.leftJoin(
+      'collections_stats',
+      'Statistics',
+      '"Collections".collection_id = "Statistics".collection_id',
+    );
   }
 }

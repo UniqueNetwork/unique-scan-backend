@@ -1,34 +1,41 @@
-import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
+import BigNumber from 'bignumber.js';
 import {
-  ETHEREUM_ADDRESS_MAX_LENGTH,
-  NESTING_ADDRESS_COLLECTION_ID_LENGTH,
-  NESTING_ADDRESS_PREFIX,
-  NESTING_ADDRESS_TOKEN_ID_LENGTH,
-} from './constants';
+  encodeAddress,
+  decodeAddress,
+  isEthereumAddress,
+} from '@polkadot/util-crypto';
+import { Prefix } from '@polkadot/util-crypto/types';
 
-export function normalizeSubstrateAddress(address) {
-  if (address?.length <= ETHEREUM_ADDRESS_MAX_LENGTH) {
-    return address;
-  }
-
-  return encodeAddress(decodeAddress(address));
+export function normalizeSubstrateAddress(address, ss58Format?: Prefix) {
+  return isEthereumAddress(address)
+    ? address
+    : encodeAddress(decodeAddress(address), ss58Format);
 }
 
-export function parseNestingAddress(address) {
-  const match = address.match(
-    RegExp(
-      `^${NESTING_ADDRESS_PREFIX}(.{${NESTING_ADDRESS_COLLECTION_ID_LENGTH}})(.{${NESTING_ADDRESS_TOKEN_ID_LENGTH}})$`,
-    ),
-  );
+export function normalizeTimestamp(timestamp: number) {
+  return Math.floor(timestamp / 1000);
+}
 
-  if (!match) {
-    return null;
-  }
+export function getAmount(strNum: string) {
+  BigNumber.config({
+    EXPONENTIAL_AT: [-30, 30],
+  });
 
-  const [, collectionIdString, tokenIdString] = match;
+  const result = new BigNumber(strNum);
+  const dividedBy = result.dividedBy('1000000000000000000').toString();
 
-  return {
-    collectionId: parseInt(collectionIdString, 16) || null,
-    tokenId: parseInt(tokenIdString, 16) || null,
-  };
+  return dividedBy === 'NaN' ? '0' : dividedBy;
+}
+
+export function sanitizeUnicodeString(str) {
+  return str.replace(/\\u0000|\x00/g, '');
+}
+
+export function sanitizePropertiesValues(
+  propertiesArr: { key: string; value: string }[],
+) {
+  return propertiesArr.map(({ key, value }) => ({
+    key,
+    value: sanitizeUnicodeString(value),
+  }));
 }

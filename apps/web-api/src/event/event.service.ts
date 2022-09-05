@@ -5,6 +5,7 @@ import { In, Not, Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { EventDTO } from './event.dto';
+import { EventMethod, EventSection } from '@common/constants';
 
 @Injectable()
 export class EventService extends BaseService<Event, EventDTO> {
@@ -37,8 +38,8 @@ export class EventService extends BaseService<Event, EventDTO> {
     );
     qb.where({
       phase: Not('Initialization'),
-      section: 'balances',
-      method: In(['Transfer', 'Deposit']),
+      section: EventSection.BALANCES,
+      method: In([EventMethod.TRANSFER, EventMethod.DEPOSIT]),
     });
     qb.groupBy('"Event".block_number');
     qb.addGroupBy('"Event".block_index');
@@ -46,8 +47,7 @@ export class EventService extends BaseService<Event, EventDTO> {
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    const data = await qb.getRawMany();
-    const count = await qb.getCount();
-    return { data, count };
+
+    return this.getDataAndCount(qb, queryArgs);
   }
 }

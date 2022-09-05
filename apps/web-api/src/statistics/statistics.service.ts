@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { StatisticsDTO } from './statistics.dto';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 @Injectable()
 export class StatisticsService extends BaseService<Total, StatisticsDTO> {
@@ -12,6 +13,7 @@ export class StatisticsService extends BaseService<Total, StatisticsDTO> {
     super();
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<StatisticsDTO>,
   ): Promise<IDataListResponse<Total>> {
@@ -23,9 +25,6 @@ export class StatisticsService extends BaseService<Total, StatisticsDTO> {
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
 
-    const data = await qb.getRawMany();
-    const count = await qb.getCount();
-
-    return { data, count };
+    return this.getDataAndCount(qb, queryArgs);
   }
 }

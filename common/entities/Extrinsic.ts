@@ -27,9 +27,6 @@ export class Extrinsic {
   @Column('text', { name: 'method' })
   method: string;
 
-  @Column('text', { name: 'args' })
-  args: string;
-
   @Column('text', { name: 'hash' })
   hash: string;
 

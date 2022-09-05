@@ -7,9 +7,6 @@ export class AccountDTO implements Partial<Account> {
   account_id?: string;
 
   @Field(() => String)
-  balances?: string;
-
-  @Field(() => String)
   available_balance?: string;
 
   @Field(() => String)
@@ -17,9 +14,6 @@ export class AccountDTO implements Partial<Account> {
 
   @Field(() => String)
   locked_balance?: string;
-
-  @Field(() => String)
-  nonce?: string;
 
   @Field(() => Int)
   timestamp?: string;

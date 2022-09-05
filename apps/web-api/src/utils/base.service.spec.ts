@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 import { Account } from '@entities/Account';
-import { INestApplication, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { BaseService } from './base.service';
 import { AccountDTO } from '../account/account.dto';
 import { AppModule } from '../app.module';
@@ -29,14 +29,18 @@ class BaseServiceTest extends BaseService<Account, AccountDTO> {
 
 describe('BaseService', () => {
   let service: BaseServiceTest;
-
+  let app: TestingModule;
   beforeAll(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    app = await Test.createTestingModule({
       imports: [AppModule, TypeOrmModule.forFeature([Account])],
       providers: [BaseServiceTest],
     }).compile();
 
     service = app.get<BaseServiceTest>(BaseServiceTest);
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   describe('base service with Account', () => {
@@ -112,12 +116,91 @@ describe('BaseService', () => {
 
       expect(qb.getSql()).toBe(
         // eslint-disable-next-line max-len
-        'SELECT * FROM "public"."account" "Account" WHERE ("Account"."account_id" = $1 OR "Account"."available_balance" = $2) LIMIT 10',
+        'SELECT * FROM "public"."account" "Account" WHERE (("Account"."account_id" = $1) OR ("Account"."available_balance" = $2)) LIMIT 10',
       );
 
       const [orm_param_0, orm_param_1] = Object.values(qb.getParameters());
       expect(orm_param_0).toBe(1);
       expect(orm_param_1).toBe(100);
+    });
+
+    it('where with _or + _and', async () => {
+      const where = {
+        _or: [
+          {
+            _and: [
+              {
+                account_id: {
+                  _eq: 1,
+                },
+              },
+              {
+                available_balance: {
+                  _eq: 100,
+                },
+              },
+            ],
+          },
+          {
+            _and: [
+              {
+                account_id: {
+                  _eq: 2,
+                },
+              },
+              {
+                available_balance: {
+                  _eq: 200,
+                },
+              },
+            ],
+          },
+        ],
+      };
+      // @ts-ignore
+      const qb = service.apply({ where });
+
+      expect(qb.getSql()).toBe(
+        // eslint-disable-next-line max-len
+        'SELECT * FROM "public"."account" "Account" WHERE (((("Account"."account_id" = $1) AND ("Account"."available_balance" = $2))) OR ((("Account"."account_id" = $3) AND ("Account"."available_balance" = $4)))) LIMIT 10',
+      );
+
+      const [orm_param_0, orm_param_1, orm_param_2, orm_param_3] =
+        Object.values(qb.getParameters());
+
+      expect(orm_param_0).toBe(1);
+      expect(orm_param_1).toBe(100);
+      expect(orm_param_2).toBe(2);
+      expect(orm_param_3).toBe(200);
+    });
+
+    it('where with _and + _or + filter', async () => {
+      const where = {
+        _and: [
+          {
+            _or: [
+              { available_balance: { _eq: 2 } },
+              { locked_balance: { _eq: 3 } },
+            ],
+            account_id: { _eq: 1 },
+          },
+        ],
+      };
+      // @ts-ignore
+      const qb = service.apply({ where });
+
+      expect(qb.getSql()).toBe(
+        // eslint-disable-next-line max-len
+        'SELECT * FROM "public"."account" "Account" WHERE (((("Account"."available_balance" = $1) OR ("Account"."locked_balance" = $2)) AND "Account"."account_id" = $3)) LIMIT 10',
+      );
+
+      const [orm_param_0, orm_param_1, orm_param_2] = Object.values(
+        qb.getParameters(),
+      );
+
+      expect(orm_param_0).toBe(2);
+      expect(orm_param_1).toBe(3);
+      expect(orm_param_2).toBe(1);
     });
   });
 });
