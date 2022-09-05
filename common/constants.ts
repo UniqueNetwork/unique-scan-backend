@@ -66,6 +66,9 @@ export const EventName = {
   BALANCES_ENDOWED: `${EventSection.BALANCES}.${EventMethod.ENDOWED}`,
   BALANCES_WITHDRAW: `${EventSection.BALANCES}.${EventMethod.WITHDRAW}`,
   BALANCES_TRANSFER: `${EventSection.BALANCES}.${EventMethod.TRANSFER}`,
+
+  // Treasury
+  TREASURY_DEPOSIT: `${EventSection.TREASURY}.${EventMethod.DEPOSIT}`,
 };
 
 export enum ExtrinsicSection {

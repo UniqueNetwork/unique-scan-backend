@@ -1,0 +1,184 @@
+import {
+  EventName,
+  ExtrinsicMethod,
+  ExtrinsicSection,
+} from '@common/constants';
+import {
+  getAmount,
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+} from '@common/utils';
+import { Extrinsic } from '@entities/Extrinsic';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { SubstrateExtrinsic } from '@subsquid/substrate-processor';
+import { Repository } from 'typeorm';
+import {
+  IBlockCommonData,
+  IBlockItem,
+  IEvent,
+} from '../subscribers/blocks-subscriber.service';
+
+const EXTRINSICS_TRANSFER_METHODS = [
+  ExtrinsicMethod.TRANSFER,
+  ExtrinsicMethod.TRANSFER_FROM,
+  ExtrinsicMethod.TRANSFER_ALL,
+  ExtrinsicMethod.TRANSFER_KEEP_ALIVE,
+  ExtrinsicMethod.VESTED_TRANSFER,
+];
+
+interface IExtrinsicExtended extends SubstrateExtrinsic {
+  name: string;
+}
+
+interface IExtrinsicRecipient {
+  // Unique.transfer
+  recipient?: { value: string };
+
+  // Balances.transfer
+  // Balances.transfer_all
+  // Balances.transfer_keep_alive
+  // Vesting.vested_transfer
+  dest?: { value: string };
+}
+
+@Injectable()
+export class ExtrinsicWriterService {
+  constructor(
+    @InjectRepository(Extrinsic)
+    private extrinsicsRepository: Repository<Extrinsic>,
+  ) {}
+
+  private extractExtrinsicItems(items: IBlockItem[]): IExtrinsicExtended[] {
+    return items
+      .filter(({ kind }) => kind === 'call')
+      .map((item) => {
+        const { name, extrinsic } = item;
+        return { name, ...extrinsic } as IExtrinsicExtended;
+      });
+  }
+
+  private getAmountValues(blockItems: IBlockItem[]) {
+    const eventItems = blockItems
+      .filter(({ kind }) => kind === 'event')
+      .map((item) => item.event as IEvent);
+
+    // Save 'amount' and 'fee' for extrinsic's events
+    return eventItems.reduce((acc, curr) => {
+      const { name, extrinsic, args } = curr;
+
+      const extrinsicId = extrinsic?.id;
+      if (!extrinsicId) {
+        return acc;
+      }
+
+      const rawAmount =
+        typeof args === 'string' ? args : args?.amount || args?.value;
+
+      if (name === EventName.BALANCES_TRANSFER) {
+        // Save extrinsic amount
+        acc[extrinsicId] = acc[extrinsicId] || {};
+        acc[extrinsicId].amount = getAmount(rawAmount);
+      } else if (name === EventName.TREASURY_DEPOSIT) {
+        // Save extrinsic fee
+        acc[extrinsicId] = acc[extrinsicId] || {};
+        acc[extrinsicId].fee = getAmount(rawAmount);
+      } else {
+        return acc;
+      }
+
+      return { ...acc };
+    }, {});
+  }
+
+  private prepareDataForDb({
+    extrinsicItems,
+    amountValues,
+    blockCommonData,
+  }: {
+    extrinsicItems: IExtrinsicExtended[];
+    amountValues: {
+      [key: string]: { amount?: string; fee?: string };
+    };
+    blockCommonData: IBlockCommonData;
+  }) {
+    return extrinsicItems
+      .map((extrinsic) => {
+        const { name } = extrinsic;
+        const [section, method] = name.split('.') as [
+          ExtrinsicSection,
+          ExtrinsicMethod,
+        ];
+
+        const { blockTimestamp, blockNumber, ss58Prefix } = blockCommonData;
+
+        let signer = null;
+        const { signature } = extrinsic;
+        if (signature) {
+          const {
+            address: { value: rawSigner },
+          } = signature;
+
+          signer = normalizeSubstrateAddress(rawSigner, ss58Prefix);
+        }
+
+        const {
+          call: { args },
+        } = extrinsic;
+
+        let toOwner = null;
+        if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
+          const recipientAddress = args as IExtrinsicRecipient;
+          const rawToOwner =
+            recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
+          toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix);
+        }
+
+        const { id, hash, indexInBlock, success } = extrinsic;
+
+        const { amount = '0', fee = '0' } = amountValues[id] || {};
+
+        return {
+          timestamp: String(normalizeTimestamp(blockTimestamp)),
+          block_number: String(blockNumber),
+          block_index: `${blockNumber}-${indexInBlock}`,
+          extrinsic_index: indexInBlock,
+          section,
+          method,
+          hash,
+          success,
+          is_signed: !!signature,
+          signer,
+          signer_normalized: signer && normalizeSubstrateAddress(signer),
+          to_owner: toOwner,
+          to_owner_normalized: toOwner && normalizeSubstrateAddress(toOwner),
+          amount,
+          fee,
+        };
+      })
+      .filter((item) => !!item);
+  }
+
+  async upsert({
+    blockItems,
+    blockCommonData,
+  }: {
+    blockItems: IBlockItem[];
+    blockCommonData: IBlockCommonData;
+  }) {
+    const extrinsicItems = this.extractExtrinsicItems(blockItems);
+
+    const amountValues = this.getAmountValues(blockItems);
+
+    const extrinsicsData = this.prepareDataForDb({
+      extrinsicItems,
+      amountValues,
+      blockCommonData,
+    });
+
+    return this.extrinsicsRepository.upsert(extrinsicsData, [
+      'block_number',
+      'extrinsic_index',
+    ]);
+  }
+}
