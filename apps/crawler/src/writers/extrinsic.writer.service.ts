@@ -105,61 +105,59 @@ export class ExtrinsicWriterService {
     };
     blockCommonData: IBlockCommonData;
   }) {
-    return extrinsicItems
-      .map((extrinsic) => {
-        const { name } = extrinsic;
-        const [section, method] = name.split('.') as [
-          ExtrinsicSection,
-          ExtrinsicMethod,
-        ];
+    return extrinsicItems.map((extrinsic) => {
+      const { name } = extrinsic;
+      const [section, method] = name.split('.') as [
+        ExtrinsicSection,
+        ExtrinsicMethod,
+      ];
 
-        const { blockTimestamp, blockNumber, ss58Prefix } = blockCommonData;
+      const { blockTimestamp, blockNumber, ss58Prefix } = blockCommonData;
 
-        let signer = null;
-        const { signature } = extrinsic;
-        if (signature) {
-          const {
-            address: { value: rawSigner },
-          } = signature;
-
-          signer = normalizeSubstrateAddress(rawSigner, ss58Prefix);
-        }
-
+      let signer = null;
+      const { signature } = extrinsic;
+      if (signature) {
         const {
-          call: { args },
-        } = extrinsic;
+          address: { value: rawSigner },
+        } = signature;
 
-        let toOwner = null;
-        if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
-          const recipientAddress = args as IExtrinsicRecipient;
-          const rawToOwner =
-            recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
-          toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix);
-        }
+        signer = normalizeSubstrateAddress(rawSigner, ss58Prefix);
+      }
 
-        const { id, hash, indexInBlock, success } = extrinsic;
+      const {
+        call: { args },
+      } = extrinsic;
 
-        const { amount = '0', fee = '0' } = amountValues[id] || {};
+      let toOwner = null;
+      if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
+        const recipientAddress = args as IExtrinsicRecipient;
+        const rawToOwner =
+          recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
+        toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix);
+      }
 
-        return {
-          timestamp: String(normalizeTimestamp(blockTimestamp)),
-          block_number: String(blockNumber),
-          block_index: `${blockNumber}-${indexInBlock}`,
-          extrinsic_index: indexInBlock,
-          section,
-          method,
-          hash,
-          success,
-          is_signed: !!signature,
-          signer,
-          signer_normalized: signer && normalizeSubstrateAddress(signer),
-          to_owner: toOwner,
-          to_owner_normalized: toOwner && normalizeSubstrateAddress(toOwner),
-          amount,
-          fee,
-        };
-      })
-      .filter((item) => !!item);
+      const { id, hash, indexInBlock, success } = extrinsic;
+
+      const { amount = '0', fee = '0' } = amountValues[id] || {};
+
+      return {
+        timestamp: String(normalizeTimestamp(blockTimestamp)),
+        block_number: String(blockNumber),
+        block_index: `${blockNumber}-${indexInBlock}`,
+        extrinsic_index: indexInBlock,
+        section,
+        method,
+        hash,
+        success,
+        is_signed: !!signature,
+        signer,
+        signer_normalized: signer && normalizeSubstrateAddress(signer),
+        to_owner: toOwner,
+        to_owner_normalized: toOwner && normalizeSubstrateAddress(toOwner),
+        amount,
+        fee,
+      };
+    });
   }
 
   async upsert({
