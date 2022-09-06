@@ -89,4 +89,10 @@ export class CollectionDTO implements Partial<Collections> {
 
   @Field(() => GraphQLJSON, { nullable: true })
   attributes_schema?: object;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  properties?: object;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  token_properties_permissions?: object;
 }
