@@ -2,11 +2,11 @@ import { SubscriberName } from '@common/constants';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../config/config.module';
-import { AccountsSubscriberService } from './accounts-subscriber.service';
-import { BlocksSubscriberService } from './blocks-subscriber.service';
-import { CollectionsSubscriberService } from './collections-subscriber.service';
+import { AccountsSubscriberService } from './accounts.subscriber.service';
+import { BlocksSubscriberService } from './blocks.subscriber.service';
+import { CollectionsSubscriberService } from './collections.subscriber.service';
 import { ProcessorService } from './processor/processor.service';
-import { TokensSubscriberService } from './tokens-subscriber.service';
+import { TokensSubscriberService } from './tokens.subscriber.service';
 
 export interface ISubscriberService {
   subscribe(processorService: ProcessorService);

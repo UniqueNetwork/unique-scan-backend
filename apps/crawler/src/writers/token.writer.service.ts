@@ -26,7 +26,7 @@ export class TokenWriterService {
     private tokensRepository: Repository<Tokens>,
   ) {}
 
-  prepareDataForDb(tokenData: ITokenData) {
+  prepareDataForDb(tokenData: ITokenData): Omit<Tokens, 'id'> {
     const { tokenDecoded, tokenProperties, collectionDecoded } = tokenData;
     const {
       tokenId: token_id,
