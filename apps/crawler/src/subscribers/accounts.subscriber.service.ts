@@ -28,16 +28,32 @@ export class AccountsSubscriberService implements ISubscriberService {
 
   subscribe(processorService: ProcessorService) {
     [
+      // System
       EventName.NEW_ACCOUNT,
+
+      // Common
       EventName.COLLECTION_CREATED,
       EventName.ITEM_CREATED,
-      EventName.COLLECTION_ADMIN_ADDED,
-      EventName.COLLECTION_OWNED_CHANGED,
+      EventName.ITEM_DESTROYED,
       EventName.TRANSFER,
+      EventName.APPROVED,
+
+      // Balances
+      EventName.BALANCES_TRANSFER,
+      EventName.BALANCES_WITHDRAW,
       EventName.BALANCES_DEPOSIT,
       EventName.BALANCES_ENDOWED,
-      EventName.BALANCES_WITHDRAW,
-      EventName.BALANCES_TRANSFER,
+      EventName.BALANCES_BALANCE_SET,
+      EventName.BALANCES_RESERVED,
+      EventName.BALANCES_UNRESERVED,
+
+      // Unique
+      EventName.COLLECTION_ADMIN_ADDED,
+      EventName.COLLECTION_ADMIN_REMOVED,
+      EventName.COLLECTION_OWNED_CHANGED,
+      EventName.ALLOW_LIST_ADDRESS_ADDED,
+      EventName.COLLECTION_SPONSOR_SET,
+      EventName.SPONSORSHIP_CONFIRMED,
     ].forEach((eventName) =>
       processorService.processor.addEventHandler(
         eventName,

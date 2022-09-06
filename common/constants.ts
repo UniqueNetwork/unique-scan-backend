@@ -7,16 +7,19 @@ export enum EventSection {
 }
 
 export enum EventMethod {
+  // Unique
   ALLOW_LIST_ADDRESS_ADDDED = 'AllowListAddressAdded',
   ALLOW_LIST_ADDRESS_REMOVED = 'AllowListAddressRemoved',
   COLLECTION_ADMIN_ADDED = 'CollectionAdminAdded',
   COLLECTION_ADMIN_REMOVED = 'CollectionAdminRemoved',
+  COLLECTION_SPONSOR_SET = 'CollectionSponsorSet',
+  COLLECTION_SPONSOR_REMOVED = 'CollectionSponsorRemoved',
+  SPONSORSHIP_CONFIRMED = 'SponsorshipConfirmed',
+
   COLLECTION_OWNER_CHANGED = 'CollectionOwnedChanged',
   COLLECTION_PERMISSION_CHANGED = 'CollectionPermissionSet',
   COLLECTION_PROPERTY_SET = 'CollectionPropertySet',
   COLLECTION_PROPERTY_DELETED = 'CollectionPropertyDeleted',
-  COLLECTION_SPONSOR_SET = 'CollectionSponsorSet',
-  COLLECTION_SPONSOR_REMOVED = 'CollectionSponsorRemoved',
   DEPOSIT = 'Deposit',
   ENDOWED = 'Endowed',
   ITEM_CREATED = 'ItemCreated',
@@ -29,9 +32,12 @@ export enum EventMethod {
   PROPERTY_PERMISSION_SET = 'PropertyPermissionSet',
   TOKEN_PERMISSION_SET = 'TokenPropertySet',
   TOKEN_PERMISSION_DELETED = 'TokenPropertyDeleted',
-  SPONSORSHIP_CONFIRMED = 'SponsorshipConfirmed',
   TRANSFER = 'Transfer',
   WITHDRAW = 'Withdraw',
+  APPROVED = 'Approved',
+  BALANCE_SET = 'BalanceSet',
+  RESERVED = 'Reserved',
+  UNRESERVED = 'Unreserved',
 }
 
 export const EventName = {
@@ -49,6 +55,7 @@ export const EventName = {
   TOKEN_PROPERTY_SET: `${EventSection.COMMON}.${EventMethod.TOKEN_PERMISSION_SET}`,
   TOKEN_PROPERTY_DELETED: `${EventSection.COMMON}.${EventMethod.TOKEN_PERMISSION_DELETED}`,
   TRANSFER: `${EventSection.COMMON}.${EventMethod.TRANSFER}`,
+  APPROVED: `${EventSection.COMMON}.${EventMethod.APPROVED}`,
 
   // Unique
   ALLOW_LIST_ADDRESS_ADDED: `${EventSection.UNIQUE}.${EventMethod.ALLOW_LIST_ADDRESS_ADDDED}`,
@@ -66,6 +73,9 @@ export const EventName = {
   BALANCES_ENDOWED: `${EventSection.BALANCES}.${EventMethod.ENDOWED}`,
   BALANCES_WITHDRAW: `${EventSection.BALANCES}.${EventMethod.WITHDRAW}`,
   BALANCES_TRANSFER: `${EventSection.BALANCES}.${EventMethod.TRANSFER}`,
+  BALANCES_BALANCE_SET: `${EventSection.BALANCES}.${EventMethod.BALANCE_SET}`,
+  BALANCES_RESERVED: `${EventSection.BALANCES}.${EventMethod.RESERVED}`,
+  BALANCES_UNRESERVED: `${EventSection.BALANCES}.${EventMethod.UNRESERVED}`,
 
   // Treasury
   TREASURY_DEPOSIT: `${EventSection.TREASURY}.${EventMethod.DEPOSIT}`,

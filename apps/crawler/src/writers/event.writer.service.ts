@@ -35,7 +35,7 @@ export class EventWriterService {
   }
 
   /**
-   * Collects address values from event arguments.
+   * Extracts address values from event arguments.
    *
    * We have different kinds of args formats and should process all of them:
    * - Common.CollectionCreated
@@ -87,6 +87,15 @@ export class EventWriterService {
       to?: string;
       who?: string;
     };
+
+    // todo: EventName.APPROVED
+    // todo: EventName.BALANCES_BALANCE_SET,
+    // todo: EventName.BALANCES_RESERVED,
+    // todo: EventName.BALANCES_UNRESERVED,
+    // todo: EventName.ALLOW_LIST_ADDRESS_ADDED,
+    // todo: EventName.COLLECTION_ADMIN_REMOVED,
+    // todo: EventName.COLLECTION_SPONSOR_SET,
+    // todo: EventName.SPONSORSHIP_CONFIRMED,
 
     // Convert array arguments into object format
     if (typeof args === 'string') {
