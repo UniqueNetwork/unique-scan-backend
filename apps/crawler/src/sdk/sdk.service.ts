@@ -30,6 +30,14 @@ export class SdkService {
     return result?.limits;
   }
 
+  @SdkCache('getCollectionLimits')
+  async getCollectionPropertyPermissions(collectionId: number) {
+    const result = await this.sdk.collections.propertyPermissions({
+      collectionId,
+    });
+    return result.propertyPermissions;
+  }
+
   @SdkCache('getToken')
   getToken(
     collectionId: number,

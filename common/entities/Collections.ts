@@ -25,6 +25,9 @@ export class Collections {
   @Column('jsonb', { name: 'properties', default: [] })
   properties: object | null;
 
+  @Column('jsonb', { name: 'properties', default: [] })
+  token_properties_permissions: object | null;
+
   @Column('jsonb', { name: 'attributes_schema', default: {} })
   attributes_schema: object | null;
 
