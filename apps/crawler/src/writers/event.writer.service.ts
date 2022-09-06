@@ -40,7 +40,7 @@ export class EventWriterService {
   }: {
     eventItems: IEvent[];
     blockCommonData: IBlockCommonData;
-  }) {
+  }): Event[] {
     return eventItems.map((event) => {
       const { name, indexInBlock, phase, extrinsic, args } = event;
       const { blockNumber, blockTimestamp } = blockCommonData;

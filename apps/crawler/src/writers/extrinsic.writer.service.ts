@@ -104,7 +104,7 @@ export class ExtrinsicWriterService {
       [key: string]: { amount?: string; fee?: string };
     };
     blockCommonData: IBlockCommonData;
-  }) {
+  }): Extrinsic[] {
     return extrinsicItems.map((extrinsic) => {
       const { name } = extrinsic;
       const [section, method] = name.split('.') as [

@@ -56,7 +56,7 @@ export class BlockWriterService {
   }: {
     block: SubstrateBlock;
     itemCounts: IItemCounts;
-  }) {
+  }): Block {
     const {
       specId,
       parentHash,
