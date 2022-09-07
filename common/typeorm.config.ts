@@ -11,11 +11,12 @@ import { Tokens } from './entities/Tokens';
 import { Total } from './entities/Total';
 import { TokensStats } from './entities/TokensStats';
 import { DataSourceOptions } from 'typeorm';
-import dotenv = require('dotenv');
-import path = require('path');
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 dotenv.config();
 const migrationsDir = path.join(__dirname, '..', 'migrations');
+const isTestMode = process.env.NODE_ENV === 'test';
 
 const typeormConfig: DataSourceOptions = {
   type: 'postgres',
@@ -40,7 +41,7 @@ const typeormConfig: DataSourceOptions = {
   ],
   synchronize: false,
   migrationsRun: false,
-  migrations: [path.join(migrationsDir, '/**/*{.ts,.js}')],
+  migrations: isTestMode ? [] : [path.join(migrationsDir, '/**/*{.ts,.js}')],
   logging: process.env.LOGGING === '1',
 };
 
