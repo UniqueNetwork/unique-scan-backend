@@ -42,12 +42,14 @@ export class EventWriterService {
     blockCommonData: IBlockCommonData;
   }): Event[] {
     return eventItems.map((event) => {
-      const { name, indexInBlock, phase, extrinsic, args } = event;
+      const { name, indexInBlock, phase, extrinsic, args: rawArgs } = event;
       const { blockNumber, blockTimestamp } = blockCommonData;
 
       const [section, method] = name.split('.') as [EventSection, EventMethod];
 
-      const rawAmount = EventWriterService.extractRawAmountValue(args);
+      const rawAmount = EventWriterService.extractRawAmountValue(rawArgs);
+
+      const args = typeof rawArgs === 'object' ? rawArgs : [rawArgs];
 
       return {
         timestamp: String(normalizeTimestamp(blockTimestamp)),
