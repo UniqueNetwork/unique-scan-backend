@@ -11,7 +11,7 @@ import { CollectionWriterService } from './collection.writer.service';
 import { AccountWriterService } from './account.writer.service';
 import { TokenWriterService } from './token.writer.service';
 import { BlockWriterService } from './block.writer.service';
-import { EventWriterService } from './event.writer.service';
+import { EventService } from './event/event.service';
 import { ExtrinsicWriterService } from './extrinsic.writer.service';
 
 @Module({
@@ -30,7 +30,7 @@ import { ExtrinsicWriterService } from './extrinsic.writer.service';
     AccountWriterService,
     BlockWriterService,
     CollectionWriterService,
-    EventWriterService,
+    EventService,
     ExtrinsicWriterService,
     TokenWriterService,
   ],
@@ -38,7 +38,7 @@ import { ExtrinsicWriterService } from './extrinsic.writer.service';
     AccountWriterService,
     BlockWriterService,
     CollectionWriterService,
-    EventWriterService,
+    EventService,
     ExtrinsicWriterService,
     TokenWriterService,
   ],

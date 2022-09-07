@@ -10,7 +10,7 @@ import { Prefix } from '@unique-nft/api/.';
 import { ProcessorService } from './processor/processor.service';
 import { BlockWriterService } from '../writers/block.writer.service';
 import { ExtrinsicWriterService } from '../writers/extrinsic.writer.service';
-import { EventWriterService } from '../writers/event.writer.service';
+import { EventService } from '../writers/event/event.service';
 
 export interface IEvent {
   name: string;
@@ -54,7 +54,7 @@ export class BlocksSubscriberService implements ISubscriberService {
 
     private extrinsicWriterService: ExtrinsicWriterService,
 
-    private eventWriterService: EventWriterService,
+    private eventService: EventService,
 
     @InjectSentry()
     private readonly sentry: SentryService,
@@ -104,7 +104,7 @@ export class BlocksSubscriberService implements ISubscriberService {
           blockCommonData,
           blockItems,
         }),
-        this.eventWriterService.upsert({
+        this.eventService.upsert({
           blockCommonData,
           blockItems,
         }),

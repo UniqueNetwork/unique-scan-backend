@@ -17,7 +17,8 @@ import {
   IBlockCommonData,
   IBlockItem,
 } from '../subscribers/blocks.subscriber.service';
-import { EventWriterService } from './event.writer.service';
+import { EventArgumentsService } from './event/event.arguments.service';
+import { EventService } from './event/event.service';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
@@ -68,7 +69,7 @@ export class ExtrinsicWriterService {
   }
 
   private getAmountValues(blockItems: IBlockItem[]) {
-    const eventItems = EventWriterService.extractEventItems(blockItems);
+    const eventItems = EventService.extractEventItems(blockItems);
 
     // Save 'amount' and 'fee' for extrinsic's events
     return eventItems.reduce((acc, curr) => {
@@ -79,7 +80,7 @@ export class ExtrinsicWriterService {
         return acc;
       }
 
-      const rawAmount = EventWriterService.extractRawAmountValue(args);
+      const rawAmount = EventArgumentsService.extractRawAmountValue(args);
       const amount = getAmount(rawAmount);
 
       acc[extrinsicId] = acc[extrinsicId] || {};

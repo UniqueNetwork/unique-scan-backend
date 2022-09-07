@@ -9,7 +9,7 @@ import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
 import { AccountWriterService } from '../writers/account.writer.service';
-import { EventWriterService } from '../writers/event.writer.service';
+import { EventArgumentsService } from '../writers/event/event.arguments.service';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
@@ -86,7 +86,7 @@ export class AccountsSubscriberService implements ISubscriberService {
     };
 
     try {
-      const rawAddressValues = EventWriterService.extractAddressValues(
+      const rawAddressValues = EventArgumentsService.extractAddressValues(
         eventName,
         args,
       );
