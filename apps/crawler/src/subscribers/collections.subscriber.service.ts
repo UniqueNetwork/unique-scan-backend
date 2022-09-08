@@ -61,14 +61,17 @@ export class CollectionsSubscriberService implements ISubscriberService {
   private async getCollectionData(
     collectionId: number,
   ): Promise<ICollectionData> {
-    const [collectionDecoded, collectionLimits] = await Promise.all([
-      this.sdkService.getCollection(collectionId),
-      this.sdkService.getCollectionLimits(collectionId),
-    ]);
+    const [collectionDecoded, collectionLimits, tokenPropertyPermissions] =
+      await Promise.all([
+        this.sdkService.getCollection(collectionId),
+        this.sdkService.getCollectionLimits(collectionId),
+        this.sdkService.getTokenPropertyPermissions(collectionId),
+      ]);
 
     return {
       collectionDecoded,
       collectionLimits,
+      tokenPropertyPermissions,
     };
   }
 

@@ -13,6 +13,7 @@ import {
   CollectionLimits,
   CollectionProperty,
   UniqueCollectionSchemaDecoded,
+  PropertyKeyPermission,
 } from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
 
@@ -27,6 +28,7 @@ type ParsedSchemaFields = {
 export interface ICollectionData {
   collectionDecoded: CollectionInfoWithSchema | null;
   collectionLimits: CollectionLimits | null;
+  tokenPropertyPermissions: PropertyKeyPermission[];
 }
 
 @Injectable()
@@ -132,7 +134,8 @@ export class CollectionWriterService {
   }
 
   private prepareDataForDb(collectionData: ICollectionData): Collections {
-    const { collectionDecoded, collectionLimits } = collectionData;
+    const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
+      collectionData;
 
     const {
       id: collection_id,
@@ -183,7 +186,7 @@ export class CollectionWriterService {
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
       properties: sanitizePropertiesValues(properties),
-      token_properties_permissions: permissions,
+      token_properties_permissions: tokenPropertyPermissions,
       attributes_schema: attributesSchema,
       const_chain_schema: constOnChainSchema,
       variable_on_chain_schema: variableOnChainSchema,
