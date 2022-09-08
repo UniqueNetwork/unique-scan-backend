@@ -1,14 +1,18 @@
-import { EventName } from '@common/constants';
 import { Injectable } from '@nestjs/common';
+import {
+  EventName,
+  EVENT_ARGS_ACCOUNT_KEYS,
+  EVENT_ARGS_ACCOUNT_KEY_DEFAULT,
+  EVENT_ARGS_COLLECTION_ID_KEY_DEFAULT,
+  EVENT_ARGS_TOKEN_ID_KEY_DEFAULT,
+} from '@common/constants';
+import { NormalizedEventArgs, RawEventArgs } from './event.types';
 
-export const EVENTS_WITH_ADDRESSES = [];
+type EventArgsValueNormalizer = (rawValue: string | number | object) => unknown;
 
-// type ArgsDescriptor = {
-//   accounts?: string | number | { [oldKey: string]: string };
-//   collectionId?: number;
-//   tokenId?: number;
-// };
-
+/**
+ * todo: Add types and description
+ */
 const EVENT_ARGS_DESCRIPTORS = {
   [EventName.ITEM_CREATED]: {
     accounts: 2,
@@ -31,26 +35,6 @@ const EVENT_ARGS_DESCRIPTORS = {
     accounts: 2,
   },
 };
-
-export type RawEventArgs =
-  | number
-  | string
-  | object
-  | (string | number | object)[];
-
-const ACCOUNT_KEY_DEFAULT = 'account';
-const COLLECTION_ID_KEY_DEFAULT = 'collectionId';
-const TOKEN_ID_KEY_DEFAULT = 'tokenId';
-
-const ACCOUNT_KEYS = [ACCOUNT_KEY_DEFAULT, 'who', 'from', 'to'] as const;
-
-type AccountKey = typeof ACCOUNT_KEYS[number];
-
-export type NormalizedEventArgs = {
-  collectionId?: number;
-  tokenId?: number;
-} & { [key in AccountKey]: string | undefined };
-
 @Injectable()
 export class EventArgumentsService {
   static extractRawAmountValue(
@@ -59,79 +43,83 @@ export class EventArgumentsService {
     return typeof args === 'string' ? args : args?.amount || args?.value;
   }
 
-  normalizeArguments(
+  getNormalizedArguments(
     eventName: string,
     rawArgs: RawEventArgs,
   ): NormalizedEventArgs | null {
-    const args = typeof rawArgs === 'object' ? rawArgs : [rawArgs];
-    // const argsObj = Array.isArray(args)
-    //   ? Object.fromEntries(args.map((v, i) => [v, i]))
-    //   : args;
+    const accountKeysMap = {};
+    const otherKeysMap = {};
 
-    let result = {} as NormalizedEventArgs;
+    // Add default account keys map
+    Object.assign(
+      accountKeysMap,
+      Object.fromEntries(EVENT_ARGS_ACCOUNT_KEYS.map((v) => [v, v])),
+    );
 
     const argsDescriptor = EVENT_ARGS_DESCRIPTORS[eventName];
-
-    let keysMap = {};
-
-    keysMap = {
-      ...keysMap,
-      ...Object.fromEntries(ACCOUNT_KEYS.map((v) => [v, v])),
-    };
-
     if (argsDescriptor) {
       const {
-        accounts: accountsKeys,
+        accounts: accountsKeys = null, // Use null as default to be albe using keys like 0.
         collectionId: collectionIdKey = null,
         tokenId: tokenIdKey = null,
       } = argsDescriptor;
 
       if (accountsKeys !== null) {
         if (typeof accountsKeys === 'object') {
-          keysMap = {
-            ...keysMap,
-            ...accountsKeys,
-          };
+          Object.assign(accountKeysMap, accountsKeys);
         } else {
-          keysMap[accountsKeys] = ACCOUNT_KEY_DEFAULT;
+          accountKeysMap[accountsKeys] = EVENT_ARGS_ACCOUNT_KEY_DEFAULT;
         }
       }
 
       if (collectionIdKey !== null) {
-        keysMap[collectionIdKey] = COLLECTION_ID_KEY_DEFAULT;
+        otherKeysMap[collectionIdKey] = EVENT_ARGS_COLLECTION_ID_KEY_DEFAULT;
       }
 
       if (tokenIdKey !== null) {
-        keysMap[tokenIdKey] = TOKEN_ID_KEY_DEFAULT;
+        otherKeysMap[tokenIdKey] = EVENT_ARGS_TOKEN_ID_KEY_DEFAULT;
       }
     }
 
-    result = {
-      ...result,
-      ...this.normalizeAccounts(args, keysMap),
+    const result = {
+      ...this.normalizeArgs(
+        rawArgs,
+        accountKeysMap,
+        this.normalizeAccountValue.bind(this),
+      ),
+      ...this.normalizeArgs(rawArgs, otherKeysMap),
     };
 
     return Object.keys(result).length ? result : null;
   }
 
-  private normalizeAccounts(
-    args: object,
-    accountKeysMap: { [key: string]: string },
+  private normalizeArgs(
+    rawArgs: RawEventArgs,
+    keysMap: { [key: string]: string },
+    valueNormalizerFn?: EventArgsValueNormalizer,
   ): NormalizedEventArgs {
+    // Args should be object or array only
+    const args = typeof rawArgs === 'object' ? rawArgs : [rawArgs];
+
     const result = {} as NormalizedEventArgs;
 
-    Object.entries(accountKeysMap).forEach(([key, newKey]) => {
-      // console.log(key, newKey, args);
+    Object.entries(keysMap).forEach(([key, newKey]) => {
       if (args[key]) {
-        // todo: Go to sdk
-        // todo: get inner value if object
-        const newValue = args[key];
-
-        result[newKey] = newValue;
+        result[newKey] = valueNormalizerFn
+          ? valueNormalizerFn(args[key])
+          : args[key];
       }
     });
 
     return result;
+  }
+
+  private normalizeAccountValue(rawValue: string | object) {
+    // todo: Go to sdk
+
+    // todo: get inner value if object
+
+    return rawValue;
   }
 
   /**

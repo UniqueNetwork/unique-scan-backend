@@ -44,7 +44,7 @@ export class EventService {
 
       const [section, method] = name.split('.') as [EventSection, EventMethod];
 
-      const argsNormalized = this.eventArgumentsService.normalizeArguments(
+      const argsNormalized = this.eventArgumentsService.getNormalizedArguments(
         name,
         rawArgs,
       );

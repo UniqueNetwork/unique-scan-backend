@@ -112,3 +112,13 @@ export enum SubscriberAction {
   DELETE = 'DELETE',
   DELETE_NOT_FOUND = 'DELETE: NOT FOUND',
 }
+
+export const EVENT_ARGS_ACCOUNT_KEY_DEFAULT = 'account';
+export const EVENT_ARGS_COLLECTION_ID_KEY_DEFAULT = 'collectionId';
+export const EVENT_ARGS_TOKEN_ID_KEY_DEFAULT = 'tokenId';
+export const EVENT_ARGS_ACCOUNT_KEYS = [
+  EVENT_ARGS_ACCOUNT_KEY_DEFAULT,
+  'who',
+  'from',
+  'to',
+];
