@@ -5,13 +5,13 @@ export class collectionsPropertiesPermissions1662471315191
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "collections" ADD "token_properties_permissions" jsonb NOT NULL DEFAULT '[]'`,
+      `ALTER TABLE "collections" ADD "token_property_permissions" jsonb NOT NULL DEFAULT '[]'`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "collections" DROP COLUMN "token_properties_permissions"`,
+      `ALTER TABLE "collections" DROP COLUMN "token_property_permissions"`,
     );
   }
 }

@@ -186,7 +186,7 @@ export class CollectionWriterService {
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
       properties: sanitizePropertiesValues(properties),
-      token_properties_permissions: tokenPropertyPermissions,
+      token_property_permissions: tokenPropertyPermissions,
       attributes_schema: attributesSchema,
       const_chain_schema: constOnChainSchema,
       variable_on_chain_schema: variableOnChainSchema,

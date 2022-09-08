@@ -140,8 +140,8 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
     qb.addSelect('Collections.properties', 'properties');
     qb.addSelect(
-      'Collections.token_properties_permissions',
-      'token_properties_permissions',
+      'Collections.token_property_permissions',
+      'token_property_permissions',
     );
     qb.addSelect(
       `COALESCE("Statistics".tokens_count, 0::bigint)`,

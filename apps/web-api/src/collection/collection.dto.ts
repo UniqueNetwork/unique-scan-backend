@@ -94,5 +94,5 @@ export class CollectionDTO implements Partial<Collections> {
   properties?: object;
 
   @Field(() => GraphQLJSON, { nullable: true })
-  token_properties_permissions?: object;
+  token_property_permissions?: object;
 }
