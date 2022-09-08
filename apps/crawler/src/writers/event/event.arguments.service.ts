@@ -14,12 +14,11 @@ type EventArgsValueNormalizer = (rawValue: string | number | object) => unknown;
  * todo: Add types and description
  */
 const EVENT_ARGS_DESCRIPTORS = {
-  [EventName.ITEM_CREATED]: {
-    accounts: 2,
-  },
-  [EventName.ITEM_DESTROYED]: {
-    accounts: 2,
-  },
+  // System
+  [EventName.ITEM_CREATED]: { collectionId: 0, tokenId: 1, accounts: 2 },
+
+  // Common
+  [EventName.ITEM_DESTROYED]: { collectionId: 0, tokenId: 1, accounts: 2 },
   [EventName.TRANSFER]: {
     collectionId: 0,
     tokenId: 1,
@@ -30,10 +29,15 @@ const EVENT_ARGS_DESCRIPTORS = {
     tokenId: 1,
     accounts: { '2': 'sender', '3': 'spender' },
   },
-  [EventName.COLLECTION_CREATED]: {
-    collectionId: 0,
-    accounts: 2,
-  },
+  [EventName.COLLECTION_CREATED]: { collectionId: 0, accounts: 2 },
+  [EventName.COLLECTION_DESTROYED]: { collectionId: 0 },
+
+  // Balances
+  [EventName.BALANCES_WITHDRAW]: { accounts: { '0': 'who' } },
+  [EventName.BALANCES_DEPOSIT]: { accounts: { '0': 'who' } },
+
+  // Unique
+  // todo: Start here
 };
 @Injectable()
 export class EventArgumentsService {
@@ -47,6 +51,10 @@ export class EventArgumentsService {
     eventName: string,
     rawArgs: RawEventArgs,
   ): NormalizedEventArgs | null {
+    if (rawArgs == null) {
+      return null;
+    }
+
     const accountKeysMap = {};
     const otherKeysMap = {};
 

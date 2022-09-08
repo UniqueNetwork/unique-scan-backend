@@ -1,7 +1,7 @@
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EventMethod, EventSection } from '@common/constants';
+import { EventMethod, EventName, EventSection } from '@common/constants';
 import { Event } from '@entities/Event';
 import { getAmount, normalizeTimestamp } from '@common/utils';
 import {
@@ -82,7 +82,15 @@ export class EventService {
   }) {
     const eventItems = EventService.extractEventItems(blockItems);
 
-    console.log('eventItems', eventItems);
+    console.log(
+      'eventItems',
+      eventItems
+        .filter(({ name }) => ![EventName.EXTRINSIC_SUCCESS].includes(name))
+        .map(({ name, args }) => ({
+          name,
+          args,
+        })),
+    );
 
     const eventsData = this.prepareDataForDb({
       blockCommonData,

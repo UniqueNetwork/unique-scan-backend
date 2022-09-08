@@ -26,6 +26,7 @@ export enum EventMethod {
   ITEM_DESTROYED = 'ItemDestroyed',
   NEW_ACCOUNT = 'NewAccount',
   EXTRINSIC_SUCCESS = 'ExtrinsicSuccess',
+  EXTRINSIC_FAILED = 'ExtrinsicFailed',
   COLLECTION_CREATED = 'CollectionCreated',
   COLLECTION_DESTROYED = 'CollectionDestroyed',
   COLLECTION_LIMIT_SET = 'CollectionLimitSet',
@@ -42,6 +43,8 @@ export enum EventMethod {
 
 export const EventName = {
   // System
+  EXTRINSIC_SUCCESS: `${EventSection.SYSTEM}.${EventMethod.EXTRINSIC_SUCCESS}`,
+  EXTRINSIC_FAILED: `${EventSection.SYSTEM}.${EventMethod.EXTRINSIC_FAILED}`,
   NEW_ACCOUNT: `${EventSection.SYSTEM}.${EventMethod.NEW_ACCOUNT}`,
 
   // Common
