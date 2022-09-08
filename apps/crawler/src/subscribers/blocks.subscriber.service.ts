@@ -95,6 +95,7 @@ export class BlocksSubscriberService implements ISubscriberService {
         ss58Prefix,
       } as IBlockCommonData;
 
+      // todo: Use Promise.allSettled() instead
       const [itemCounts] = await Promise.all([
         this.blockWriterService.upsert({
           block,

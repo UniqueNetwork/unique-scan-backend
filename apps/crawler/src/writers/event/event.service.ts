@@ -14,6 +14,8 @@ import { EventArgumentsService } from './event.arguments.service';
 @Injectable()
 export class EventService {
   constructor(
+    private eventArgumentsService: EventArgumentsService,
+
     @InjectRepository(Event)
     private eventsRepository: Repository<Event>,
   ) {}
@@ -42,11 +44,12 @@ export class EventService {
 
       const [section, method] = name.split('.') as [EventSection, EventMethod];
 
-      const args = EventArgumentsService.normalizeArguments(
-        section,
-        method,
+      const argsNormalized = this.eventArgumentsService.normalizeArguments(
+        name,
         rawArgs,
       );
+
+      console.log(argsNormalized);
 
       // todo: Получать amount из нормализованных аргументов
       const rawAmount = EventArgumentsService.extractRawAmountValue(rawArgs);
@@ -64,7 +67,7 @@ export class EventService {
         phase:
           phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
         data: JSON.stringify(rawArgs),
-        args: JSON.stringify(args), // todo: Add field into entity
+        args: JSON.stringify(argsNormalized), // todo: Add field into entity
         amount: rawAmount ? getAmount(rawAmount) : null,
       };
     });
@@ -78,6 +81,8 @@ export class EventService {
     blockCommonData: IBlockCommonData;
   }) {
     const eventItems = EventService.extractEventItems(blockItems);
+
+    console.log('eventItems', eventItems);
 
     const eventsData = this.prepareDataForDb({
       blockCommonData,

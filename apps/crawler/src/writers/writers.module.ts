@@ -13,6 +13,7 @@ import { TokenWriterService } from './token.writer.service';
 import { BlockWriterService } from './block.writer.service';
 import { EventService } from './event/event.service';
 import { ExtrinsicWriterService } from './extrinsic.writer.service';
+import { EventArgumentsService } from './event/event.arguments.service';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ExtrinsicWriterService } from './extrinsic.writer.service';
     BlockWriterService,
     CollectionWriterService,
     EventService,
+    EventArgumentsService,
     ExtrinsicWriterService,
     TokenWriterService,
   ],

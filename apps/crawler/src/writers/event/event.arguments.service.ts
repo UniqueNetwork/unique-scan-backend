@@ -1,28 +1,55 @@
-import { EventMethod, EventName, EventSection } from '@common/constants';
+import { EventName } from '@common/constants';
 import { Injectable } from '@nestjs/common';
 
 export const EVENTS_WITH_ADDRESSES = [];
 
-type AddressString = string;
+// type ArgsDescriptor = {
+//   accounts?: string | number | { [oldKey: string]: string };
+//   collectionId?: number;
+//   tokenId?: number;
+// };
 
-export interface ISystemArguments {
-  [key: string]: string | object;
-  account?: AddressString;
-}
+const EVENT_ARGS_DESCRIPTORS = {
+  [EventName.ITEM_CREATED]: {
+    accounts: 2,
+  },
+  [EventName.ITEM_DESTROYED]: {
+    accounts: 2,
+  },
+  [EventName.TRANSFER]: {
+    collectionId: 0,
+    tokenId: 1,
+    accounts: { '2': 'from', '3': 'to' },
+  },
+  [EventName.APPROVED]: {
+    collectionId: 0,
+    tokenId: 1,
+    accounts: { '2': 'sender', '3': 'spender' },
+  },
+  [EventName.COLLECTION_CREATED]: {
+    collectionId: 0,
+    accounts: 2,
+  },
+};
 
-export interface ICommonArguments {
-  collectionId: number;
-  tokenId: number;
-  sender: object;
-  spender: object;
-  amount: string;
-} | {
-    account?: string;
-}
+export type RawEventArgs =
+  | number
+  | string
+  | object
+  | (string | number | object)[];
 
-export type RawEventArguments = object | (string | number)[];
+const ACCOUNT_KEY_DEFAULT = 'account';
+const COLLECTION_ID_KEY_DEFAULT = 'collectionId';
+const TOKEN_ID_KEY_DEFAULT = 'tokenId';
 
-export type NormalizedEventArguments = ISystemArguments;
+const ACCOUNT_KEYS = [ACCOUNT_KEY_DEFAULT, 'who', 'from', 'to'] as const;
+
+type AccountKey = typeof ACCOUNT_KEYS[number];
+
+export type NormalizedEventArgs = {
+  collectionId?: number;
+  tokenId?: number;
+} & { [key in AccountKey]: string | undefined };
 
 @Injectable()
 export class EventArgumentsService {
@@ -32,33 +59,83 @@ export class EventArgumentsService {
     return typeof args === 'string' ? args : args?.amount || args?.value;
   }
 
-  static normalizeArguments(
-    section: EventSection,
-    method: EventMethod,
-    args: RawEventArguments,
-  ): NormalizedEventArguments {
-    if (section === EventSection.SYSTEM) {
-      return EventArgumentsService.normalizeSystemArguments(method, args);
-    } else if (section === EventSection.COMMON) {
+  normalizeArguments(
+    eventName: string,
+    rawArgs: RawEventArgs,
+  ): NormalizedEventArgs | null {
+    const args = typeof rawArgs === 'object' ? rawArgs : [rawArgs];
+    // const argsObj = Array.isArray(args)
+    //   ? Object.fromEntries(args.map((v, i) => [v, i]))
+    //   : args;
+
+    let result = {} as NormalizedEventArgs;
+
+    const argsDescriptor = EVENT_ARGS_DESCRIPTORS[eventName];
+
+    let keysMap = {};
+
+    keysMap = {
+      ...keysMap,
+      ...Object.fromEntries(ACCOUNT_KEYS.map((v) => [v, v])),
+    };
+
+    if (argsDescriptor) {
+      const {
+        accounts: accountsKeys,
+        collectionId: collectionIdKey = null,
+        tokenId: tokenIdKey = null,
+      } = argsDescriptor;
+
+      if (accountsKeys !== null) {
+        if (typeof accountsKeys === 'object') {
+          keysMap = {
+            ...keysMap,
+            ...accountsKeys,
+          };
+        } else {
+          keysMap[accountsKeys] = ACCOUNT_KEY_DEFAULT;
+        }
+      }
+
+      if (collectionIdKey !== null) {
+        keysMap[collectionIdKey] = COLLECTION_ID_KEY_DEFAULT;
+      }
+
+      if (tokenIdKey !== null) {
+        keysMap[tokenIdKey] = TOKEN_ID_KEY_DEFAULT;
+      }
     }
+
+    result = {
+      ...result,
+      ...this.normalizeAccounts(args, keysMap),
+    };
+
+    return Object.keys(result).length ? result : null;
   }
 
-  private static normalizeSystemArguments(
-    method: EventMethod,
-    args: RawEventArguments,
-  ): ISystemArguments {
-    const result = { ...args } as ISystemArguments;
+  private normalizeAccounts(
+    args: object,
+    accountKeysMap: { [key: string]: string },
+  ): NormalizedEventArgs {
+    const result = {} as NormalizedEventArgs;
 
-    if (method === EventMethod.NEW_ACCOUNT) {
-      // todo: Process account and normalize address
-      // result.account = processAddress(result.account);
-    }
+    Object.entries(accountKeysMap).forEach(([key, newKey]) => {
+      // console.log(key, newKey, args);
+      if (args[key]) {
+        // todo: Go to sdk
+        // todo: get inner value if object
+        const newValue = args[key];
+
+        result[newKey] = newValue;
+      }
+    });
 
     return result;
   }
 
   /**
-   * Extracts address values from event arguments.
+   * Extracts address values from event args.
    *
    * We have different kinds of args formats and should process all of them:
    * - Common.CollectionCreated
@@ -120,7 +197,7 @@ export class EventArgumentsService {
     // todo: EventName.COLLECTION_SPONSOR_SET,
     // todo: EventName.SPONSORSHIP_CONFIRMED,
 
-    // Convert array arguments into object format
+    // Convert array args into object format
     if (typeof args === 'string') {
       argsObj.account = args;
     } else if (Array.isArray(args)) {
