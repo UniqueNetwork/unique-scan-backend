@@ -21,7 +21,7 @@ export class SdkService {
   getCollection(
     collectionId: number,
   ): Promise<CollectionInfoWithSchema | null> {
-    return this.sdk.collections.get_new({ collectionId });
+    return this.sdk.collections.get({ collectionId });
   }
 
   @SdkCache('getCollectionLimits')

@@ -44,4 +44,7 @@ export class Tokens {
 
   @Column('text', { name: 'token_name', nullable: true })
   token_name: string;
+
+  @Column('boolean', { name: 'was_burn', default: false })
+  was_burn: boolean;
 }

@@ -198,6 +198,7 @@ export class CollectionWriterService {
       mint_mode,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
+      was_burn: false,
     };
   }
 
@@ -226,6 +227,19 @@ export class CollectionWriterService {
 
   async delete(collectionId: number) {
     return this.deleteCollectionWithTokens(collectionId);
+  }
+
+  async burnCollection(collectionId: number) {
+    return Promise.allSettled([
+      this.collectionsRepository.update(
+        { collection_id: collectionId },
+        { was_burn: true },
+      ),
+      this.tokensRepository.update(
+        { collection_id: collectionId },
+        { was_burn: true },
+      ),
+    ]);
   }
 
   // Delete db collection record and related tokens

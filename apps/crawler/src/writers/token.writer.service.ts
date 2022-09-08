@@ -58,6 +58,7 @@ export class TokenWriterService {
       parent_id: parentId,
       is_sold: owner !== collectionOwner,
       token_name: `${tokenPrefix} #${token_id}`,
+      was_burn: false,
     };
   }
 
@@ -82,6 +83,16 @@ export class TokenWriterService {
             : undefined,
       },
       ['collection_id', 'token_id'],
+    );
+  }
+
+  async burn(collectionId: number, tokenId: number) {
+    return this.tokensRepository.update(
+      {
+        collection_id: collectionId,
+        token_id: tokenId,
+      },
+      { was_burn: true },
     );
   }
 

@@ -134,7 +134,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
       log.collectionId = collectionId;
 
-      await this.collectionWriterService.delete(collectionId);
+      await this.collectionWriterService.burnCollection(collectionId);
 
       this.logger.verbose({ ...log });
     } catch (error) {

@@ -151,7 +151,7 @@ export class TokensSubscriberService implements ISubscriberService {
       log.tokenId = tokenId;
 
       // Delete db record
-      await this.tokenWriterService.delete(collectionId, tokenId);
+      await this.tokenWriterService.burn(collectionId, tokenId);
 
       this.logger.verbose({ ...log });
     } catch (error) {
