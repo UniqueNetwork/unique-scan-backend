@@ -1,7 +1,7 @@
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EventMethod, EventSection } from '@common/constants';
+import { EventMethod, EventName, EventSection } from '@common/constants';
 import { Event } from '@entities/Event';
 import { getAmount, normalizeTimestamp } from '@common/utils';
 import {
@@ -31,44 +31,52 @@ export class EventService {
       .filter((v) => !!v);
   }
 
-  private prepareDataForDb({
+  private async prepareDataForDb({
     eventItems,
     blockCommonData,
   }: {
     eventItems: IEvent[];
     blockCommonData: IBlockCommonData;
-  }): Event[] {
-    return eventItems.map((event) => {
-      const { name, indexInBlock, phase, extrinsic, args: rawArgs } = event;
-      const { blockNumber, blockTimestamp } = blockCommonData;
+  }): Promise<Event[]> {
+    return Promise.all(
+      eventItems.map(async (event) => {
+        const { name, indexInBlock, phase, extrinsic, args: rawArgs } = event;
+        const { blockNumber, blockTimestamp } = blockCommonData;
 
-      const [section, method] = name.split('.') as [EventSection, EventMethod];
+        const [section, method] = name.split('.') as [
+          EventSection,
+          EventMethod,
+        ];
 
-      const argsNormalized = this.eventArgumentsService.getNormalizedArguments(
-        name,
-        rawArgs,
-      );
+        const argsNormalized =
+          await this.eventArgumentsService.getNormalizedArguments(
+            name,
+            rawArgs,
+          );
 
-      // todo: Получать amount из нормализованных аргументов
-      const rawAmount = EventArgumentsService.extractRawAmountValue(rawArgs);
+        console.log(argsNormalized);
 
-      return {
-        timestamp: String(normalizeTimestamp(blockTimestamp)),
-        block_number: String(blockNumber),
-        event_index: indexInBlock,
-        block_index: `${blockNumber}-${
-          extrinsic ? extrinsic.indexInBlock : ''
-        }`,
-        section,
-        method,
-        // todo: Make more clean connect to extrinsic
-        phase:
-          phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
-        data: JSON.stringify(rawArgs),
-        args: JSON.stringify(argsNormalized), // todo: Add field into entity
-        amount: rawAmount ? getAmount(rawAmount) : null,
-      };
-    });
+        // todo: Получать amount из нормализованных аргументов
+        const rawAmount = EventArgumentsService.extractRawAmountValue(rawArgs);
+
+        return {
+          timestamp: String(normalizeTimestamp(blockTimestamp)),
+          block_number: String(blockNumber),
+          event_index: indexInBlock,
+          block_index: `${blockNumber}-${
+            extrinsic ? extrinsic.indexInBlock : ''
+          }`,
+          section,
+          method,
+          // todo: Make more clean connect to extrinsic
+          phase:
+            phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
+          data: JSON.stringify(rawArgs),
+          args: JSON.stringify(argsNormalized), // todo: Add field into entity
+          amount: rawAmount ? getAmount(rawAmount) : null,
+        };
+      }),
+    );
   }
 
   async upsert({
@@ -80,17 +88,17 @@ export class EventService {
   }) {
     const eventItems = EventService.extractEventItems(blockItems);
 
-    // console.log(
-    //   'eventItems',
-    //   eventItems
-    //     .filter(({ name }) => ![EventName.EXTRINSIC_SUCCESS].includes(name))
-    //     .map(({ name, args }) => ({
-    //       name,
-    //       args,
-    //     })),
-    // );
+    console.log(
+      'eventItems',
+      eventItems
+        .filter(({ name }) => ![EventName.EXTRINSIC_SUCCESS].includes(name))
+        .map(({ name, args }) => ({
+          name,
+          args,
+        })),
+    );
 
-    const eventsData = this.prepareDataForDb({
+    const eventsData = await this.prepareDataForDb({
       blockCommonData,
       eventItems,
     });

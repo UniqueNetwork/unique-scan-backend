@@ -18,20 +18,23 @@ export enum EventMethod {
   COLLECTION_OWNER_CHANGED = 'CollectionOwnedChanged',
   COLLECTION_PERMISSION_SET = 'CollectionPermissionSet',
 
-  COLLECTION_PROPERTY_SET = 'CollectionPropertySet',
+  // Common
+  APPROVED = 'Approved',
+  COLLECTION_CREATED = 'CollectionCreated',
+  COLLECTION_DESTROYED = 'CollectionDestroyed',
   COLLECTION_PROPERTY_DELETED = 'CollectionPropertyDeleted',
+  COLLECTION_PROPERTY_SET = 'CollectionPropertySet',
   ITEM_CREATED = 'ItemCreated',
   ITEM_DESTROYED = 'ItemDestroyed',
+  PROPERTY_PERMISSION_SET = 'PropertyPermissionSet',
+  TOKEN_PROPERTY_DELETED = 'TokenPropertyDeleted',
+  TOKEN_PROPERTY_SET = 'TokenPropertySet',
+  // and Transfer
+
   NEW_ACCOUNT = 'NewAccount',
   EXTRINSIC_SUCCESS = 'ExtrinsicSuccess',
   EXTRINSIC_FAILED = 'ExtrinsicFailed',
-  COLLECTION_CREATED = 'CollectionCreated',
-  COLLECTION_DESTROYED = 'CollectionDestroyed',
   COLLECTION_LIMIT_SET = 'CollectionLimitSet',
-  PROPERTY_PERMISSION_SET = 'PropertyPermissionSet',
-  TOKEN_PERMISSION_SET = 'TokenPropertySet',
-  TOKEN_PERMISSION_DELETED = 'TokenPropertyDeleted',
-  APPROVED = 'Approved',
 
   // Balances
   BALANCE_SET = 'BalanceSet',
@@ -53,17 +56,17 @@ export const EventName = {
   NEW_ACCOUNT: `${EventSection.SYSTEM}.${EventMethod.NEW_ACCOUNT}`,
 
   // Common
+  APPROVED: `${EventSection.COMMON}.${EventMethod.APPROVED}`,
   COLLECTION_CREATED: `${EventSection.COMMON}.${EventMethod.COLLECTION_CREATED}`,
   COLLECTION_DESTROYED: `${EventSection.COMMON}.${EventMethod.COLLECTION_DESTROYED}`,
+  COLLECTION_PROPERTY_DELETED: `${EventSection.COMMON}.${EventMethod.COLLECTION_PROPERTY_DELETED}`,
+  COLLECTION_PROPERTY_SET: `${EventSection.COMMON}.${EventMethod.COLLECTION_PROPERTY_SET}`,
   ITEM_CREATED: `${EventSection.COMMON}.${EventMethod.ITEM_CREATED}`,
   ITEM_DESTROYED: `${EventSection.COMMON}.${EventMethod.ITEM_DESTROYED}`,
-  COLLECTION_PROPERTY_SET: `${EventSection.COMMON}.${EventMethod.COLLECTION_PROPERTY_SET}`,
-  COLLECTION_PROPERTY_DELETED: `${EventSection.COMMON}.${EventMethod.COLLECTION_PROPERTY_DELETED}`,
   PROPERTY_PERMISSION_SET: `${EventSection.COMMON}.${EventMethod.PROPERTY_PERMISSION_SET}`,
-  TOKEN_PROPERTY_SET: `${EventSection.COMMON}.${EventMethod.TOKEN_PERMISSION_SET}`,
-  TOKEN_PROPERTY_DELETED: `${EventSection.COMMON}.${EventMethod.TOKEN_PERMISSION_DELETED}`,
+  TOKEN_PROPERTY_SET: `${EventSection.COMMON}.${EventMethod.TOKEN_PROPERTY_SET}`,
+  TOKEN_PROPERTY_DELETED: `${EventSection.COMMON}.${EventMethod.TOKEN_PROPERTY_DELETED}`,
   TRANSFER: `${EventSection.COMMON}.${EventMethod.TRANSFER}`,
-  APPROVED: `${EventSection.COMMON}.${EventMethod.APPROVED}`,
 
   // Unique
   ALLOW_LIST_ADDRESS_ADDED: `${EventSection.UNIQUE}.${EventMethod.ALLOW_LIST_ADDRESS_ADDDED}`,
