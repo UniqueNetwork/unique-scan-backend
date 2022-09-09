@@ -72,7 +72,7 @@ export class EventService {
           phase:
             phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
           data: JSON.stringify(rawArgs),
-          args: JSON.stringify(argsNormalized), // todo: Add field into entity
+          args: argsNormalized,
           amount: rawAmount ? getAmount(rawAmount) : null,
         };
       }),
