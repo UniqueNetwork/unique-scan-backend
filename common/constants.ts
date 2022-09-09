@@ -15,13 +15,11 @@ export enum EventMethod {
   COLLECTION_SPONSOR_SET = 'CollectionSponsorSet',
   COLLECTION_SPONSOR_REMOVED = 'CollectionSponsorRemoved',
   SPONSORSHIP_CONFIRMED = 'SponsorshipConfirmed',
-
   COLLECTION_OWNER_CHANGED = 'CollectionOwnedChanged',
-  COLLECTION_PERMISSION_CHANGED = 'CollectionPermissionSet',
+  COLLECTION_PERMISSION_SET = 'CollectionPermissionSet',
+
   COLLECTION_PROPERTY_SET = 'CollectionPropertySet',
   COLLECTION_PROPERTY_DELETED = 'CollectionPropertyDeleted',
-  DEPOSIT = 'Deposit',
-  ENDOWED = 'Endowed',
   ITEM_CREATED = 'ItemCreated',
   ITEM_DESTROYED = 'ItemDestroyed',
   NEW_ACCOUNT = 'NewAccount',
@@ -33,12 +31,19 @@ export enum EventMethod {
   PROPERTY_PERMISSION_SET = 'PropertyPermissionSet',
   TOKEN_PERMISSION_SET = 'TokenPropertySet',
   TOKEN_PERMISSION_DELETED = 'TokenPropertyDeleted',
-  TRANSFER = 'Transfer',
-  WITHDRAW = 'Withdraw',
   APPROVED = 'Approved',
+
+  // Balances
   BALANCE_SET = 'BalanceSet',
+  DEPOSIT = 'Deposit',
+  DUST_LOST = 'DustLost',
+  ENDOWED = 'Endowed',
   RESERVED = 'Reserved',
+  RESERVED_REPATRIATED = 'ReserveRepatriated',
+  SLASHED = 'Slashed',
+  TRANSFER = 'Transfer',
   UNRESERVED = 'Unreserved',
+  WITHDRAW = 'Withdraw',
 }
 
 export const EventName = {
@@ -70,6 +75,7 @@ export const EventName = {
   COLLECTION_LIMIT_SET: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_LIMIT_SET}`,
   COLLECTION_SPONSOR_SET: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_SPONSOR_SET}`,
   SPONSORSHIP_CONFIRMED: `${EventSection.UNIQUE}.${EventMethod.SPONSORSHIP_CONFIRMED}`,
+  COLLECTION_PERMISSION_SET: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_PERMISSION_SET}`,
 
   // Balances
   BALANCES_DEPOSIT: `${EventSection.BALANCES}.${EventMethod.DEPOSIT}`,
@@ -79,6 +85,9 @@ export const EventName = {
   BALANCES_BALANCE_SET: `${EventSection.BALANCES}.${EventMethod.BALANCE_SET}`,
   BALANCES_RESERVED: `${EventSection.BALANCES}.${EventMethod.RESERVED}`,
   BALANCES_UNRESERVED: `${EventSection.BALANCES}.${EventMethod.UNRESERVED}`,
+  BALANCES_DUST_LOST: `${EventSection.BALANCES}.${EventMethod.DUST_LOST}`,
+  BALANCES_RESERVED_REPATRIATED: `${EventSection.BALANCES}.${EventMethod.RESERVED_REPATRIATED}`,
+  BALANCES_SLASHED: `${EventSection.BALANCES}.${EventMethod.SLASHED}`,
 
   // Treasury
   TREASURY_DEPOSIT: `${EventSection.TREASURY}.${EventMethod.DEPOSIT}`,

@@ -1,7 +1,7 @@
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EventMethod, EventName, EventSection } from '@common/constants';
+import { EventMethod, EventSection } from '@common/constants';
 import { Event } from '@entities/Event';
 import { getAmount, normalizeTimestamp } from '@common/utils';
 import {
@@ -49,8 +49,6 @@ export class EventService {
         rawArgs,
       );
 
-      console.log(argsNormalized);
-
       // todo: Получать amount из нормализованных аргументов
       const rawAmount = EventArgumentsService.extractRawAmountValue(rawArgs);
 
@@ -82,15 +80,15 @@ export class EventService {
   }) {
     const eventItems = EventService.extractEventItems(blockItems);
 
-    console.log(
-      'eventItems',
-      eventItems
-        .filter(({ name }) => ![EventName.EXTRINSIC_SUCCESS].includes(name))
-        .map(({ name, args }) => ({
-          name,
-          args,
-        })),
-    );
+    // console.log(
+    //   'eventItems',
+    //   eventItems
+    //     .filter(({ name }) => ![EventName.EXTRINSIC_SUCCESS].includes(name))
+    //     .map(({ name, args }) => ({
+    //       name,
+    //       args,
+    //     })),
+    // );
 
     const eventsData = this.prepareDataForDb({
       blockCommonData,

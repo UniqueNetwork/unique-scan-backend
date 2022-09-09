@@ -15,15 +15,9 @@ type EventArgsValueNormalizer = (rawValue: string | number | object) => unknown;
  */
 const EVENT_ARGS_DESCRIPTORS = {
   // System
-  [EventName.ITEM_CREATED]: { collectionId: 0, tokenId: 1, accounts: 2 },
+  [EventName.NEW_ACCOUNT]: { accounts: 0 },
 
   // Common
-  [EventName.ITEM_DESTROYED]: { collectionId: 0, tokenId: 1, accounts: 2 },
-  [EventName.TRANSFER]: {
-    collectionId: 0,
-    tokenId: 1,
-    accounts: { '2': 'from', '3': 'to' },
-  },
   [EventName.APPROVED]: {
     collectionId: 0,
     tokenId: 1,
@@ -31,13 +25,57 @@ const EVENT_ARGS_DESCRIPTORS = {
   },
   [EventName.COLLECTION_CREATED]: { collectionId: 0, accounts: 2 },
   [EventName.COLLECTION_DESTROYED]: { collectionId: 0 },
+  [EventName.COLLECTION_PROPERTY_DELETED]: { collectionId: 0 },
+  [EventName.COLLECTION_PROPERTY_SET]: { collectionId: 0 },
+  [EventName.ITEM_CREATED]: { collectionId: 0, tokenId: 1, accounts: 2 },
+  [EventName.ITEM_DESTROYED]: { collectionId: 0, tokenId: 1, accounts: 2 },
+  [EventName.PROPERTY_PERMISSION_SET]: {
+    collectionId: 0,
+    tokenId: 1,
+    accounts: 2,
+  },
+  [EventName.TOKEN_PROPERTY_DELETED]: {
+    collectionId: 0,
+    tokenId: 1,
+    accounts: 2,
+  },
+  [EventName.TOKEN_PROPERTY_SET]: {
+    collectionId: 0,
+    tokenId: 1,
+    accounts: 2,
+  },
+  [EventName.TRANSFER]: {
+    collectionId: 0,
+    tokenId: 1,
+    accounts: { '2': 'from', '3': 'to' },
+  },
 
   // Balances
-  [EventName.BALANCES_WITHDRAW]: { accounts: { '0': 'who' } },
+  [EventName.BALANCES_BALANCE_SET]: { accounts: { '0': 'who' } },
   [EventName.BALANCES_DEPOSIT]: { accounts: { '0': 'who' } },
+  [EventName.BALANCES_WITHDRAW]: { accounts: { '0': 'who' } },
+  [EventName.BALANCES_DUST_LOST]: { accounts: 0 },
+  [EventName.BALANCES_ENDOWED]: { accounts: 0 },
+  [EventName.BALANCES_RESERVED]: { accounts: { '0': 'who' } },
+  [EventName.BALANCES_RESERVED_REPATRIATED]: {
+    accounts: { '0': 'from', '1': 'to' },
+  },
+  [EventName.BALANCES_SLASHED]: { accounts: 0 },
+  [EventName.BALANCES_TRANSFER]: { accounts: { '0': 'from', '1': 'to' } },
+  [EventName.BALANCES_UNRESERVED]: { accounts: { '0': 'who' } },
+  [EventName.BALANCES_WITHDRAW]: { accounts: { '0': 'who' } },
 
   // Unique
-  // todo: Start here
+  [EventName.ALLOW_LIST_ADDRESS_ADDED]: { collectionId: 0, accounts: 1 },
+  [EventName.ALLOW_LIST_ADDRESS_REMOVED]: { collectionId: 0, accounts: 1 },
+  [EventName.COLLECTION_ADMIN_ADDED]: { collectionId: 0, accounts: 1 },
+  [EventName.COLLECTION_ADMIN_REMOVED]: { collectionId: 0, accounts: 1 },
+  [EventName.COLLECTION_OWNED_CHANGED]: { collectionId: 0, accounts: 1 },
+  [EventName.COLLECTION_LIMIT_SET]: { collectionId: 0 },
+  [EventName.COLLECTION_PERMISSION_SET]: { collectionId: 0 },
+  [EventName.COLLECTION_SPONSOR_SET]: { collectionId: 0, accounts: 1 },
+  [EventName.COLLECTION_SPONSOR_REMOVED]: { collectionId: 0 },
+  [EventName.SPONSORSHIP_CONFIRMED]: { collectionId: 0, accounts: 1 },
 };
 @Injectable()
 export class EventArgumentsService {
