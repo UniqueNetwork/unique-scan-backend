@@ -13,9 +13,12 @@ type EventArgsValueNormalizer = (
   rawValue: string | number | object,
 ) => Promise<unknown>;
 
-/**
- * todo: Add types and description
- */
+type EventArgsDescriptor = {
+  accounts?: number | { [rawKey: string]: string };
+  collectionId?: number;
+  tokenId?: number;
+};
+
 const EVENT_ARGS_DESCRIPTORS = {
   // System
   [EventName.NEW_ACCOUNT]: { accounts: 0 },
@@ -67,7 +70,11 @@ const EVENT_ARGS_DESCRIPTORS = {
   [EventName.COLLECTION_SPONSOR_SET]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_SPONSOR_REMOVED]: { collectionId: 0 },
   [EventName.SPONSORSHIP_CONFIRMED]: { collectionId: 0, accounts: 1 },
-};
+} as { [eventName: string]: EventArgsDescriptor };
+
+const ACCOUNT_ARGS_KEYS_MAP_DEFAULT = Object.fromEntries(
+  EVENT_ARGS_ACCOUNT_KEYS.map((v) => [v, v]),
+);
 
 @Injectable()
 export class EventArgumentsService {
@@ -87,54 +94,72 @@ export class EventArgumentsService {
       return null;
     }
 
-    const accountKeysMap = {};
-
-    const otherKeysMap = {};
-
-    // Add default account keys map
-    Object.assign(
-      accountKeysMap,
-      Object.fromEntries(EVENT_ARGS_ACCOUNT_KEYS.map((v) => [v, v])),
-    );
-
     const argsDescriptor = EVENT_ARGS_DESCRIPTORS[eventName];
-    if (argsDescriptor) {
-      const {
-        accounts: accountsKeys = null, // Use null as default to be albe using keys like 0.
-        collectionId: collectionIdKey = null,
-        tokenId: tokenIdKey = null,
-      } = argsDescriptor;
 
-      if (accountsKeys !== null) {
-        if (typeof accountsKeys === 'object') {
-          Object.assign(accountKeysMap, accountsKeys);
-        } else {
-          accountKeysMap[accountsKeys] = EVENT_ARGS_ACCOUNT_KEY_DEFAULT;
-        }
-      }
-
-      if (collectionIdKey !== null) {
-        otherKeysMap[collectionIdKey] = EVENT_ARGS_COLLECTION_ID_KEY_DEFAULT;
-      }
-
-      if (tokenIdKey !== null) {
-        otherKeysMap[tokenIdKey] = EVENT_ARGS_TOKEN_ID_KEY_DEFAULT;
-      }
-    }
-    const accountsNormalized = await this.normalizeArgs(
-      rawArgs,
-      accountKeysMap,
-      this.normalizeAccountValue.bind(this),
-    );
-
-    const otherNormalized = await this.normalizeArgs(rawArgs, otherKeysMap);
+    const [accountsNormalized, otherNormalized] = await Promise.all([
+      this.normalizeAccountArgs(rawArgs, argsDescriptor),
+      this.normalizeOtherArgs(rawArgs, argsDescriptor),
+    ]);
 
     const result = { ...accountsNormalized, ...otherNormalized };
 
     return Object.keys(result).length ? result : null;
   }
 
-  private async normalizeArgs(
+  private async normalizeAccountArgs(
+    rawArgs: RawEventArgs,
+    argsDescriptor: EventArgsDescriptor | null,
+  ) {
+    const keysMap = { ...ACCOUNT_ARGS_KEYS_MAP_DEFAULT };
+
+    if (argsDescriptor) {
+      // Add event specific keys map.
+      const {
+        accounts: accountsKeysMap = null, // Use null as default to be albe using keys like 0.
+      } = argsDescriptor;
+
+      if (accountsKeysMap !== null) {
+        if (typeof accountsKeysMap === 'object') {
+          Object.assign(keysMap, accountsKeysMap);
+        } else {
+          keysMap[accountsKeysMap] = EVENT_ARGS_ACCOUNT_KEY_DEFAULT;
+        }
+      }
+    }
+
+    return this.normalize(
+      rawArgs,
+      keysMap,
+      this.normalizeAccountValue.bind(this),
+    );
+  }
+
+  private async normalizeOtherArgs(
+    rawArgs: RawEventArgs,
+    argsDescriptor: EventArgsDescriptor | null,
+  ) {
+    const keysMap = {};
+
+    if (argsDescriptor) {
+      // Add event specific keys map.
+      const {
+        collectionId: collectionIdKey = null, // Use null as default to be albe using keys like 0.
+        tokenId: tokenIdKey = null,
+      } = argsDescriptor;
+
+      if (collectionIdKey !== null) {
+        keysMap[collectionIdKey] = EVENT_ARGS_COLLECTION_ID_KEY_DEFAULT;
+      }
+
+      if (tokenIdKey !== null) {
+        keysMap[tokenIdKey] = EVENT_ARGS_TOKEN_ID_KEY_DEFAULT;
+      }
+    }
+
+    return this.normalize(rawArgs, keysMap);
+  }
+
+  private async normalize(
     rawArgs: RawEventArgs,
     keysMap: { [key: string]: string },
     valueNormalizerFn?: EventArgsValueNormalizer,

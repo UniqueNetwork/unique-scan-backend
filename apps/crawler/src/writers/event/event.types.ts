@@ -12,4 +12,4 @@ export type RawEventArgs =
 export type NormalizedEventArgs = {
   collectionId?: number;
   tokenId?: number;
-} & { [key in AccountKey]: string | undefined };
+} & { [key in AccountKey]: string };
