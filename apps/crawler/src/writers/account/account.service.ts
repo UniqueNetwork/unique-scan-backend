@@ -6,7 +6,7 @@ import { AllBalances } from '@unique-nft/substrate-client/types';
 import { Repository } from 'typeorm';
 
 @Injectable()
-export class AccountWriterService {
+export class AccountService {
   constructor(
     @InjectRepository(Account)
     private accountsRepository: Repository<Account>,

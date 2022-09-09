@@ -7,6 +7,7 @@ import {
   EVENT_ARGS_TOKEN_ID_KEY_DEFAULT,
 } from '@common/constants';
 import { NormalizedEventArgs, RawEventArgs } from './event.types';
+import { SdkService } from '../../sdk/sdk.service';
 
 type EventArgsValueNormalizer = (rawValue: string | number | object) => unknown;
 
@@ -77,8 +78,11 @@ const EVENT_ARGS_DESCRIPTORS = {
   [EventName.COLLECTION_SPONSOR_REMOVED]: { collectionId: 0 },
   [EventName.SPONSORSHIP_CONFIRMED]: { collectionId: 0, accounts: 1 },
 };
+
 @Injectable()
 export class EventArgumentsService {
+  constructor(private sdkService: SdkService) {}
+
   static extractRawAmountValue(
     args: string | { amount?: string; value?: string },
   ) {
@@ -94,6 +98,7 @@ export class EventArgumentsService {
     }
 
     const accountKeysMap = {};
+
     const otherKeysMap = {};
 
     // Add default account keys map

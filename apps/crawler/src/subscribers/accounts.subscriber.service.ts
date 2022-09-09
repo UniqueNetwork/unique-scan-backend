@@ -8,7 +8,7 @@ import { SdkService } from '../sdk/sdk.service';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
-import { AccountWriterService } from '../writers/account.writer.service';
+import { AccountService } from '../writers/account/account.service';
 import { EventArgumentsService } from '../writers/event/event.arguments.service';
 
 @Injectable()
@@ -18,7 +18,7 @@ export class AccountsSubscriberService implements ISubscriberService {
   constructor(
     private sdkService: SdkService,
 
-    private accountWriterService: AccountWriterService,
+    private accountWriterService: AccountService,
 
     @InjectSentry()
     private readonly sentry: SentryService,

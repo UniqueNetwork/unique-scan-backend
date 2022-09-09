@@ -8,7 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Account } from '@entities/Account';
 import { CollectionWriterService } from './collection.writer.service';
-import { AccountWriterService } from './account.writer.service';
+import { AccountService } from './account/account.service';
 import { TokenWriterService } from './token.writer.service';
 import { BlockWriterService } from './block.writer.service';
 import { EventService } from './event/event.service';
@@ -28,7 +28,7 @@ import { EventArgumentsService } from './event/event.arguments.service';
     ConfigModule,
   ],
   providers: [
-    AccountWriterService,
+    AccountService,
     BlockWriterService,
     CollectionWriterService,
     EventService,
@@ -37,7 +37,7 @@ import { EventArgumentsService } from './event/event.arguments.service';
     TokenWriterService,
   ],
   exports: [
-    AccountWriterService,
+    AccountService,
     BlockWriterService,
     CollectionWriterService,
     EventService,
