@@ -20,13 +20,14 @@ export class SdkService {
   @SdkCache('getCollection')
   getCollection(
     collectionId: number,
+    at: string,
   ): Promise<CollectionInfoWithSchema | null> {
-    return this.sdk.collections.get({ collectionId });
+    return this.sdk.collections.get({ collectionId, at });
   }
 
   @SdkCache('getCollectionLimits')
-  async getCollectionLimits(collectionId: number) {
-    const result = await this.sdk.collections.getLimits({ collectionId });
+  async getCollectionLimits(collectionId: number, at: string) {
+    const result = await this.sdk.collections.getLimits({ collectionId, at });
     return result?.limits;
   }
 
@@ -34,16 +35,18 @@ export class SdkService {
   getToken(
     collectionId: number,
     tokenId: number,
+    at: string,
   ): Promise<TokenByIdResult | null> {
-    return this.sdk.tokens.get_new({ collectionId, tokenId });
+    return this.sdk.tokens.get_new({ collectionId, tokenId, at });
   }
 
   @SdkCache('getTokenProperties')
   getTokenProperties(
     collectionId: number,
     tokenId: number,
+    at: string,
   ): Promise<TokenPropertiesResult | null> {
-    return this.sdk.tokens.properties({ collectionId, tokenId });
+    return this.sdk.tokens.properties({ collectionId, tokenId, at });
   }
 
   @SdkCache('getBalances')

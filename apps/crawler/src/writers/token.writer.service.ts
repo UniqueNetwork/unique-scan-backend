@@ -86,7 +86,7 @@ export class TokenWriterService {
     );
   }
 
-  async burn(collectionId: number, tokenId: number) {
+  async burnToken(collectionId: number, tokenId: number) {
     return this.tokensRepository.update(
       {
         collection_id: collectionId,

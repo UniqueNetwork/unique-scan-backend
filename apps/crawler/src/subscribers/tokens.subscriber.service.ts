@@ -66,12 +66,13 @@ export class TokensSubscriberService implements ISubscriberService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
+    hash: string,
   ): Promise<ITokenData> {
     const [tokenDecoded, tokenProperties, collectionDecoded] =
       await Promise.all([
-        this.sdkService.getToken(collectionId, tokenId),
-        this.sdkService.getTokenProperties(collectionId, tokenId),
-        this.sdkService.getCollection(collectionId),
+        this.sdkService.getToken(collectionId, tokenId, hash),
+        this.sdkService.getTokenProperties(collectionId, tokenId, hash),
+        this.sdkService.getCollection(collectionId, hash),
       ]);
 
     return {
@@ -83,7 +84,7 @@ export class TokensSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: blockTimestamp },
+      block: { height: blockNumber, timestamp: blockTimestamp, hash },
       event: { name: eventName, args },
     } = ctx;
 
@@ -105,7 +106,7 @@ export class TokensSubscriberService implements ISubscriberService {
         throw new Error('Bad tokenId');
       }
 
-      const tokenData = await this.getTokenData(collectionId, tokenId);
+      const tokenData = await this.getTokenData(collectionId, tokenId, hash);
 
       if (tokenData.tokenDecoded) {
         await this.tokenWriterService.upsert({
@@ -151,7 +152,7 @@ export class TokensSubscriberService implements ISubscriberService {
       log.tokenId = tokenId;
 
       // Delete db record
-      await this.tokenWriterService.burn(collectionId, tokenId);
+      await this.tokenWriterService.burnToken(collectionId, tokenId);
 
       this.logger.verbose({ ...log });
     } catch (error) {

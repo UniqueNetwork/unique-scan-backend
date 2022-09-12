@@ -62,10 +62,11 @@ export class CollectionsSubscriberService implements ISubscriberService {
    */
   private async getCollectionData(
     collectionId: number,
+    hash: string,
   ): Promise<ICollectionData> {
     const [collectionDecoded, collectionLimits] = await Promise.all([
-      this.sdkService.getCollection(collectionId),
-      this.sdkService.getCollectionLimits(collectionId),
+      this.sdkService.getCollection(collectionId, hash),
+      this.sdkService.getCollectionLimits(collectionId, hash),
     ]);
 
     return {
@@ -76,7 +77,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: blockTimestamp },
+      block: { height: blockNumber, timestamp: blockTimestamp, hash },
       event: { name: eventName, args },
     } = ctx;
 
@@ -92,7 +93,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
       log.collectionId = collectionId;
 
-      const collectionData = await this.getCollectionData(collectionId);
+      const collectionData = await this.getCollectionData(collectionId, hash);
 
       if (collectionData.collectionDecoded) {
         await this.collectionWriterService.upsert({
