@@ -7,9 +7,9 @@ import { Address, AllBalances } from '@unique-nft/substrate-client/types';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
 
-export type RawAccount =
-  | string
-  | { value: string; __kind: 'Substrate' | 'Etherium' };
+export type AccountRecord =
+  | Address
+  | { value: Address; __kind: 'Substrate' | 'Etherium' };
 
 type BalancesExtended = AllBalances & {
   etheriumAddress?: string;
@@ -24,51 +24,56 @@ export class AccountService {
     private accountsRepository: Repository<Account>,
   ) {}
 
-  async processRawAddress({
-    rawAddress,
+  async processRawAccountRecord({
+    account,
     blockTimestamp = 0,
     blockNumber = 0,
   }: {
-    rawAddress: RawAccount;
+    account: AccountRecord;
     blockTimestamp?: number;
     blockNumber?: number;
-  }): Promise<RawAccount> {
-    const rawAddressValue =
-      typeof rawAddress === 'string' ? rawAddress : rawAddress.value;
+  }): Promise<AccountRecord> {
+    const rawAddress = this.getAccountAddress(account);
 
-    const normalizedAddressValue = await this.upsert({
-      rawAddressValue,
+    const balances = await this.sdkService.getBalances(rawAddress);
 
+    // We should keep Etherium addresses as it is, but sdk normalizes it into Substrate
+    const balancesExtended = this.extendEtheriumAddressBalances(
+      balances,
+      rawAddress,
+    );
+
+    const normalizedAddress = await this.upsert({
       // todo: Решить с пустыми blockTimestamp & blockNumber
       blockTimestamp,
       blockNumber,
+
+      balances: balancesExtended,
     });
 
-    return typeof rawAddress === 'string'
-      ? normalizedAddressValue
-      : { ...rawAddress, value: normalizedAddressValue };
+    return this.updateAccountAddress(account, normalizedAddress);
   }
 
-  /**
-   * Gets balances data for every raw address value passed.
-   */
-  // private getBalances(rawAddressValues: string[]): Promise<AllBalances[]> {
-  //   return Promise.all(
-  //     rawAddressValues.map((rawAddress) =>
-  //       this.sdkService.getBalances(rawAddress),
-  //     ),
-  //   );
-  // }
+  private getAccountAddress(account: AccountRecord): Address {
+    return typeof account === 'string' ? account : account.value;
+  }
+
+  private updateAccountAddress(
+    account: AccountRecord,
+    address: Address,
+  ): AccountRecord {
+    return typeof account === 'string'
+      ? address
+      : { ...account, value: address };
+  }
 
   private extendEtheriumAddressBalances(
     balances: AllBalances,
-    rawAddressValue: string,
+    address: Address,
   ): BalancesExtended {
     return {
       ...balances,
-      etheriumAddress: isEthereumAddress(rawAddressValue)
-        ? rawAddressValue
-        : null,
+      etheriumAddress: isEthereumAddress(address) ? address : null,
     };
   }
 
@@ -108,29 +113,21 @@ export class AccountService {
   async upsert({
     blockNumber,
     blockTimestamp,
-    rawAddressValue,
+    balances,
   }: {
     blockNumber: number;
     blockTimestamp: number;
-    rawAddressValue: string;
+    balances: BalancesExtended;
   }): Promise<Address> {
-    const balances = await this.sdkService.getBalances(rawAddressValue);
-
-    // We should keep Etherium addresses as it is, but sdk normalizes it into Substrate
-    const balancesExtended = this.extendEtheriumAddressBalances(
-      balances,
-      rawAddressValue,
-    );
-
     const dataToWrite = this.prepareDataForDb({
       blockNumber,
       blockTimestamp,
-      balances: balancesExtended,
+      balances,
     });
 
     // Write data into db
     await this.accountsRepository.upsert(dataToWrite, ['account_id']);
 
-    return balancesExtended.etheriumAddress || balancesExtended.address;
+    return balances.etheriumAddress || balances.address;
   }
 }

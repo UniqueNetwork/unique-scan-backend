@@ -1,21 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { Severity } from '@sentry/node';
-import { AllBalances } from '@unique-nft/substrate-client/types';
 import { EventName } from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
-import { AccountService } from '../writers/account/account.service';
-import { EventArgumentsService } from '../writers/event/event.arguments.service';
+import { EventService } from '../writers/event/event.service';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(AccountsSubscriberService.name);
 
   constructor(
-    private accountService: AccountService,
+    private eventService: EventService,
 
     @InjectSentry()
     private readonly sentry: SentryService,
@@ -25,31 +22,36 @@ export class AccountsSubscriberService implements ISubscriberService {
 
   subscribe(processorService: ProcessorService) {
     [
-      // System
-      EventName.NEW_ACCOUNT,
+      // Balances
+      EventName.BALANCES_BALANCE_SET,
+      EventName.BALANCES_DEPOSIT,
+      EventName.BALANCES_DUST_LOST,
+      EventName.BALANCES_ENDOWED,
+      EventName.BALANCES_RESERVED,
+      EventName.BALANCES_RESERVED_REPATRIATED,
+      EventName.BALANCES_SLASHED,
+      EventName.BALANCES_TRANSFER,
+      EventName.BALANCES_UNRESERVED,
+      EventName.BALANCES_WITHDRAW,
 
       // Common
+      EventName.APPROVED,
       EventName.COLLECTION_CREATED,
       EventName.ITEM_CREATED,
       EventName.ITEM_DESTROYED,
       EventName.TRANSFER,
-      EventName.APPROVED,
 
-      // Balances
-      EventName.BALANCES_TRANSFER,
-      EventName.BALANCES_WITHDRAW,
-      EventName.BALANCES_DEPOSIT,
-      EventName.BALANCES_ENDOWED,
-      EventName.BALANCES_BALANCE_SET,
-      EventName.BALANCES_RESERVED,
-      EventName.BALANCES_UNRESERVED,
+      // System
+      EventName.NEW_ACCOUNT,
 
       // Unique
+      EventName.ALLOW_LIST_ADDRESS_ADDED,
+      EventName.ALLOW_LIST_ADDRESS_REMOVED,
       EventName.COLLECTION_ADMIN_ADDED,
       EventName.COLLECTION_ADMIN_REMOVED,
       EventName.COLLECTION_OWNED_CHANGED,
-      EventName.ALLOW_LIST_ADDRESS_ADDED,
       EventName.COLLECTION_SPONSOR_SET,
+      EventName.COLLECTION_SPONSOR_REMOVED,
       EventName.SPONSORSHIP_CONFIRMED,
     ].forEach((eventName) =>
       processorService.processor.addEventHandler(
@@ -61,57 +63,21 @@ export class AccountsSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: blockTimestamp },
-      event: { name: eventName, args },
+      event: { name: eventName, args: rawArgs },
     } = ctx;
 
     const log = {
       eventName,
-      rawAddressValues: [],
       processedAccounts: [],
     };
 
     try {
-      // todo: fix me
-      // const rawAddressValues = EventArgumentsService.extractAddressValues(
-      //   eventName,
-      //   args,
-      // );
-      // log.rawAddressValues = rawAddressValues;
+      const accountIds = await this.eventService.processEventWithAccounts(
+        eventName,
+        rawArgs,
+      );
 
-      // if (!rawAddressValues.length) {
-      //   throw new Error('No addresses found');
-      // }
-
-      // Get balances and converted address from sdk
-      // const balancesData = await this.getBalances(rawAddressValues);
-
-      // await Promise.all(
-      //   balancesData.map((balances, addressIndex) => {
-      //     if (!balances) {
-      //       this.logger.warn({
-      //         message: 'No balances data',
-      //         addressIndex,
-      //         ...log,
-      //       });
-      //       this.sentry
-      //         .instance()
-      //         .captureMessage(
-      //           `No balances data for block ${blockNumber}, event: "${eventName}", addressIndex: ${addressIndex}`,
-      //           Severity.Warning,
-      //         );
-      //       return null;
-      //     }
-
-      //     log.processedAccounts.push(balances.address);
-
-      //     return this.accountWriterService.upsert({
-      //       blockNumber,
-      //       blockTimestamp,
-      //       balances,
-      //     });
-      //   }),
-      // );
+      log.processedAccounts = accountIds;
 
       this.logger.verbose({ ...log });
     } catch (error) {

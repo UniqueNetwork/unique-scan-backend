@@ -7,7 +7,7 @@ import {
   EVENT_ARGS_TOKEN_ID_KEY_DEFAULT,
 } from '@common/constants';
 import { NormalizedEventArgs, RawEventArgs } from './event.types';
-import { AccountService, RawAccount } from '../account/account.service';
+import { AccountService, AccountRecord } from '../account/account.service';
 
 type EventArgsValueNormalizer = (
   rawValue: string | number | object,
@@ -86,7 +86,15 @@ export class EventArgumentsService {
     return typeof args === 'string' ? args : args?.amount || args?.value;
   }
 
-  async getNormalizedArguments(
+  /**
+   * Extracts data values from raw event arguments:
+   * - collectionId
+   * - tokenId
+   * - account addresses - transforms into chain specific format and stores account via AccountService
+   *
+   * and returns processed data in normalized format.
+   */
+  async processRawArguments(
     eventName: string,
     rawArgs: RawEventArgs,
   ): Promise<NormalizedEventArgs | null> {
@@ -104,59 +112,6 @@ export class EventArgumentsService {
     const result = { ...accountsNormalized, ...otherNormalized };
 
     return Object.keys(result).length ? result : null;
-  }
-
-  private async normalizeAccountArgs(
-    rawArgs: RawEventArgs,
-    argsDescriptor: EventArgsDescriptor | null,
-  ) {
-    const keysMap = { ...ACCOUNT_ARGS_KEYS_MAP_DEFAULT };
-
-    if (argsDescriptor) {
-      // Add event specific keys map.
-      const {
-        accounts: accountsKeysMap = null, // Use null as default to be albe using keys like 0.
-      } = argsDescriptor;
-
-      if (accountsKeysMap !== null) {
-        if (typeof accountsKeysMap === 'object') {
-          Object.assign(keysMap, accountsKeysMap);
-        } else {
-          keysMap[accountsKeysMap] = EVENT_ARGS_ACCOUNT_KEY_DEFAULT;
-        }
-      }
-    }
-
-    return this.normalize(
-      rawArgs,
-      keysMap,
-      this.normalizeAccountValue.bind(this),
-    );
-  }
-
-  private async normalizeOtherArgs(
-    rawArgs: RawEventArgs,
-    argsDescriptor: EventArgsDescriptor | null,
-  ) {
-    const keysMap = {};
-
-    if (argsDescriptor) {
-      // Add event specific keys map.
-      const {
-        collectionId: collectionIdKey = null, // Use null as default to be albe using keys like 0.
-        tokenId: tokenIdKey = null,
-      } = argsDescriptor;
-
-      if (collectionIdKey !== null) {
-        keysMap[collectionIdKey] = EVENT_ARGS_COLLECTION_ID_KEY_DEFAULT;
-      }
-
-      if (tokenIdKey !== null) {
-        keysMap[tokenIdKey] = EVENT_ARGS_TOKEN_ID_KEY_DEFAULT;
-      }
-    }
-
-    return this.normalize(rawArgs, keysMap);
   }
 
   private async normalize(
@@ -180,11 +135,56 @@ export class EventArgumentsService {
     return result;
   }
 
-  private async normalizeAccountValue(rawAddress: RawAccount) {
-    const normalizedAddress = await this.accountService.processRawAddress({
-      rawAddress,
-    });
+  private async normalizeAccountArgs(
+    rawArgs: RawEventArgs,
+    argsDescriptor: EventArgsDescriptor | null,
+  ): Promise<NormalizedEventArgs> {
+    const keysMap = { ...ACCOUNT_ARGS_KEYS_MAP_DEFAULT };
 
-    return normalizedAddress;
+    if (argsDescriptor) {
+      // Add event specific keys map.
+      const {
+        accounts: accountsKeysMap = null, // Use null as default to be albe using keys like 0.
+      } = argsDescriptor;
+
+      if (accountsKeysMap !== null) {
+        if (typeof accountsKeysMap === 'object') {
+          Object.assign(keysMap, accountsKeysMap);
+        } else {
+          keysMap[accountsKeysMap] = EVENT_ARGS_ACCOUNT_KEY_DEFAULT;
+        }
+      }
+    }
+
+    return this.normalize(rawArgs, keysMap, this.accountNormalizer.bind(this));
+  }
+
+  private async normalizeOtherArgs(
+    rawArgs: RawEventArgs,
+    argsDescriptor: EventArgsDescriptor | null,
+  ): Promise<NormalizedEventArgs> {
+    const keysMap = {};
+
+    if (argsDescriptor) {
+      // Add event specific keys map.
+      const {
+        collectionId: collectionIdKey = null, // Use null as default to be albe using keys like 0.
+        tokenId: tokenIdKey = null,
+      } = argsDescriptor;
+
+      if (collectionIdKey !== null) {
+        keysMap[collectionIdKey] = EVENT_ARGS_COLLECTION_ID_KEY_DEFAULT;
+      }
+
+      if (tokenIdKey !== null) {
+        keysMap[tokenIdKey] = EVENT_ARGS_TOKEN_ID_KEY_DEFAULT;
+      }
+    }
+
+    return this.normalize(rawArgs, keysMap);
+  }
+
+  private async accountNormalizer(account: AccountRecord) {
+    return this.accountService.processRawAccountRecord({ account });
   }
 }
