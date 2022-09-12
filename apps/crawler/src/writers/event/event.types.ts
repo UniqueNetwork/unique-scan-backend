@@ -12,4 +12,5 @@ export type EventArgs =
 export type EventValues = {
   collectionId?: number;
   tokenId?: number;
+  amount?: string;
 } & { [key in AccountKey]: string };
