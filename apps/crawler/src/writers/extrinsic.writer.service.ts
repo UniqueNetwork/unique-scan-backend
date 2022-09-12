@@ -81,6 +81,7 @@ export class ExtrinsicWriterService {
       }
 
       const rawAmount = EventArgumentsService.extractRawAmountValue(args);
+
       const amount = getAmount(rawAmount);
 
       acc[extrinsicId] = acc[extrinsicId] || {};

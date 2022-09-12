@@ -7,14 +7,14 @@ import {
   EVENT_ARGS_ACCOUNT_KEYS,
 } from '@common/constants';
 import { Event } from '@entities/Event';
-import { getAmount, normalizeTimestamp } from '@common/utils';
+import { normalizeTimestamp } from '@common/utils';
 import {
   IBlockCommonData,
   IBlockItem,
   IEvent,
 } from '../../subscribers/blocks.subscriber.service';
 import { EventArgumentsService } from './event.arguments.service';
-import { RawEventArgs } from './event.types';
+import { EventArgs } from './event.types';
 import { AccountRecord } from '../account/account.service';
 
 @Injectable()
@@ -60,16 +60,17 @@ export class EventService {
           EventMethod,
         ];
 
-        const argsNormalized =
-          await this.eventArgumentsService.processRawArguments(
+        // console.log(eventName, rawArgs);
+
+        const eventValues =
+          await this.eventArgumentsService.processEventArguments(
             eventName,
             rawArgs,
           );
 
-        // console.log(argsNormalized);
+        // console.log(eventName, eventValues);
 
-        // todo: Получать amount из нормализованных аргументов
-        const rawAmount = EventArgumentsService.extractRawAmountValue(rawArgs);
+        const amount = eventValues?.amount || null;
 
         return {
           timestamp: String(normalizeTimestamp(blockTimestamp)),
@@ -84,8 +85,8 @@ export class EventService {
           phase:
             phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
           data: JSON.stringify(rawArgs),
-          args: argsNormalized,
-          amount: rawAmount ? getAmount(rawAmount) : null,
+          values: eventValues,
+          amount, // todo: Remove this field and use from values?
         };
       }),
     );
@@ -123,16 +124,19 @@ export class EventService {
 
   async processEventWithAccounts(
     eventName: string,
-    rawArgs: RawEventArgs,
+    rawArgs: EventArgs,
   ): Promise<AccountRecord[]> {
-    const normalizedArguments =
-      await this.eventArgumentsService.processRawArguments(eventName, rawArgs);
+    const eventValues = await this.eventArgumentsService.processEventArguments(
+      eventName,
+      rawArgs,
+    );
 
     const result = [];
 
+    // Extract only accounts values.
     EVENT_ARGS_ACCOUNT_KEYS.forEach((k) => {
-      if (normalizedArguments[k]) {
-        result.push(normalizedArguments[k]);
+      if (eventValues[k]) {
+        result.push(eventValues[k]);
       }
     });
 

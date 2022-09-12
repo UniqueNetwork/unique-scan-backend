@@ -24,8 +24,8 @@ export class Event {
   @Column('text', { name: 'data' })
   data: string;
 
-  @Column('jsonb', { name: 'args', nullable: true, default: null })
-  args: object | null;
+  @Column('jsonb', { name: 'values', nullable: true, default: null })
+  values: object | null;
 
   @Column('bigint', { name: 'timestamp', nullable: true })
   timestamp: string | null;

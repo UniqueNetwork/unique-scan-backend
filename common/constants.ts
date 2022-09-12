@@ -137,3 +137,5 @@ export const EVENT_ARGS_ACCOUNT_KEYS = [
   'from',
   'to',
 ];
+export const EVENT_ARGS_AMOUNT_KEY_DEFAULT = 'amount';
+export const EVENT_ARGS_AMOUNT_KEYS = [EVENT_ARGS_AMOUNT_KEY_DEFAULT, 'value'];

@@ -3,11 +3,14 @@ import {
   EventName,
   EVENT_ARGS_ACCOUNT_KEYS,
   EVENT_ARGS_ACCOUNT_KEY_DEFAULT,
+  EVENT_ARGS_AMOUNT_KEYS,
+  EVENT_ARGS_AMOUNT_KEY_DEFAULT,
   EVENT_ARGS_COLLECTION_ID_KEY_DEFAULT,
   EVENT_ARGS_TOKEN_ID_KEY_DEFAULT,
 } from '@common/constants';
-import { NormalizedEventArgs, RawEventArgs } from './event.types';
+import { EventValues, EventArgs } from './event.types';
 import { AccountService, AccountRecord } from '../account/account.service';
+import { getAmount } from '@common/utils';
 
 type EventArgsValueNormalizer = (
   rawValue: string | number | object,
@@ -17,6 +20,7 @@ type EventArgsDescriptor = {
   accounts?: number | { [rawKey: string]: string };
   collectionId?: number;
   tokenId?: number;
+  amount?: number | { [rawKey: string]: string };
 };
 
 const EVENT_ARGS_DESCRIPTORS = {
@@ -55,7 +59,10 @@ const EVENT_ARGS_DESCRIPTORS = {
     accounts: { '0': 'from', '1': 'to' },
   },
   [EventName.BALANCES_SLASHED]: { accounts: 0 },
-  [EventName.BALANCES_TRANSFER]: { accounts: { '0': 'from', '1': 'to' } },
+  [EventName.BALANCES_TRANSFER]: {
+    accounts: { '0': 'from', '1': 'to' },
+    amount: 2,
+  },
   [EventName.BALANCES_UNRESERVED]: { accounts: { '0': 'who' } },
   [EventName.BALANCES_WITHDRAW]: { accounts: { '0': 'who' } },
 
@@ -70,16 +77,24 @@ const EVENT_ARGS_DESCRIPTORS = {
   [EventName.COLLECTION_SPONSOR_SET]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_SPONSOR_REMOVED]: { collectionId: 0 },
   [EventName.SPONSORSHIP_CONFIRMED]: { collectionId: 0, accounts: 1 },
+
+  // Treasury
+  [EventName.TREASURY_DEPOSIT]: { amount: 0 },
 } as { [eventName: string]: EventArgsDescriptor };
 
 const ACCOUNT_ARGS_KEYS_MAP_DEFAULT = Object.fromEntries(
   EVENT_ARGS_ACCOUNT_KEYS.map((v) => [v, v]),
 );
 
+const AMOUNT_ARGS_KEYS_MAP_DEFAULT = Object.fromEntries(
+  EVENT_ARGS_AMOUNT_KEYS.map((v) => [v, EVENT_ARGS_AMOUNT_KEY_DEFAULT]),
+);
+
 @Injectable()
 export class EventArgumentsService {
   constructor(private accountService: AccountService) {}
 
+  // todo: REMOVE ME
   static extractRawAmountValue(
     args: string | { amount?: string; value?: string },
   ) {
@@ -92,37 +107,38 @@ export class EventArgumentsService {
    * - tokenId
    * - account addresses - transforms into chain specific format and stores account via AccountService
    *
-   * and returns processed data in normalized format.
+   * and returns event values.
    */
-  async processRawArguments(
+  async processEventArguments(
     eventName: string,
-    rawArgs: RawEventArgs,
-  ): Promise<NormalizedEventArgs | null> {
+    rawArgs: EventArgs,
+  ): Promise<EventValues | null> {
     if (rawArgs == null) {
       return null;
     }
 
     const argsDescriptor = EVENT_ARGS_DESCRIPTORS[eventName];
 
-    const [accountsNormalized, otherNormalized] = await Promise.all([
+    const [accountsValues, amountValues, otherValues] = await Promise.all([
       this.normalizeAccountArgs(rawArgs, argsDescriptor),
+      this.normalizeAmountArgs(rawArgs, argsDescriptor),
       this.normalizeOtherArgs(rawArgs, argsDescriptor),
     ]);
 
-    const result = { ...accountsNormalized, ...otherNormalized };
+    const result = { ...accountsValues, ...amountValues, ...otherValues };
 
     return Object.keys(result).length ? result : null;
   }
 
   private async normalize(
-    rawArgs: RawEventArgs,
+    rawArgs: EventArgs,
     keysMap: { [key: string]: string },
     valueNormalizerFn?: EventArgsValueNormalizer,
-  ): Promise<NormalizedEventArgs> {
+  ): Promise<EventValues> {
     // Args should be object or array only
     const args = typeof rawArgs === 'object' ? rawArgs : [rawArgs];
 
-    const result = {} as NormalizedEventArgs;
+    const result = {} as EventValues;
 
     for (const [rawKey, newKey] of Object.entries(keysMap)) {
       if (args[rawKey]) {
@@ -136,9 +152,9 @@ export class EventArgumentsService {
   }
 
   private async normalizeAccountArgs(
-    rawArgs: RawEventArgs,
+    rawArgs: EventArgs,
     argsDescriptor: EventArgsDescriptor | null,
-  ): Promise<NormalizedEventArgs> {
+  ): Promise<EventValues> {
     const keysMap = { ...ACCOUNT_ARGS_KEYS_MAP_DEFAULT };
 
     if (argsDescriptor) {
@@ -159,10 +175,34 @@ export class EventArgumentsService {
     return this.normalize(rawArgs, keysMap, this.accountNormalizer.bind(this));
   }
 
-  private async normalizeOtherArgs(
-    rawArgs: RawEventArgs,
+  private async normalizeAmountArgs(
+    rawArgs: EventArgs,
     argsDescriptor: EventArgsDescriptor | null,
-  ): Promise<NormalizedEventArgs> {
+  ): Promise<EventValues> {
+    const keysMap = { ...AMOUNT_ARGS_KEYS_MAP_DEFAULT };
+
+    if (argsDescriptor) {
+      // Add event specific keys map.
+      const {
+        amount: amountKeysMap = null, // Use null as default to be albe using keys like 0.
+      } = argsDescriptor;
+
+      if (amountKeysMap !== null) {
+        if (typeof amountKeysMap === 'object') {
+          Object.assign(keysMap, amountKeysMap);
+        } else {
+          keysMap[amountKeysMap] = EVENT_ARGS_AMOUNT_KEY_DEFAULT;
+        }
+      }
+    }
+
+    return this.normalize(rawArgs, keysMap, this.amountNormalizer.bind(this));
+  }
+
+  private async normalizeOtherArgs(
+    rawArgs: EventArgs,
+    argsDescriptor: EventArgsDescriptor | null,
+  ): Promise<EventValues> {
     const keysMap = {};
 
     if (argsDescriptor) {
@@ -186,5 +226,9 @@ export class EventArgumentsService {
 
   private async accountNormalizer(account: AccountRecord) {
     return this.accountService.processRawAccountRecord({ account });
+  }
+
+  private async amountNormalizer(amount: string) {
+    return amount ? getAmount(amount) : null;
   }
 }
