@@ -67,6 +67,9 @@ export class EventService {
             rawArgs,
           );
 
+        // todo: Remove when triggers start using event values
+        const rawArgsObj = typeof rawArgs === 'object' ? rawArgs : [rawArgs];
+
         const amount = eventValues?.amount || null;
 
         return {
@@ -81,7 +84,7 @@ export class EventService {
           // todo: Make more clean connect to extrinsic
           phase:
             phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
-          data: JSON.stringify(rawArgs),
+          data: JSON.stringify(rawArgsObj),
           values: eventValues,
           amount, // todo: Remove this field and use from values?
         };
