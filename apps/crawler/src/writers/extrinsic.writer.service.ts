@@ -55,7 +55,7 @@ export class ExtrinsicWriterService {
     private extrinsicsRepository: Repository<Extrinsic>,
   ) {}
 
-  static extractExtrinsicItems(items: IBlockItem[]): IExtrinsicExtended[] {
+  private extractExtrinsicItems(items: IBlockItem[]): IExtrinsicExtended[] {
     return items
       .map((item) => {
         const { kind } = item;
@@ -68,6 +68,7 @@ export class ExtrinsicWriterService {
       .filter((v) => !!v);
   }
 
+  // todo: Should do this in EventService
   private getAmountValues(blockItems: IBlockItem[]) {
     const eventItems = EventService.extractEventItems(blockItems);
 
@@ -116,6 +117,7 @@ export class ExtrinsicWriterService {
 
       const { blockTimestamp, blockNumber, ss58Prefix } = blockCommonData;
 
+      // todo: Normalize signer and toOwner using AccountService
       let signer = null;
       const { signature } = extrinsic;
       if (signature) {
@@ -169,8 +171,7 @@ export class ExtrinsicWriterService {
     blockItems: IBlockItem[];
     blockCommonData: IBlockCommonData;
   }) {
-    const extrinsicItems =
-      ExtrinsicWriterService.extractExtrinsicItems(blockItems);
+    const extrinsicItems = this.extractExtrinsicItems(blockItems);
 
     const amountValues = this.getAmountValues(blockItems);
 

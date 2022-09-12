@@ -95,6 +95,7 @@ export class BlocksSubscriberService implements ISubscriberService {
         ss58Prefix,
       } as IBlockCommonData;
 
+      // todo: Process events first and get events values. Use event values in extrinsics for extrinsics amount, fee.
       // todo: Use Promise.allSettled() instead
       const [itemCounts] = await Promise.all([
         this.blockWriterService.upsert({

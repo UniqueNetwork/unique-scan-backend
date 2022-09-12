@@ -26,6 +26,7 @@ export class EventService {
     private eventsRepository: Repository<Event>,
   ) {}
 
+  // todo: Make this method private
   static extractEventItems(blockItems: IBlockItem[]): IEvent[] {
     return blockItems
       .map((item) => {
@@ -60,15 +61,11 @@ export class EventService {
           EventMethod,
         ];
 
-        // console.log(eventName, rawArgs);
-
         const eventValues =
           await this.eventArgumentsService.processEventArguments(
             eventName,
             rawArgs,
           );
-
-        // console.log(eventName, eventValues);
 
         const amount = eventValues?.amount || null;
 
@@ -100,16 +97,6 @@ export class EventService {
     blockCommonData: IBlockCommonData;
   }) {
     const eventItems = EventService.extractEventItems(blockItems);
-
-    // console.log(
-    //   'eventItems',
-    //   eventItems
-    //     .filter(({ name }) => ![EventName.EXTRINSIC_SUCCESS].includes(name))
-    //     .map(({ name, args }) => ({
-    //       name,
-    //       args,
-    //     })),
-    // );
 
     const eventsData = await this.prepareDataForDb({
       blockCommonData,
