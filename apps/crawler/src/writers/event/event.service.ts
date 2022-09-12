@@ -26,8 +26,7 @@ export class EventService {
     private eventsRepository: Repository<Event>,
   ) {}
 
-  // todo: Make this method private
-  static extractEventItems(blockItems: IBlockItem[]): IEvent[] {
+  private extractEventItems(blockItems: IBlockItem[]): IEvent[] {
     return blockItems
       .map((item) => {
         if (item.kind == 'event') {
@@ -98,18 +97,20 @@ export class EventService {
   }: {
     blockItems: IBlockItem[];
     blockCommonData: IBlockCommonData;
-  }) {
-    const eventItems = EventService.extractEventItems(blockItems);
+  }): Promise<Event[]> {
+    const eventItems = this.extractEventItems(blockItems);
 
     const eventsData = await this.prepareDataForDb({
       blockCommonData,
       eventItems,
     });
 
-    return this.eventsRepository.upsert(eventsData, [
+    await this.eventsRepository.upsert(eventsData, [
       'block_number',
       'event_index',
     ]);
+
+    return eventsData;
   }
 
   async processEventWithAccounts(

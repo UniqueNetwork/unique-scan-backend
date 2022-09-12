@@ -9,7 +9,7 @@ import { ISubscriberService } from './subscribers.service';
 import { Prefix } from '@unique-nft/api/.';
 import { ProcessorService } from './processor/processor.service';
 import { BlockWriterService } from '../writers/block.writer.service';
-import { ExtrinsicWriterService } from '../writers/extrinsic.writer.service';
+import { ExtrinsicService } from '../writers/extrinsic/extrinsic.service';
 import { EventService } from '../writers/event/event.service';
 
 export interface IEvent {
@@ -52,7 +52,7 @@ export class BlocksSubscriberService implements ISubscriberService {
   constructor(
     private blockWriterService: BlockWriterService,
 
-    private extrinsicWriterService: ExtrinsicWriterService,
+    private extrinsicWriterService: ExtrinsicService,
 
     private eventService: EventService,
 
@@ -95,6 +95,12 @@ export class BlocksSubscriberService implements ISubscriberService {
         ss58Prefix,
       } as IBlockCommonData;
 
+      // Process events first to get event.values
+      const eventsData = await this.eventService.upsert({
+        blockCommonData,
+        blockItems,
+      });
+
       // todo: Process events first and get events values. Use event values in extrinsics for extrinsics amount, fee.
       // todo: Use Promise.allSettled() instead
       const [itemCounts] = await Promise.all([
@@ -105,10 +111,7 @@ export class BlocksSubscriberService implements ISubscriberService {
         this.extrinsicWriterService.upsert({
           blockCommonData,
           blockItems,
-        }),
-        this.eventService.upsert({
-          blockCommonData,
-          blockItems,
+          eventsData,
         }),
       ]);
 

@@ -12,7 +12,7 @@ import { AccountService } from './account/account.service';
 import { TokenWriterService } from './token.writer.service';
 import { BlockWriterService } from './block.writer.service';
 import { EventService } from './event/event.service';
-import { ExtrinsicWriterService } from './extrinsic.writer.service';
+import { ExtrinsicService } from './extrinsic/extrinsic.service';
 import { EventArgumentsService } from './event/event.arguments.service';
 
 @Module({
@@ -33,7 +33,7 @@ import { EventArgumentsService } from './event/event.arguments.service';
     CollectionWriterService,
     EventService,
     EventArgumentsService,
-    ExtrinsicWriterService,
+    ExtrinsicService,
     TokenWriterService,
   ],
   exports: [
@@ -41,7 +41,7 @@ import { EventArgumentsService } from './event/event.arguments.service';
     BlockWriterService,
     CollectionWriterService,
     EventService,
-    ExtrinsicWriterService,
+    ExtrinsicService,
     TokenWriterService,
   ],
 })
