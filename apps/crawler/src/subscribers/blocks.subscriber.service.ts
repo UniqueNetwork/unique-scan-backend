@@ -52,7 +52,7 @@ export class BlocksSubscriberService implements ISubscriberService {
   constructor(
     private blockWriterService: BlockWriterService,
 
-    private extrinsicWriterService: ExtrinsicService,
+    private extrinsicService: ExtrinsicService,
 
     private eventService: EventService,
 
@@ -106,7 +106,7 @@ export class BlocksSubscriberService implements ISubscriberService {
           block,
           blockItems,
         }),
-        this.extrinsicWriterService.upsert({
+        this.extrinsicService.upsert({
           blockCommonData,
           blockItems,
           eventsData,

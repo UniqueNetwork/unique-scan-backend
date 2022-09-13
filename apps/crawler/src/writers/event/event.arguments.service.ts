@@ -94,26 +94,20 @@ const AMOUNT_ARGS_KEYS_MAP_DEFAULT = Object.fromEntries(
 export class EventArgumentsService {
   constructor(private accountService: AccountService) {}
 
-  // todo: REMOVE ME
-  static extractRawAmountValue(
-    args: string | { amount?: string; value?: string },
-  ) {
-    return typeof args === 'string' ? args : args?.amount || args?.value;
-  }
-
   /**
    * Extracts data values from raw event arguments:
    * - collectionId
    * - tokenId
    * - account addresses - transforms into chain specific format and stores account via AccountService
+   * - amount
    *
-   * and returns event values.
+   * and returns those event values.
    */
   async processEventArguments(
     eventName: string,
     rawArgs: EventArgs,
   ): Promise<EventValues | null> {
-    if (rawArgs == null) {
+    if (!rawArgs) {
       return null;
     }
 
