@@ -60,6 +60,8 @@ export class BlockWriterService {
     const {
       specId,
       parentHash,
+      stateRoot,
+      extrinsicsRoot,
       hash: blockHash,
       height: blockNumber,
       timestamp: blockTimestamp,
@@ -74,6 +76,8 @@ export class BlockWriterService {
       block_number: blockNumber,
       block_hash: blockHash,
       parent_hash: parentHash,
+      extrinsics_root: extrinsicsRoot,
+      state_root: stateRoot,
       spec_name: specName,
       spec_version: specVersion,
       timestamp: String(normalizeTimestamp(blockTimestamp)),
@@ -85,8 +89,6 @@ export class BlockWriterService {
       total_extrinsics: totalExtrinsics,
 
       // todo or not todo
-      extrinsics_root: '',
-      state_root: '',
       session_length: '0',
       total_issuance: '',
       need_rescan: false,
