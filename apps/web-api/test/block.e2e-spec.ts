@@ -49,15 +49,12 @@ describe('Block (e2e)', () => {
               parent_hash
               extrinsics_root
               state_root
-              session_length
               spec_name
               spec_version
               total_events
               num_transfers
               new_accounts
-              total_issuance
               timestamp
-              need_rescan
               total_extrinsics
             }
           }
@@ -80,7 +77,6 @@ describe('Block (e2e)', () => {
           expect(res.body.data.block.data.length).toBe(10);
 
           expect(res.body.data.block.data[0].block_number).toBe(214569);
-          expect(res.body.data.block.data[0].session_length).toBe(0);
           expect(res.body.data.block.data[0].spec_name).toBe('quartz');
           expect(res.body.data.block.data[0].spec_version).toBe(914000);
           expect(res.body.data.block.data[0].total_events).toBe(2);
@@ -88,29 +84,24 @@ describe('Block (e2e)', () => {
           expect(res.body.data.block.data[0].new_accounts).toBe(0);
 
           expect(res.body.data.block.data[0].timestamp).toBe(1640875392);
-          expect(res.body.data.block.data[0].need_rescan).toBe(true);
           expect(res.body.data.block.data[0].total_extrinsics).toBe(2);
 
           expect(res.body.data.block.data[3].block_number).toBe(12393);
-          expect(res.body.data.block.data[3].session_length).toBe(0);
           expect(res.body.data.block.data[3].spec_name).toBe('quartz');
           expect(res.body.data.block.data[3].spec_version).toBe(1);
           expect(res.body.data.block.data[3].total_events).toBe(2);
           expect(res.body.data.block.data[3].num_transfers).toBe(0);
           expect(res.body.data.block.data[3].new_accounts).toBe(0);
           expect(res.body.data.block.data[3].timestamp).toBe(1638217818);
-          expect(res.body.data.block.data[3].need_rescan).toBe(true);
           expect(res.body.data.block.data[3].total_extrinsics).toBe(2);
 
           expect(res.body.data.block.data[7].block_number).toBe(12385);
-          expect(res.body.data.block.data[7].session_length).toBe(0);
           expect(res.body.data.block.data[7].spec_name).toBe('quartz');
           expect(res.body.data.block.data[7].spec_version).toBe(1);
           expect(res.body.data.block.data[7].total_events).toBe(2);
           expect(res.body.data.block.data[7].num_transfers).toBe(0);
           expect(res.body.data.block.data[7].new_accounts).toBe(0);
           expect(res.body.data.block.data[7].timestamp).toBe(1638217722);
-          expect(res.body.data.block.data[7].need_rescan).toBe(true);
           expect(res.body.data.block.data[7].total_extrinsics).toBe(2);
         });
     });
@@ -131,14 +122,12 @@ describe('Block (e2e)', () => {
           expect(res.body.data.block.data.length).toBe(1);
 
           expect(res.body.data.block.data[0].block_number).toBe(214569);
-          expect(res.body.data.block.data[0].session_length).toBe(0);
           expect(res.body.data.block.data[0].spec_name).toBe('quartz');
           expect(res.body.data.block.data[0].spec_version).toBe(914000);
           expect(res.body.data.block.data[0].total_events).toBe(2);
           expect(res.body.data.block.data[0].num_transfers).toBe(0);
           expect(res.body.data.block.data[0].new_accounts).toBe(0);
           expect(res.body.data.block.data[0].timestamp).toBe(1640875392);
-          expect(res.body.data.block.data[0].need_rescan).toBe(true);
           expect(res.body.data.block.data[0].total_extrinsics).toBe(2);
         });
     });
@@ -159,14 +148,12 @@ describe('Block (e2e)', () => {
           expect(res.body.data.block.data.length).toBe(1);
 
           expect(res.body.data.block.data[0].block_number).toBe(12222);
-          expect(res.body.data.block.data[0].session_length).toBe(0);
           expect(res.body.data.block.data[0].spec_name).toBe('quartz');
           expect(res.body.data.block.data[0].spec_version).toBe(1);
           expect(res.body.data.block.data[0].total_events).toBe(2);
           expect(res.body.data.block.data[0].num_transfers).toBe(0);
           expect(res.body.data.block.data[0].new_accounts).toBe(0);
           expect(res.body.data.block.data[0].timestamp).toBe(1638215562);
-          expect(res.body.data.block.data[0].need_rescan).toBe(true);
           expect(res.body.data.block.data[0].total_extrinsics).toBe(2);
         });
     });
@@ -243,14 +230,12 @@ describe('Block (e2e)', () => {
           expect(res.body.data.block.count).toBe(1);
 
           expect(res.body.data.block.data[0].block_number).toBe(12231);
-          expect(res.body.data.block.data[0].session_length).toBe(0);
           expect(res.body.data.block.data[0].spec_name).toBe('quartz');
           expect(res.body.data.block.data[0].spec_version).toBe(1);
           expect(res.body.data.block.data[0].total_events).toBe(2);
           expect(res.body.data.block.data[0].num_transfers).toBe(0);
           expect(res.body.data.block.data[0].new_accounts).toBe(0);
           expect(res.body.data.block.data[0].timestamp).toBe(1638215670);
-          expect(res.body.data.block.data[0].need_rescan).toBe(true);
           expect(res.body.data.block.data[0].total_extrinsics).toBe(2);
         });
     });
