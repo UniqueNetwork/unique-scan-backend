@@ -2,7 +2,6 @@ import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Column, Entity, Index } from 'typeorm';
 
 @Index('block_pkey', ['block_number'], { unique: true })
-@Index('block_need_rescan_idx', ['need_rescan'], {})
 @Entity('block', { schema: 'public' })
 @ObjectType()
 export class Block {
@@ -27,9 +26,6 @@ export class Block {
   @Column('text', { name: 'state_root', nullable: true })
   state_root: string | null;
 
-  @Column('bigint', { name: 'session_length', nullable: true })
-  session_length: string | null;
-
   @Column('text', { name: 'spec_name' })
   spec_name: string;
 
@@ -45,14 +41,8 @@ export class Block {
   @Column('integer', { name: 'new_accounts' })
   new_accounts: number;
 
-  @Column('text', { name: 'total_issuance' })
-  total_issuance: string;
-
   @Column('bigint', { name: 'timestamp' })
   timestamp: string;
-
-  @Column('boolean', { name: 'need_rescan', default: false })
-  need_rescan: boolean;
 
   @Column('integer', { name: 'total_extrinsics' })
   total_extrinsics: number;
