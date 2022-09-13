@@ -18,9 +18,6 @@ export class BlockDto implements Partial<Block> {
   @Field(() => String, { nullable: true })
   state_root?: string | null;
 
-  @Field(() => Int, { nullable: true })
-  session_length?: string | null;
-
   @Field(() => String, { nullable: true })
   spec_name?: string;
 
@@ -36,14 +33,8 @@ export class BlockDto implements Partial<Block> {
   @Field(() => Int, { nullable: true })
   new_accounts?: number;
 
-  @Field(() => String, { nullable: true })
-  total_issuance?: string;
-
   @Field(() => Int, { nullable: true })
   timestamp?: string;
-
-  @Field(() => Boolean, { nullable: true })
-  need_rescan?: boolean;
 
   @Field(() => Int, { nullable: true })
   total_extrinsics?: number;

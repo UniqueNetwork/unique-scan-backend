@@ -87,11 +87,6 @@ export class BlockWriterService {
       num_transfers: numTransfers,
       new_accounts: newAccounts,
       total_extrinsics: totalExtrinsics,
-
-      // todo or not todo
-      session_length: '0',
-      total_issuance: '',
-      need_rescan: false,
     };
   }
 
