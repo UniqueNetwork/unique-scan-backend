@@ -25,17 +25,17 @@ const tokensUpdateActionsStatsFn = `
 			  'ItemDestroyed'
 			];
 		begin
-	    if ((NEW.method = any(methods) or OLD."method" = any(methods)) and NEW.values::json->'collectionId' is not null) then
+	    if ((NEW.method = any(methods) or OLD."method" = any(methods)) and NEW.values->>'collectionId' is not null) then
 	        if (TG_OP = 'INSERT') then
 		      	insert into collections_stats(collection_id, tokens_count, holders_count, actions_count, transfers_count)
-		      	values ((NEW.values::json->'collectionId')::text::int, 0, 0, 1, 0)
+		      	values ((NEW.values->>'collectionId')::int, 0, 0, 1, 0)
 		      	ON CONFLICT (collection_id)
 		      	DO UPDATE SET actions_count = collections_stats.actions_count + 1;
 	        end if;
 
 	        if (TG_OP = 'DELETE') then
 	          	insert into collections_stats(collection_id, tokens_count, holders_count, actions_count, transfers_count)
-	          	values ((OLD.values::json->'collectionId')::text::int, 0, 0, 0, 0)
+	          	values ((OLD.values->>'collectionId')::int, 0, 0, 0, 0)
 	          	ON CONFLICT (collection_id)
 	          	DO UPDATE SET actions_count = collections_stats.actions_count - 1;
 	        end if;
@@ -56,16 +56,16 @@ const collectionsUpdateTransfersStatsFn = `
   create or replace function update_collections_stats_transfers() returns trigger as $$
 		begin
 	    if (NEW.method = 'Transfer' and NEW.section <> 'Balances') then
-	        if (TG_OP = 'INSERT' and NEW.values::json->'collectionId' is not null) then
+	        if (TG_OP = 'INSERT' and NEW.values->>'collectionId' is not null) then
 		      	insert into collections_stats(collection_id, tokens_count, holders_count, actions_count, transfers_count)
-		      	values ((NEW.values::json->'collectionId')::text::int, 0, 0, 0, 1)
+		      	values ((NEW.values->>'collectionId')::int, 0, 0, 0, 1)
 		      	ON CONFLICT (collection_id)
 		      	DO UPDATE SET transfers_count = collections_stats.transfers_count + 1;
 	        end if;
 
-	        if (TG_OP = 'DELETE' and OLD.values::json->'collectionId' is not null) then
+	        if (TG_OP = 'DELETE' and OLD.values->'collectionId' is not null) then
 	          	insert into collections_stats(collection_id, tokens_count, holders_count, actions_count, transfers_count)
-	          	values ((OLD.values::json->'collectionId')::text::int, 0, 0, 0, 0)
+	          	values ((OLD.values->'collectionId')::int, 0, 0, 0, 0)
 	          	ON CONFLICT (collection_id)
 	          	DO UPDATE SET transfers_count = collections_stats.transfers_count - 1;
 	        end if;
@@ -88,16 +88,16 @@ const transferTrigger = 'token_transfers_stats';
 const tokensUpdateTransfersStatsFn = `
   create or replace function ${transferFn}() returns trigger as $$
 		begin
-	    if (TG_OP = 'INSERT' and NEW.method = 'Transfer' and NEW.section <> 'Balances' and NEW.values::json->'tokenId' is not null) then
+	    if (TG_OP = 'INSERT' and NEW.method = 'Transfer' and NEW.section <> 'Balances' and NEW.values->>'tokenId' is not null) then
         insert into tokens_stats(collection_id, token_id, transfers_count)
-        values ((NEW.values::json->'collectionId')::text::int, (NEW.values::json->'tokenId')::text::int, 1)
+        values ((NEW.values->>'collectionId')::int, (NEW.values->>'tokenId')::int, 1)
         ON CONFLICT (collection_id, token_id)
         DO UPDATE SET transfers_count = tokens_stats.transfers_count + 1;
 		  end if;
 
-		  if (TG_OP = 'DELETE' and OLD.method = 'Transfer' and OLD.section <> 'Balances' and OLD.values::json->'tokenId' is not null) then
+		  if (TG_OP = 'DELETE' and OLD.method = 'Transfer' and OLD.section <> 'Balances' and OLD.values->>'tokenId' is not null) then
         insert into tokens_stats(collection_id, token_id, transfers_count)
-        values ((OLD.values::json->'collectionId')::text::int, (OLD.values::json->'tokenId')::text::int, 0)
+        values ((OLD.values->'collectionId')::int, (OLD.values->>'tokenId')::int, 0)
         ON CONFLICT (collection_id, token_id)
         DO UPDATE SET transfers_count = tokens_stats.transfers_count - 1;
 		  end if;
@@ -114,7 +114,7 @@ const tokensTransfersStatsTrigger = `
   execute function ${transferFn}();
 `;
 
-export class triigersNewStructure1663059962812 implements MigrationInterface {
+export class triggersNewStructure1663059962812 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(tokensUpdateActionsStatsFn);
     await queryRunner.query(deleteActionsStatsTrigger);
