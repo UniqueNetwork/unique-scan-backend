@@ -9,8 +9,8 @@ import { ISubscriberService } from './subscribers.service';
 import { Prefix } from '@unique-nft/api/.';
 import { ProcessorService } from './processor/processor.service';
 import { BlockWriterService } from '../writers/block.writer.service';
-import { ExtrinsicWriterService } from '../writers/extrinsic.writer.service';
-import { EventWriterService } from '../writers/event.writer.service';
+import { ExtrinsicService } from '../writers/extrinsic/extrinsic.service';
+import { EventService } from '../writers/event/event.service';
 
 export interface IEvent {
   name: string;
@@ -52,9 +52,9 @@ export class BlocksSubscriberService implements ISubscriberService {
   constructor(
     private blockWriterService: BlockWriterService,
 
-    private extrinsicWriterService: ExtrinsicWriterService,
+    private extrinsicService: ExtrinsicService,
 
-    private eventWriterService: EventWriterService,
+    private eventService: EventService,
 
     @InjectSentry()
     private readonly sentry: SentryService,
@@ -95,18 +95,21 @@ export class BlocksSubscriberService implements ISubscriberService {
         ss58Prefix,
       } as IBlockCommonData;
 
+      // Process events first to get event.values
+      const eventsData = await this.eventService.upsert({
+        blockCommonData,
+        blockItems,
+      });
+
       const [itemCounts] = await Promise.all([
         this.blockWriterService.upsert({
           block,
           blockItems,
         }),
-        this.extrinsicWriterService.upsert({
+        this.extrinsicService.upsert({
           blockCommonData,
           blockItems,
-        }),
-        this.eventWriterService.upsert({
-          blockCommonData,
-          blockItems,
+          eventsData,
         }),
       ]);
 

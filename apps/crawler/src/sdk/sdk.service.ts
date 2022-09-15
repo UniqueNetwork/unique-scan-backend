@@ -6,6 +6,7 @@ import {
   TokenByIdResult,
   TokenPropertiesResult,
 } from '@unique-nft/substrate-client/tokens';
+import { AllBalances } from '@unique-nft/substrate-client/types';
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 
@@ -55,7 +56,7 @@ export class SdkService {
   }
 
   @SdkCache('getBalances')
-  getBalances(rawAddress: string) {
+  async getBalances(rawAddress: string): Promise<AllBalances> {
     return this.sdk.balance.get({ address: rawAddress });
   }
 }
