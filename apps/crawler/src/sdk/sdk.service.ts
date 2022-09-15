@@ -22,7 +22,7 @@ export class SdkService {
   getCollection(
     collectionId: number,
   ): Promise<CollectionInfoWithSchema | null> {
-    return this.sdk.collections.get_new({ collectionId });
+    return this.sdk.collections.get({ collectionId });
   }
 
   @SdkCache('getCollectionLimits')
@@ -44,7 +44,7 @@ export class SdkService {
     collectionId: number,
     tokenId: number,
   ): Promise<TokenByIdResult | null> {
-    return this.sdk.tokens.get_new({ collectionId, tokenId });
+    return this.sdk.tokens.get({ collectionId, tokenId });
   }
 
   @SdkCache('getTokenProperties')
