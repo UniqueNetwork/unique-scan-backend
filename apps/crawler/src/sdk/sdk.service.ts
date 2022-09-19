@@ -37,7 +37,7 @@ export class SdkService {
     tokenId: number,
     at: string,
   ): Promise<TokenByIdResult | null> {
-    return this.sdk.tokens.get_new({ collectionId, tokenId, at });
+    return this.sdk.tokens.get({ collectionId, tokenId, at });
   }
 
   @SdkCache('getTokenProperties')
