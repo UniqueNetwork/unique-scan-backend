@@ -203,7 +203,7 @@ export class CollectionWriterService {
       token_prefix,
       mode,
       mint_mode: mintMode,
-      nesting_enabled: nesting.collectionAdmin || nesting.tokenOwner,
+      nesting_enabled: nesting?.collectionAdmin || nesting?.tokenOwner,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
     };
