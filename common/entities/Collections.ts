@@ -25,6 +25,9 @@ export class Collections {
   @Column('jsonb', { name: 'properties', default: [] })
   properties: object | null;
 
+  @Column('jsonb', { name: 'permissions', nullable: true })
+  permissions: object | null;
+
   @Column('jsonb', { name: 'token_property_permissions', default: [] })
   token_property_permissions: object;
 
@@ -82,6 +85,9 @@ export class Collections {
 
   @Column('boolean', { name: 'mint_mode', nullable: true })
   mint_mode?: boolean;
+
+  @Column('boolean', { name: 'nesting_enabled', default: false })
+  nesting_enabled: boolean;
 
   @Column('bigint', { name: 'date_of_creation', nullable: true })
   date_of_creation?: number;

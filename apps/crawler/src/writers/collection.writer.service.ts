@@ -169,6 +169,8 @@ export class CollectionWriterService {
       attributesSchema = {},
     } = this.processSchema(schema || schemaFromProperties);
 
+    const { mintMode, nesting } = permissions;
+
     const {
       tokenLimit: token_limit,
       accountTokenOwnershipLimit: limits_account_ownership,
@@ -186,6 +188,7 @@ export class CollectionWriterService {
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
       properties: sanitizePropertiesValues(properties),
+      permissions,
       token_property_permissions: tokenPropertyPermissions,
       attributes_schema: attributesSchema,
       const_chain_schema: constOnChainSchema,
@@ -199,7 +202,8 @@ export class CollectionWriterService {
       schema_version: schemaVersion,
       token_prefix,
       mode,
-      mint_mode: permissions.mintMode,
+      mint_mode: mintMode,
+      nesting_enabled: nesting.collectionAdmin || nesting.tokenOwner,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
     };
