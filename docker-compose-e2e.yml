@@ -52,10 +52,11 @@ services:
       - scan
     depends_on:
       - crawler-migrations
+      - gateway
     restart: on-failure
     environment:
       - NODE_ENV=production
-      - ARCHIVE_GQL_URL=${ARCHIVE_GQL_URL}
+      - ARCHIVE_GQL_URL=http://gateway:8000/graphql
       - CHAIN_WS_URL=${CHAIN_WS_URL}
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=polkastats
@@ -76,7 +77,7 @@ services:
     restart: on-failure
     environment:
       - NODE_ENV=production
-      - ARCHIVE_GQL_URL=${ARCHIVE_GQL_URL}
+      - ARCHIVE_GQL_URL=http://gateway:8000/graphql
       - CHAIN_WS_URL=${CHAIN_WS_URL}
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=polkastats
@@ -86,7 +87,70 @@ services:
       - HOST_CRAWLER=0.0.0.0
     entrypoint: ["npm", "run", "db:migration:run"]
 
+# Subsquid Archive
+  archive-db:
+    image: postgres:14.2-alpine
+    container_name: archive-db
+    networks:
+      - scan
+    restart: always
+    volumes:
+      - archive-pgdata:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: squid-archive
+
+  ingest:
+    depends_on:
+      - archive-db
+    restart: on-failure
+    image: subsquid/substrate-ingest:firesquid
+    networks:
+      - scan
+    container_name: ingest
+    command: [
+       "-e", "${CHAIN_WS_URL}",
+       "-c", "10",
+       "--prom-port", "9090",
+       "--out", "postgres://postgres:postgres@archive-db:5432/squid-archive"
+    ]
+
+  gateway:
+    depends_on:
+      - archive-db
+    image: subsquid/substrate-gateway:firesquid
+    networks:
+      - scan
+    environment:
+      RUST_LOG: "substrate_gateway=info,actix_server=info"
+    command: [
+       "--database-url", "postgres://postgres:postgres@archive-db:5432/squid-archive",
+       "--database-max-connections", "3",
+    ]
+    ports:
+      - "8888:8000"
+
+  explorer:
+    image: subsquid/substrate-explorer:firesquid
+    networks:
+      - scan
+    depends_on:
+      - archive-db
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: archive-db
+      DB_PORT: "5432"
+      DB_NAME: "squid-archive"
+      DB_USER: "postgres"
+      DB_PASS: "postgres"
+    ports:
+      - "4444:3000"
 
 volumes:
   scan-pgdata:
+    external: false
+
+  archive-pgdata:
     external: false
