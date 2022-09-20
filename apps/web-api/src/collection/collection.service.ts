@@ -120,6 +120,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.collection_cover', 'collection_cover');
     qb.addSelect('Collections.mode', 'type');
     qb.addSelect('Collections.mint_mode', 'mint_mode');
+    qb.addSelect('Collections.nesting_enabled', 'nesting_enabled');
     qb.addSelect('Collections.attributes_schema', 'attributes_schema');
     qb.addSelect(
       'Collections.limits_account_ownership',
@@ -139,6 +140,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.sponsorship', 'sponsorship');
     qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
     qb.addSelect('Collections.properties', 'properties');
+    qb.addSelect('Collections.permissions', 'permissions');
     qb.addSelect(
       'Collections.token_property_permissions',
       'token_property_permissions',
