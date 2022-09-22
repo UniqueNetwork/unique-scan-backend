@@ -2,18 +2,23 @@
 
 import { expectResponseContains } from '../utils';
 import { collectionsApi } from '../api';
-import { createSdk, createCollection } from '../blockchain';
+import { createCollection, createSdk } from '../sdk';
+import { getAccount } from '../utils/accounts';
+import { defaultCollectionRequest } from '../sdk/collections';
 
 describe('Collections tests', function () {
   it('Create collection in blockchain and check it in scan', async function () {
-    const sdk = await createSdk('//Eve');
+    const account = await getAccount('//Alice');
+    const sdk = await createSdk(account);
     const collectionId = await createCollection(
       sdk,
-      '5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw',
-      {
-        name: 'Collection',
-        description: 'The one!',
-      },
+      account.instance.address,
+      defaultCollectionRequest(
+        account.instance.address,
+        'Collection',
+        'The one!',
+      ),
+      true,
     );
 
     const getActualCollection = async () =>
@@ -23,6 +28,8 @@ describe('Collections tests', function () {
       name: 'Collection',
       description: 'The one!',
     };
+
+    console.log(`collectionId: ${collectionId}`);
 
     return await expectResponseContains(
       getActualCollection,

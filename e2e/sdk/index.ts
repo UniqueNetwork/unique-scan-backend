@@ -1,15 +1,14 @@
-import { getAccount } from '../utils/accounts';
 import { Sdk } from '@unique-nft/substrate-client';
+import { KeyringAccount } from '@unique-nft/accounts/keyring';
 
-export async function createSdk(seed = '//Alice'): Promise<Sdk> {
+export async function createSdk(account: KeyringAccount): Promise<Sdk> {
   const options = {
     chainWsUrl: process.env.TESTS_UNIQUE_WS_ENDPOINT,
     ipfsGatewayUrl: process.env.TESTS_IPFS_URL,
   };
-  const signer = await getAccount(seed);
   return await Sdk.create({
     ...options,
-    signer: signer.getSigner(),
+    signer: account.getSigner(),
   });
 }
 
