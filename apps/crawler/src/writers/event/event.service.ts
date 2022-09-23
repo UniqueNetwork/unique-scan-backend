@@ -15,7 +15,7 @@ import {
 } from '../../subscribers/blocks.subscriber.service';
 import { EventArgumentsService } from './event.arguments.service';
 import { EventArgs } from './event.types';
-import { AccountRecord } from '../account/account.service';
+import { AccountRecord } from '../account/account.types';
 
 @Injectable()
 export class EventService {
