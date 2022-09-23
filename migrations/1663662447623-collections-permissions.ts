@@ -1,0 +1,23 @@
+import { MigrationInterface, QueryRunner } from 'typeorm';
+
+export class collectionsPermissions1663662447623 implements MigrationInterface {
+  name = 'collectionsPermissions1663662447623';
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "collections" ADD "permissions" jsonb`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "collections" ADD "nesting_enabled" boolean NOT NULL DEFAULT false`,
+    );
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "collections" DROP COLUMN "nesting_enabled"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "collections" DROP COLUMN "permissions"`,
+    );
+  }
+}

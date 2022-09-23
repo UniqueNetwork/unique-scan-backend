@@ -13,6 +13,7 @@ import {
   CollectionLimits,
   CollectionProperty,
   UniqueCollectionSchemaDecoded,
+  PropertyKeyPermission,
 } from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
 
@@ -27,6 +28,7 @@ type ParsedSchemaFields = {
 export interface ICollectionData {
   collectionDecoded: CollectionInfoWithSchema | null;
   collectionLimits: CollectionLimits | null;
+  tokenPropertyPermissions: PropertyKeyPermission[];
 }
 
 @Injectable()
@@ -36,7 +38,6 @@ export class CollectionWriterService {
   constructor(
     @InjectRepository(Collections)
     private collectionsRepository: Repository<Collections>,
-
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -133,7 +134,9 @@ export class CollectionWriterService {
   }
 
   private prepareDataForDb(collectionData: ICollectionData): Collections {
-    const { collectionDecoded, collectionLimits } = collectionData;
+    const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
+      collectionData;
+
     const {
       id: collection_id,
       owner,
@@ -143,7 +146,7 @@ export class CollectionWriterService {
       tokenPrefix: token_prefix,
       mode,
       schema,
-      permissions: { mintMode: mint_mode },
+      permissions,
       properties = [],
     } = collectionDecoded;
 
@@ -166,6 +169,8 @@ export class CollectionWriterService {
       attributesSchema = {},
     } = this.processSchema(schema || schemaFromProperties);
 
+    const { mintMode, nesting } = permissions;
+
     const {
       tokenLimit: token_limit,
       accountTokenOwnershipLimit: limits_account_ownership,
@@ -183,6 +188,8 @@ export class CollectionWriterService {
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
       properties: sanitizePropertiesValues(properties),
+      permissions,
+      token_property_permissions: tokenPropertyPermissions,
       attributes_schema: attributesSchema,
       const_chain_schema: constOnChainSchema,
       variable_on_chain_schema: variableOnChainSchema,
@@ -195,7 +202,8 @@ export class CollectionWriterService {
       schema_version: schemaVersion,
       token_prefix,
       mode,
-      mint_mode,
+      mint_mode: mintMode,
+      nesting_enabled: nesting?.collectionAdmin || nesting?.tokenOwner,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
     };

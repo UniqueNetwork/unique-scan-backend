@@ -3,7 +3,7 @@ items:
   event{1..55}:
     block_number: 213826($current)
     event_index: ($current)
-    section: 'balances'
+    section: 'Balances'
     method: 'Transfer'
     phase: 'Initialization($current)'
     data: ''

@@ -14,6 +14,7 @@ import {
   TOrderByParams,
   TWhereParams,
   ListDataType,
+  IWhereOperators,
 } from '../utils/gql-query-args';
 import { CollectionDTO, CollectionEnum } from './collection.dto';
 import { TokenDTO } from '../tokens/token.dto';
@@ -40,6 +41,12 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   token_prefix?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  mint_mode?: IWhereOperators;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  nesting_enabled?: IWhereOperators;
 
   @Field(() => TokenWhereParams, { nullable: true })
   tokens?: TokenWhereParams;
@@ -97,6 +104,9 @@ export class CollectionOrderByParams implements TOrderByParams<CollectionDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   owner_normalized?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  nesting_enabled?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
