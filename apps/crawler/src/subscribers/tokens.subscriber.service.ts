@@ -5,7 +5,7 @@ import { EventName, SubscriberAction } from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
-import { TokenService } from '../writers/token.service';
+import { TokenService } from '../services/token.service';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
