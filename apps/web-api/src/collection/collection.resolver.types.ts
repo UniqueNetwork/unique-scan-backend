@@ -14,6 +14,7 @@ import {
   TOrderByParams,
   TWhereParams,
   ListDataType,
+  IWhereOperators,
 } from '../utils/gql-query-args';
 import { CollectionDTO, CollectionEnum } from './collection.dto';
 import { TokenDTO } from '../tokens/token.dto';
@@ -40,6 +41,9 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   token_prefix?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  was_burn?: IWhereOperators;
 
   @Field(() => TokenWhereParams, { nullable: true })
   tokens?: TokenWhereParams;

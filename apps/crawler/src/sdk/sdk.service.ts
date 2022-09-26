@@ -44,9 +44,8 @@ export class SdkService {
   getTokenProperties(
     collectionId: number,
     tokenId: number,
-    at: string,
   ): Promise<TokenPropertiesResult | null> {
-    return this.sdk.tokens.properties({ collectionId, tokenId, at });
+    return this.sdk.tokens.properties({ collectionId, tokenId });
   }
 
   @SdkCache('getBalances')

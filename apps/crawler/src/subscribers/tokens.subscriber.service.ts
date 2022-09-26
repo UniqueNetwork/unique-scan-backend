@@ -69,16 +69,21 @@ export class TokensSubscriberService implements ISubscriberService {
     hash: string,
   ): Promise<ITokenData> {
     const [tokenDecoded, tokenProperties, collectionDecoded] =
-      await Promise.all([
+      await Promise.allSettled([
         this.sdkService.getToken(collectionId, tokenId, hash),
-        this.sdkService.getTokenProperties(collectionId, tokenId, hash),
+        this.sdkService.getTokenProperties(collectionId, tokenId),
         this.sdkService.getCollection(collectionId, hash),
       ]);
 
     return {
-      tokenDecoded,
-      tokenProperties,
-      collectionDecoded,
+      tokenDecoded:
+        tokenDecoded.status === 'fulfilled' ? tokenDecoded.value : null,
+      tokenProperties:
+        tokenProperties.status === 'fulfilled' ? tokenProperties.value : null,
+      collectionDecoded:
+        collectionDecoded.status === 'fulfilled'
+          ? collectionDecoded.value
+          : null,
     };
   }
 

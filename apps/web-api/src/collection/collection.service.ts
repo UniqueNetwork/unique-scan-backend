@@ -138,6 +138,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.schema_version', 'schema_version');
     qb.addSelect('Collections.sponsorship', 'sponsorship');
     qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
+    qb.addSelect('Collections.was_burn', 'was_burn')
     qb.addSelect(
       `COALESCE("Statistics".tokens_count, 0::bigint)`,
       'tokens_count',

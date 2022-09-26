@@ -110,6 +110,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
     qb.addSelect('Tokens.parent_id', 'parent_id');
     qb.addSelect('Tokens.is_sold', 'is_sold');
+    qb.addSelect('Tokens.was_burn', 'was_burn');
     qb.addSelect('Tokens.token_name', 'token_name');
     qb.leftJoinAndSelect(
       'collections',
