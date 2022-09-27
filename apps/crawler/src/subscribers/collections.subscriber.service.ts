@@ -17,9 +17,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
   constructor(
     private sdkService: SdkService,
-
     private collectionWriterService: CollectionWriterService,
-
     @InjectSentry()
     private readonly sentry: SentryService,
   ) {
@@ -64,14 +62,17 @@ export class CollectionsSubscriberService implements ISubscriberService {
     collectionId: number,
     hash: string,
   ): Promise<ICollectionData> {
-    const [collectionDecoded, collectionLimits] = await Promise.all([
-      this.sdkService.getCollection(collectionId, hash),
-      this.sdkService.getCollectionLimits(collectionId, hash),
-    ]);
+    const [collectionDecoded, collectionLimits, tokenPropertyPermissions] =
+      await Promise.all([
+        this.sdkService.getCollection(collectionId, hash),
+        this.sdkService.getCollectionLimits(collectionId, hash),
+        this.sdkService.getTokenPropertyPermissions(collectionId),
+      ]);
 
     return {
       collectionDecoded,
       collectionLimits,
+      tokenPropertyPermissions,
     };
   }
 

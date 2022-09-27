@@ -43,6 +43,12 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   token_prefix?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
+  mint_mode?: IWhereOperators;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  nesting_enabled?: IWhereOperators;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
   was_burn?: IWhereOperators;
 
   @Field(() => TokenWhereParams, { nullable: true })
@@ -101,6 +107,9 @@ export class CollectionOrderByParams implements TOrderByParams<CollectionDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   owner_normalized?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  nesting_enabled?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
