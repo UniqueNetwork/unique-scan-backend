@@ -19,6 +19,8 @@ import { TimestampTransformInterceptor } from './timestamp.interceptor';
 import { StatisticsModule } from './statistics/statistics.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { SentryModule } from '@ntegral/nestjs-sentry';
+import { ContractController } from './contract/contract.controller';
+import { ContractService } from './contract/contract.service';
 
 @Module({
   imports: [
@@ -58,13 +60,14 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
     StatisticsModule,
     TransactionModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, ContractController],
   providers: [
     AppService,
     {
       provide: APP_INTERCEPTOR,
       useClass: TimestampTransformInterceptor,
     },
+    ContractService,
   ],
 })
 export class AppModule {}

@@ -3,6 +3,7 @@ import { Block } from './entities/Block';
 import { Chain } from './entities/Chain';
 import { Collections } from './entities/Collections';
 import { CollectionsStats } from './entities/CollectionsStats';
+import { Contract } from './entities/Contract';
 import { Event } from './entities/Event';
 import { Extrinsic } from './entities/Extrinsic';
 import { HarvesterError } from './entities/HarvesterError';
@@ -31,6 +32,7 @@ const typeormConfig: DataSourceOptions = {
     Chain,
     Collections,
     CollectionsStats,
+    Contract,
     Event,
     Extrinsic,
     HarvesterError,
