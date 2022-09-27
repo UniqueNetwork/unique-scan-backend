@@ -5,8 +5,6 @@ import { ApolloDriver } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import typeormConfig from '@common/typeorm.config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { HolderModule } from './holder/holder.module';
 import { TransferModule } from './transfer/transfer.module';
 import { TokenModule } from './tokens/token.module';
@@ -19,8 +17,7 @@ import { TimestampTransformInterceptor } from './timestamp.interceptor';
 import { StatisticsModule } from './statistics/statistics.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { SentryModule } from '@ntegral/nestjs-sentry';
-import { ContractController } from './contract/contract.controller';
-import { ContractService } from './contract/contract.service';
+import { ContractModule } from './contract/contract.module';
 
 @Module({
   imports: [
@@ -53,6 +50,7 @@ import { ContractService } from './contract/contract.service';
     TransferModule,
     TokenModule,
     CollectionModule,
+    ContractModule,
     EventModule,
     ExtrinsicModule,
     AccountModule,
@@ -60,14 +58,11 @@ import { ContractService } from './contract/contract.service';
     StatisticsModule,
     TransactionModule,
   ],
-  controllers: [AppController, ContractController],
   providers: [
-    AppService,
     {
       provide: APP_INTERCEPTOR,
       useClass: TimestampTransformInterceptor,
     },
-    ContractService,
   ],
 })
 export class AppModule {}

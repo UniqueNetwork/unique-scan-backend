@@ -9,7 +9,7 @@ export class ContractService {
     @InjectRepository(Contract) private repository: Repository<Contract>,
   ) {}
 
-  async create(contractDto: Contract) {
-    return this.repository.create(contractDto);
+  async create(createContractDto: Contract) {
+    return this.repository.insert(createContractDto);
   }
 }

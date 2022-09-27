@@ -1,18 +1,33 @@
 import { Contract } from '@entities/Contract';
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  Post,
+  Res,
+} from '@nestjs/common';
 import { ContractService } from './contract.service';
+import { Response } from 'express';
 
 @Controller('contract')
 export class ContractController {
   constructor(private contractService: ContractService) {}
 
-  @Get()
-  get(contactId: string): object {
-    return { message: `Contract hello ${contactId}` };
+  @Get(':id')
+  get(@Param('id') id: string): object {
+    return { id };
   }
 
   @Post()
-  create(@Body() createContractDto: Contract) {
-    this.contractService.create(createContractDto);
+  async create(@Body() createContractDto: Contract, @Res() res: Response) {
+    try {
+      await this.contractService.create(createContractDto);
+    } catch (error) {
+      return res.status(HttpStatus.BAD_REQUEST).json({ error: error.message });
+    }
+
+    res.sendStatus(HttpStatus.CREATED);
   }
 }
