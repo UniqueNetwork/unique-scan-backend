@@ -1,15 +1,15 @@
-import { Contract } from '@entities/Contract';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
-  HttpStatus,
   Param,
   Post,
-  Res,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ContractService } from './contract.service';
-import { Response } from 'express';
+import { CreateContractDTO } from './create-contract.dto';
 
 @Controller('contract')
 export class ContractController {
@@ -21,13 +21,12 @@ export class ContractController {
   }
 
   @Post()
-  async create(@Body() createContractDto: Contract, @Res() res: Response) {
+  @UsePipes(new ValidationPipe())
+  async create(@Body() createContractDto: CreateContractDTO) {
     try {
       await this.contractService.create(createContractDto);
     } catch (error) {
-      return res.status(HttpStatus.BAD_REQUEST).json({ error: error.message });
+      throw new BadRequestException(error.message);
     }
-
-    res.sendStatus(HttpStatus.CREATED);
   }
 }
