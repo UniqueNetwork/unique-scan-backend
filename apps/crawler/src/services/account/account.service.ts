@@ -6,10 +6,7 @@ import { isEthereumAddress } from '@polkadot/util-crypto';
 import { Address, AllBalances } from '@unique-nft/substrate-client/types';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
-
-export type AccountRecord =
-  | Address
-  | { value: Address; __kind: 'Substrate' | 'Etherium' };
+import { AccountRecord } from './account.types';
 
 type BalancesExtended = AllBalances & {
   etheriumAddress?: string;
