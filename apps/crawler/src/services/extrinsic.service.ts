@@ -14,8 +14,8 @@ import { Repository } from 'typeorm';
 import {
   IBlockCommonData,
   IBlockItem,
-} from '../../subscribers/blocks.subscriber.service';
-import { EventValues } from '../event/event.types';
+} from '../subscribers/blocks.subscriber.service';
+import { EventValues } from './event/event.types';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,

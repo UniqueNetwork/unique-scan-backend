@@ -9,8 +9,9 @@ import {
   EVENT_ARGS_TOKEN_ID_KEY_DEFAULT,
 } from '@common/constants';
 import { EventValues, EventArgs } from './event.types';
-import { AccountService, AccountRecord } from '../account/account.service';
+import { AccountService } from '../account/account.service';
 import { getAmount } from '@common/utils';
+import { AccountRecord } from '../account/account.types';
 
 type EventArgsValueNormalizer = (
   rawValue: string | number | object,

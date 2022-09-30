@@ -1,24 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { SdkService } from '../sdk/sdk.service';
 import { EventName, SubscriberAction } from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
-import {
-  ITokenData,
-  TokenWriterService,
-} from '../writers/token.writer.service';
+import { TokenService } from '../services/token.service';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(TokensSubscriberService.name);
 
   constructor(
-    private sdkService: SdkService,
-
-    private tokenWriterService: TokenWriterService,
+    private tokenService: TokenService,
 
     @InjectSentry()
     private readonly sentry: SentryService,
@@ -63,30 +57,6 @@ export class TokensSubscriberService implements ISubscriberService {
     };
   }
 
-  private async getTokenData(
-    collectionId: number,
-    tokenId: number,
-    hash: string,
-  ): Promise<ITokenData> {
-    const [tokenDecoded, tokenProperties, collectionDecoded] =
-      await Promise.allSettled([
-        this.sdkService.getToken(collectionId, tokenId, hash),
-        this.sdkService.getTokenProperties(collectionId, tokenId),
-        this.sdkService.getCollection(collectionId, hash),
-      ]);
-
-    return {
-      tokenDecoded:
-        tokenDecoded.status === 'fulfilled' ? tokenDecoded.value : null,
-      tokenProperties:
-        tokenProperties.status === 'fulfilled' ? tokenProperties.value : null,
-      collectionDecoded:
-        collectionDecoded.status === 'fulfilled'
-          ? collectionDecoded.value
-          : null,
-    };
-  }
-
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
       block: { height: blockNumber, timestamp: blockTimestamp, hash },
@@ -111,24 +81,12 @@ export class TokensSubscriberService implements ISubscriberService {
         throw new Error('Bad tokenId');
       }
 
-      const tokenData = await this.getTokenData(collectionId, tokenId, hash);
-
-      if (tokenData.tokenDecoded) {
-        await this.tokenWriterService.upsert({
-          eventName,
-          blockTimestamp,
-          tokenData,
-        });
-
-        log.action = SubscriberAction.UPSERT;
-      } else {
-        // No entity returned from sdk. Most likely it was destroyed in a future block.
-
-        // Delete db record
-        await this.tokenWriterService.delete(collectionId, tokenId);
-
-        log.action = SubscriberAction.DELETE_NOT_FOUND;
-      }
+      log.action = await this.tokenService.update({
+        collectionId,
+        tokenId,
+        eventName,
+        blockTimestamp,
+      });
 
       this.logger.verbose({ ...log });
     } catch (err) {
@@ -157,7 +115,7 @@ export class TokensSubscriberService implements ISubscriberService {
       log.tokenId = tokenId;
 
       // Delete db record
-      await this.tokenWriterService.burnToken(collectionId, tokenId);
+      await this.tokenService.burnToken(collectionId, tokenId);
 
       this.logger.verbose({ ...log });
     } catch (error) {

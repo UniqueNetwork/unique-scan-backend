@@ -5,7 +5,7 @@ import { EventName } from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
-import { EventService } from '../writers/event/event.service';
+import { EventService } from '../services/event/event.service';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
