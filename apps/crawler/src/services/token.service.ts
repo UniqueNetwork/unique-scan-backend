@@ -17,8 +17,8 @@ import { SdkService } from '../sdk/sdk.service';
 
 interface TokenData {
   tokenDecoded: TokenByIdResult;
-  tokenProperties: TokenPropertiesResult;
-  collectionDecoded: CollectionInfoWithSchema;
+  tokenProperties: TokenPropertiesResult | null;
+  collectionDecoded: CollectionInfoWithSchema | null;
 }
 
 @Injectable()
@@ -33,15 +33,20 @@ export class TokenService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
+    blockHash: string,
   ): Promise<TokenData | null> {
-    const tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+    const tokenDecoded = await this.sdkService.getToken(
+      collectionId,
+      tokenId,
+      blockHash,
+    );
 
     if (!tokenDecoded) {
       return null;
     }
     const [tokenProperties, collectionDecoded] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.getCollection(collectionId),
+      this.sdkService.getCollection(collectionId, blockHash),
     ]);
 
     return {
@@ -83,6 +88,7 @@ export class TokenService {
       parent_id: parentId,
       is_sold: owner !== collectionOwner,
       token_name: `${tokenPrefix} #${token_id}`,
+      burned: false,
     };
   }
 
@@ -91,13 +97,15 @@ export class TokenService {
     tokenId,
     eventName,
     blockTimestamp,
+    blockHash,
   }: {
     collectionId: number;
     tokenId: number;
     eventName: string;
     blockTimestamp: number;
+    blockHash: string;
   }): Promise<SubscriberAction> {
-    const tokenData = await this.getTokenData(collectionId, tokenId);
+    const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
 
     let result;
 
@@ -119,9 +127,7 @@ export class TokenService {
       result = SubscriberAction.UPSERT;
     } else {
       // No entity returned from sdk. Most likely it was destroyed in a future block.
-
-      // Delete db record
-      await this.delete(collectionId, tokenId);
+      await this.burn(collectionId, tokenId);
 
       result = SubscriberAction.DELETE;
     }
@@ -134,5 +140,17 @@ export class TokenService {
       collection_id: collectionId,
       token_id: tokenId,
     });
+  }
+
+  async burn(collectionId: number, tokenId: number) {
+    return this.tokensRepository.update(
+      {
+        collection_id: collectionId,
+        token_id: tokenId,
+      },
+      {
+        burned: true,
+      },
+    );
   }
 }

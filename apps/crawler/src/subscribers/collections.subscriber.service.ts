@@ -52,7 +52,11 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: blockTimestamp, hash },
+      block: {
+        height: blockNumber,
+        timestamp: blockTimestamp,
+        hash: blockHash,
+      },
       event: { name: eventName, args },
     } = ctx;
 
@@ -72,6 +76,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
         collectionId,
         eventName,
         blockTimestamp,
+        blockHash,
       });
 
       this.logger.verbose({ ...log });
@@ -99,7 +104,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
       log.collectionId = collectionId;
 
-      await this.collectionService.burnCollection(collectionId);
+      await this.collectionService.burn(collectionId);
 
       this.logger.verbose({ ...log });
     } catch (error) {

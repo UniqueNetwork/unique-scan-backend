@@ -49,7 +49,7 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   nesting_enabled?: IWhereOperators;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
-  was_burn?: IWhereOperators;
+  burned?: IWhereOperators;
 
   @Field(() => TokenWhereParams, { nullable: true })
   tokens?: TokenWhereParams;

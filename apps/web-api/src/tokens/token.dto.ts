@@ -69,5 +69,5 @@ export class TokenDTO implements Partial<Tokens> {
   is_sold?: boolean;
 
   @Field(() => Boolean)
-  was_burn?: boolean;
+  burned?: boolean;
 }

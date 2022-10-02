@@ -102,6 +102,6 @@ export class Collections {
   })
   collection_cover: string | null;
 
-  @Column('boolean', { name: 'was_burn', default: false })
-  was_burn: boolean;
+  @Column('boolean', { name: 'burned', default: false })
+  burned: boolean;
 }

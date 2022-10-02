@@ -59,7 +59,7 @@ export class TokensSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: blockTimestamp, hash },
+      block: { height: blockNumber, timestamp: blockTimestamp, hash: blockHash },
       event: { name: eventName, args },
     } = ctx;
 
@@ -86,6 +86,7 @@ export class TokensSubscriberService implements ISubscriberService {
         tokenId,
         eventName,
         blockTimestamp,
+        blockHash,
       });
 
       this.logger.verbose({ ...log });
@@ -115,7 +116,7 @@ export class TokensSubscriberService implements ISubscriberService {
       log.tokenId = tokenId;
 
       // Delete db record
-      await this.tokenService.burnToken(collectionId, tokenId);
+      await this.tokenService.burn(collectionId, tokenId);
 
       this.logger.verbose({ ...log });
     } catch (error) {

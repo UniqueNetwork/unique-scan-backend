@@ -139,7 +139,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.schema_version', 'schema_version');
     qb.addSelect('Collections.sponsorship', 'sponsorship');
     qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
-    qb.addSelect('Collections.was_burn', 'was_burn')
+    qb.addSelect('Collections.burned', 'burned')
     qb.addSelect('Collections.properties', 'properties');
     qb.addSelect('Collections.permissions', 'permissions');
     qb.addSelect(

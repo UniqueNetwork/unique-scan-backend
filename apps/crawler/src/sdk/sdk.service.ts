@@ -28,7 +28,7 @@ export class SdkService {
   }
 
   @SdkCache('getCollectionLimits')
-  async getCollectionLimits(collectionId: number, at: string) {
+  async getCollectionLimits(collectionId: number, at?: string) {
     const result = await this.sdk.collections.getLimits({ collectionId, at });
     return result?.limits;
   }

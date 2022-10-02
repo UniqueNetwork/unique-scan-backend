@@ -103,5 +103,5 @@ export class CollectionDTO implements Partial<Collections> {
   token_property_permissions?: object;
 
   @Field(() => Boolean)
-  was_burn?: boolean;
+  burned?: boolean;
 }
