@@ -67,6 +67,12 @@ export interface IGQLQueryArgs<T> {
 }
 
 @InputType()
+export class GQLWhereOpsIntEq implements IWhereOperators {
+  @Field(() => Float, { nullable: true })
+  _eq: number;
+}
+
+@InputType()
 export class GQLWhereOpsInt implements IWhereOperators {
   @Field(() => Float, { nullable: true })
   _eq?: number;
