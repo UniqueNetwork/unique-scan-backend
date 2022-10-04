@@ -18,6 +18,7 @@ export class AttributesWhereParams {
   collection_id: GQLWhereOpsIntEq;
 }
 
+// todo: Wrong type
 @InputType()
 export class AttributesOrderByParams implements TOrderByParams<AttributeDTO> {
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
