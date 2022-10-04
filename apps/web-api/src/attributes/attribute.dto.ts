@@ -1,6 +1,16 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 
-export class AttributeSingleDTO {}
+@ObjectType('attribute_value')
+class AttributeValue {
+  @Field(() => String, { nullable: true })
+  value?: string;
+
+  @Field(() => String, { nullable: true })
+  raw_value?: string;
+
+  @Field(() => Int, { nullable: true })
+  tokens_count?: number;
+}
 
 @ObjectType('attribute')
 export class AttributeDTO {
@@ -10,12 +20,6 @@ export class AttributeDTO {
   @Field(() => String)
   name?: string;
 
-  @Field(() => String)
-  value?: string;
-
-  @Field(() => String)
-  raw_value?: string;
-
-  @Field(() => Int)
-  tokens_count?: number;
+  @Field(() => [AttributeValue])
+  values?: AttributeValue[];
 }
