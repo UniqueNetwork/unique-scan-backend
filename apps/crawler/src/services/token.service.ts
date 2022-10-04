@@ -56,7 +56,7 @@ export class TokenService {
     };
   }
 
-  prepareDataForDb(tokenData: TokenData): Omit<Tokens, 'id'> {
+  async prepareDataForDb(tokenData: TokenData): Promise<Omit<Tokens, 'id'>> {
     const { tokenDecoded, tokenProperties, collectionDecoded } = tokenData;
     const {
       tokenId: token_id,
@@ -75,6 +75,11 @@ export class TokenService {
       parentId = `${collectionId}_${tokenId}`;
     }
 
+    const token = await this.tokensRepository.findOneBy({
+      collection_id,
+      token_id,
+    });
+
     return {
       token_id,
       collection_id,
@@ -88,7 +93,7 @@ export class TokenService {
       parent_id: parentId,
       is_sold: owner !== collectionOwner,
       token_name: `${tokenPrefix} #${token_id}`,
-      burned: false,
+      burned: token?.burned ?? false,
     };
   }
 
@@ -110,7 +115,7 @@ export class TokenService {
     let result;
 
     if (tokenData) {
-      const preparedData = this.prepareDataForDb(tokenData);
+      const preparedData = await this.prepareDataForDb(tokenData);
 
       // Write token data into db
       await this.tokensRepository.upsert(
@@ -133,13 +138,6 @@ export class TokenService {
     }
 
     return result;
-  }
-
-  async delete(collectionId: number, tokenId: number) {
-    return this.tokensRepository.delete({
-      collection_id: collectionId,
-      token_id: tokenId,
-    });
   }
 
   async burn(collectionId: number, tokenId: number) {

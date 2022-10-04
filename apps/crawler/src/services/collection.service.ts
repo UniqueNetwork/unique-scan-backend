@@ -165,7 +165,9 @@ export class CollectionService {
     return result as UniqueCollectionSchemaDecoded;
   }
 
-  private prepareDataForDb(collectionData: CollectionData): Collections {
+  private async prepareDataForDb(
+    collectionData: CollectionData,
+  ): Promise<Collections> {
     const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
       collectionData;
 
@@ -212,6 +214,10 @@ export class CollectionService {
       ownerCanDestroy: owner_can_destroy,
     } = collectionLimits;
 
+    const collection = await this.collectionsRepository.findOneBy({
+      collection_id,
+    });
+
     return {
       collection_id,
       owner,
@@ -238,7 +244,7 @@ export class CollectionService {
       nesting_enabled: nesting?.collectionAdmin || nesting?.tokenOwner,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
-      burned: false,
+      burned: collection?.burned ?? false,
     };
   }
 
@@ -261,7 +267,7 @@ export class CollectionService {
     let result;
 
     if (collectionData) {
-      const preparedData = this.prepareDataForDb(collectionData);
+      const preparedData = await this.prepareDataForDb(collectionData);
 
       await this.collectionsRepository.upsert(
         {
@@ -285,10 +291,6 @@ export class CollectionService {
     return result;
   }
 
-  async delete(collectionId: number) {
-    return this.deleteCollectionWithTokens(collectionId);
-  }
-
   async burn(collectionId: number) {
     return Promise.allSettled([
       this.collectionsRepository.update(
@@ -299,14 +301,6 @@ export class CollectionService {
         { collection_id: collectionId },
         { burned: true },
       ),
-    ]);
-  }
-
-  // Delete db collection record and related tokens
-  private async deleteCollectionWithTokens(collectionId: number) {
-    return Promise.all([
-      this.collectionsRepository.delete(collectionId),
-      this.tokensRepository.delete({ collection_id: collectionId }),
     ]);
   }
 }
