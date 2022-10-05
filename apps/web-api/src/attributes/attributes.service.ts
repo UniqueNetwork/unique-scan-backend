@@ -1,11 +1,9 @@
-import { Collections } from '@entities/Collections';
+import { DataSource } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { IGQLQueryArgs } from '../utils/gql-query-args';
 import { SentryWrapper } from '../utils/sentry.decorator';
 import { AttributeDTO, AttributeValue } from './attribute.dto';
 import { AttributesQueryArgs } from './attributes.resolver.types';
+import { IDataListResponse } from '../utils/gql-query-args';
 
 class RawAttributeValue {
   isArray: boolean;
@@ -13,23 +11,24 @@ class RawAttributeValue {
   value: object;
   rawValue: object | number | number[];
 }
+
 @Injectable()
 export class AttributesService {
-  constructor(
-    @InjectRepository(Collections)
-    private repository: Repository<Collections>,
-  ) {}
+  constructor(private dataSource: DataSource) {}
 
-  private getDefaultAttributesData(attributesSchema) {
+  /**
+   * Creates full list of all possible token attributes with default token_counts = 0.
+   */
+  private getDefaultAttributesList(attributesSchema): AttributeDTO[] {
     return Object.entries(attributesSchema).map(
       ([attrKey, attrDescriptor]: [
         string,
-        { name: string | object; enumValues?: object },
+        { name: object; enumValues?: object },
       ]) => {
         const { name, enumValues } = attrDescriptor;
 
         const attribute = {
-          key: String(attrKey),
+          key: attrKey,
           name: JSON.stringify(name),
           values: [],
         } as AttributeDTO;
@@ -56,6 +55,10 @@ export class AttributesService {
     return attributesData.find(({ key }) => key == attributeKey);
   }
 
+  /**
+   * Finds in attributes list values exact attribute value and returns it's index.
+   * If not found, creates new record in values and returns it's index.
+   */
   private getAttributeValueIndex(
     attribute: AttributeDTO,
     attributeValueObj: AttributeValue,
@@ -73,52 +76,71 @@ export class AttributesService {
     return index;
   }
 
+  /**
+   * Converts raw attribute value object from tokens.attributes db record
+   * into array of AttributeValue objects suitable for AttributesDTO.values.
+   */
   private normalizeAttributeValueObj(
     rawAttributeValueObj: RawAttributeValue,
-  ): AttributeValue {
-    const { value, rawValue } = rawAttributeValueObj;
-    return {
-      value: JSON.stringify(value),
-      raw_value: JSON.stringify(rawValue),
-      tokens_count: 0,
-    };
+  ): AttributeValue[] {
+    const result = [];
+    const { value, rawValue, isArray } = rawAttributeValueObj;
+
+    if (isArray && Array.isArray(rawValue)) {
+      rawValue.forEach((rawValue, index) => {
+        result.push({
+          value: JSON.stringify(value[index]),
+          raw_value: String(rawValue),
+          tokens_count: 0,
+        });
+      });
+    } else {
+      result.push({
+        value: JSON.stringify(value),
+        raw_value: JSON.stringify(rawValue),
+        tokens_count: 0,
+      });
+    }
+
+    return result;
   }
 
+  /**
+   * Iterates through collection tokens attributes and calculates 'token_counts' for every attribute value.
+   */
   private async collectTokenCounts(
     collectionId: number,
-    defaultAttributesData: AttributeDTO[],
+    attributesSchema: object,
   ): Promise<AttributeDTO[]> {
-    const resultAttributesData = [...defaultAttributesData];
+    // Get list of all possible attributes with default tokens_count = 0
+    const resultAttributesList = [
+      ...this.getDefaultAttributesList(attributesSchema),
+    ];
 
-    // todo: use DataSource?
-    // Get attributes values for each token and attribute
-    const qResult = await this.repository.query(
-      `SELECT attributes FROM tokens 
-      WHERE
+    // Get all collection tokens attributes.
+    const qResult = await this.dataSource.query(
+      `SELECT attributes FROM tokens WHERE
         attributes IS NOT NULL 
         AND attributes != '{}'::jsonb
         AND collection_id = ${collectionId};`,
     );
 
-    qResult.forEach(({ attributes: tokenAttributes }) => {
-      // console.log(tokenAttributes);
+    if (!qResult) {
+      return resultAttributesList;
+    }
 
+    // Tokens iteration
+    qResult.forEach(({ attributes: tokenAttributes }) => {
+      // Token attributes iteration
       Object.entries(tokenAttributes).forEach(
         ([attributeKey, rawAttributeValueObj]: [string, RawAttributeValue]) => {
-          // console.log(rawAttributeValueObj);
-
-          const { isArray } = rawAttributeValueObj;
-          const attributeValueObj =
+          const attributeValues =
             this.normalizeAttributeValueObj(rawAttributeValueObj);
 
-          // console.log(rawValue);
-
-          if (isArray) {
-            // multiselect
-            // todo: process every array value
-          } else {
+          // Normalized token attributes iteration (multiselect gives us another array)
+          attributeValues.forEach((attributeValueObj) => {
             const attribute = this.getAttributeByKey(
-              resultAttributesData,
+              resultAttributesList,
               attributeKey,
             );
 
@@ -127,20 +149,20 @@ export class AttributesService {
               attributeValueObj,
             );
 
+            // Itcrement count for exact attribute and value
             attribute.values[valueIndex].tokens_count += 1;
-          }
+          });
         },
       );
     });
 
-    return resultAttributesData;
+    return resultAttributesList;
   }
 
   @SentryWrapper({ data: [], count: 0 })
   public async getCollectionAttributes(
     queryArgs: AttributesQueryArgs,
-    // ): Promise<IDataListResponse<AttributeDTO>> {
-  ) {
+  ): Promise<IDataListResponse<AttributeDTO>> {
     const result = {
       data: [] as AttributeDTO[],
       count: 0,
@@ -148,29 +170,19 @@ export class AttributesService {
 
     const collectionId = queryArgs.where.collection_id._eq;
 
-    // Get collection attributes schema
-    const collection = await this.repository.findOne({
-      // @ts-ignore - some problem with typing...
-      select: { attributes_schema: true },
-      where: { collection_id: collectionId },
-    });
+    const qResult = await this.dataSource.query(
+      `SELECT attributes_schema FROM collections WHERE collection_id = ${collectionId}`,
+    );
 
+    const collection = qResult[0];
     if (!collection) {
       return result;
     }
 
     const { attributes_schema: attributesSchema } = collection;
 
-    const defaultAttributesData =
-      this.getDefaultAttributesData(attributesSchema);
-
-    result.data = await this.collectTokenCounts(
-      collectionId,
-      defaultAttributesData,
-    );
+    result.data = await this.collectTokenCounts(collectionId, attributesSchema);
     result.count = result.data.length;
-
-    // console.log(result.data);
 
     return result;
   }
