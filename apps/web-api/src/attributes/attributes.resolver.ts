@@ -15,7 +15,6 @@ export class AttributesResolver {
   public async attributes(
     @Args() args: AttributesQueryArgs,
   ): Promise<IDataListResponse<AttributeDTO>> {
-    // @ts-ignore
     return this.service.getCollectionAttributes(args);
   }
 }

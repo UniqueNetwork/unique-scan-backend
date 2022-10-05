@@ -3,12 +3,8 @@ import {
   GQLOrderByParamsArgs,
   GQLWhereOpsInt,
   GQLWhereOpsIntEq,
-  GQLWhereOpsString,
-  IDataListResponse,
-  IGQLQueryArgs,
   ListDataType,
   TOrderByParams,
-  TWhereParams,
 } from '../utils/gql-query-args';
 import { AttributeDTO } from './attribute.dto';
 
@@ -17,8 +13,6 @@ export class AttributesWhereParams {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   collection_id: GQLWhereOpsIntEq;
 }
-
-// todo: Wrong type
 @InputType()
 export class AttributesOrderByParams implements TOrderByParams<AttributeDTO> {
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
@@ -26,15 +20,6 @@ export class AttributesOrderByParams implements TOrderByParams<AttributeDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   name?: GQLOrderByParamsArgs;
-
-  @Field(() => GQLOrderByParamsArgs, { nullable: true })
-  value?: GQLOrderByParamsArgs;
-
-  @Field(() => GQLOrderByParamsArgs, { nullable: true })
-  raw_value?: GQLOrderByParamsArgs;
-
-  @Field(() => GQLOrderByParamsArgs, { nullable: true })
-  tokens_count?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
