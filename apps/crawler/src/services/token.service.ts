@@ -4,7 +4,7 @@ import {
   normalizeTimestamp,
   sanitizePropertiesValues,
 } from '@common/utils';
-import { Tokens } from '@entities/Tokens';
+import { Tokens, TokenType } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -63,11 +63,12 @@ export class TokenService {
     } = tokenDecoded;
 
     const { owner: collectionOwner, tokenPrefix } = collectionDecoded;
-
+    let tokenType = TokenType.NFT;
     let parentId = null;
     if (nestingParentToken) {
       const { collectionId, tokenId } = nestingParentToken;
       parentId = `${collectionId}_${tokenId}`;
+      tokenType = TokenType.NESTED;
     }
 
     return {
@@ -83,6 +84,7 @@ export class TokenService {
       parent_id: parentId,
       is_sold: owner !== collectionOwner,
       token_name: `${tokenPrefix} #${token_id}`,
+      type: tokenType,
     };
   }
 

@@ -1,5 +1,11 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
+export enum TokenType {
+  NFT = 'NFT',
+  RFT = 'RFT',
+  NESTED = 'NESTED',
+}
+
 @Index('tokens_pkey', ['token_id', 'collection_id'], { unique: true })
 @Index('tokens_collection_id_token_id_owner_idx', [
   'collection_id',
@@ -44,4 +50,11 @@ export class Tokens {
 
   @Column('text', { name: 'token_name', nullable: true })
   token_name: string;
+
+  @Column({
+    type: 'enum',
+    enum: TokenType,
+    default: TokenType.NFT,
+  })
+  type: TokenType;
 }
