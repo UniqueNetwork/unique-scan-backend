@@ -4,9 +4,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IGQLQueryArgs } from '../utils/gql-query-args';
 import { SentryWrapper } from '../utils/sentry.decorator';
-import { AttributeDTO } from './attribute.dto';
+import { AttributeDTO, AttributeValue } from './attribute.dto';
 import { AttributesQueryArgs } from './attributes.resolver.types';
 
+class RawAttributeValue {
+  isArray: boolean;
+  isEnum: boolean;
+  value: object;
+  rawValue: object | number | number[];
+}
 @Injectable()
 export class AttributesService {
   constructor(
@@ -16,23 +22,23 @@ export class AttributesService {
 
   private getDefaultAttributesData(attributesSchema) {
     return Object.entries(attributesSchema).map(
-      ([attributeKey, descriptor]: [
+      ([attrKey, attrDescriptor]: [
         string,
-        { name: { _: string }; enumValues?: object },
+        { name: string | object; enumValues?: object },
       ]) => {
-        const { name, enumValues } = descriptor;
+        const { name, enumValues } = attrDescriptor;
 
         const attribute = {
-          key: attributeKey,
-          name: name._,
+          key: String(attrKey),
+          name: JSON.stringify(name),
           values: [],
         } as AttributeDTO;
 
         if (enumValues) {
           attribute.values = Object.entries(enumValues).map(
-            ([enumKey, name]: [string, { _: string }]) => ({
-              raw_value: enumKey,
-              value: name?._,
+            ([enumKey, value]: [string, string | object]) => ({
+              raw_value: String(enumKey),
+              value: JSON.stringify(value),
               tokens_count: 0,
             }),
           );
@@ -43,68 +49,89 @@ export class AttributesService {
     );
   }
 
+  private getAttributeByKey(
+    attributesData: AttributeDTO[],
+    attributeKey: string,
+  ) {
+    return attributesData.find(({ key }) => key == attributeKey);
+  }
+
+  private getAttributeValueIndex(
+    attribute: AttributeDTO,
+    attributeValueObj: AttributeValue,
+  ) {
+    const { raw_value: attributeRawValue } = attributeValueObj;
+    let index = attribute.values.findIndex(
+      ({ raw_value: currentRawValue }) => currentRawValue === attributeRawValue,
+    );
+
+    if (index === -1) {
+      attribute.values.push(attributeValueObj);
+      index = this.getAttributeValueIndex(attribute, attributeValueObj);
+    }
+
+    return index;
+  }
+
+  private normalizeAttributeValueObj(
+    rawAttributeValueObj: RawAttributeValue,
+  ): AttributeValue {
+    const { value, rawValue } = rawAttributeValueObj;
+    return {
+      value: JSON.stringify(value),
+      raw_value: JSON.stringify(rawValue),
+      tokens_count: 0,
+    };
+  }
+
   private async collectTokenCounts(
     collectionId: number,
     defaultAttributesData: AttributeDTO[],
   ): Promise<AttributeDTO[]> {
     const resultAttributesData = [...defaultAttributesData];
 
+    // todo: use DataSource?
     // Get attributes values for each token and attribute
-    const tokenAttributes = await this.repository.query(
-      `WITH token_attributes AS (SELECT
-          token_id,
-          (jsonb_each(attributes)).*
-        FROM tokens WHERE
-          attributes IS NOT NULL 
-          AND attributes != '{}'::jsonb
-          AND collection_id = ${collectionId}
-        )
-        
-        SELECT * FROM token_attributes;`,
+    const qResult = await this.repository.query(
+      `SELECT attributes FROM tokens 
+      WHERE
+        attributes IS NOT NULL 
+        AND attributes != '{}'::jsonb
+        AND collection_id = ${collectionId};`,
     );
 
-    // todo: FROM HERE
+    qResult.forEach(({ attributes: tokenAttributes }) => {
+      // console.log(tokenAttributes);
 
-    tokenAttributes.forEach((row) => {
-      const {
-        key: attributeKey,
-        value: { isEnum, isArray, rawValue },
-      } = row;
+      Object.entries(tokenAttributes).forEach(
+        ([attributeKey, rawAttributeValueObj]: [string, RawAttributeValue]) => {
+          // console.log(rawAttributeValueObj);
 
-      // console.log(row);
-      // console.log(rawValue);
+          const { isArray } = rawAttributeValueObj;
+          const attributeValueObj =
+            this.normalizeAttributeValueObj(rawAttributeValueObj);
 
-      let resultRawValue;
-      if (isArray) {
-        // multiselect
-        // todo: process every array value
-      } else if (isEnum) {
-        resultRawValue = rawValue;
-      } else {
-        // text
-        resultRawValue = rawValue._;
-      }
+          // console.log(rawValue);
 
-      // todo: remove me when isArray processed
-      if (resultRawValue != undefined) {
-        const attribute = resultAttributesData.find(
-          ({ key }) => key == attributeKey,
-        );
-        console.log(attributeKey, resultRawValue);
-        if (!attribute.values[resultRawValue]) {
-          attribute.values[resultRawValue] = {
-            value: resultRawValue,
-            raw_value: resultRawValue,
-            tokens_count: 0,
-          };
-        }
+          if (isArray) {
+            // multiselect
+            // todo: process every array value
+          } else {
+            const attribute = this.getAttributeByKey(
+              resultAttributesData,
+              attributeKey,
+            );
 
-        attribute.values[resultRawValue].tokens_count += 1;
-      }
+            const valueIndex = this.getAttributeValueIndex(
+              attribute,
+              attributeValueObj,
+            );
+
+            attribute.values[valueIndex].tokens_count += 1;
+          }
+        },
+      );
     });
-
-    console.log(resultAttributesData[0].values);
-    console.log(resultAttributesData[1].values);
 
     return resultAttributesData;
   }
@@ -134,9 +161,12 @@ export class AttributesService {
 
     const { attributes_schema: attributesSchema } = collection;
 
+    const defaultAttributesData =
+      this.getDefaultAttributesData(attributesSchema);
+
     result.data = await this.collectTokenCounts(
       collectionId,
-      this.getDefaultAttributesData(attributesSchema),
+      defaultAttributesData,
     );
     result.count = result.data.length;
 

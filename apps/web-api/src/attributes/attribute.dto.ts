@@ -1,7 +1,7 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('attribute_value')
-class AttributeValue {
+export class AttributeValue {
   @Field(() => String, { nullable: true })
   value?: string;
 
