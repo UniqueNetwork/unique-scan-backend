@@ -9,6 +9,7 @@ import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
+  GQLWhereOpsStrEq,
   GQLWhereOpsString,
   IGQLQueryArgs,
   IWhereOperators,
@@ -55,6 +56,9 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   token_name?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsStrEq, { nullable: true })
+  attributes?: GQLWhereOpsStrEq;
 
   @Field(() => [TokenWhereParams], { nullable: true })
   _and?: TokenWhereParams[];

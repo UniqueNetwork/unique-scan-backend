@@ -13,6 +13,7 @@ export class AttributesWhereParams {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   collection_id: GQLWhereOpsIntEq;
 }
+
 @InputType()
 export class AttributesOrderByParams implements TOrderByParams<AttributeDTO> {
   @Field(() => GQLOrderByParamsArgs, { nullable: true })

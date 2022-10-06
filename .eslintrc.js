@@ -29,5 +29,14 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
+    'comma-dangle': 0,
+    // quotes: ['error', 'single'],
+    // "prettier/prettier": [
+    //   "error",
+    //   {
+    //     singleQuote: true,
+    //     trailingComma: "none",
+    //   },
+    // ],
   },
 };

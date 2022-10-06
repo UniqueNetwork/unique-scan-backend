@@ -182,6 +182,7 @@ export class AttributesService {
     const { attributes_schema: attributesSchema } = collection;
 
     result.data = await this.collectTokenCounts(collectionId, attributesSchema);
+
     result.count = result.data.length;
 
     return result;

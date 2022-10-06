@@ -1,7 +1,7 @@
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
   IDataListResponse,
@@ -40,6 +40,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, queryArgs);
+
     return this.getDataAndCount(qb, queryArgs);
   }
 
@@ -74,7 +75,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     toDate,
   }: IDateRange): Promise<IStatsResponse[]> {
     const qb = await this.repo.createQueryBuilder();
-    qb.select(`date_trunc('hour', TO_TIMESTAMP(date_of_creation))`, 'date');
+    qb.select("date_trunc('hour', TO_TIMESTAMP(date_of_creation))", 'date');
     qb.addSelect('count(*)', 'count');
     qb.groupBy('date');
 
@@ -93,10 +94,66 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     queryArgs: IGQLQueryArgs<TokenDTO>,
   ): void {
     this.select(qb);
+
     this.applyDistinctOn(qb, queryArgs);
     this.applyLimitOffset(qb, queryArgs);
+
+    const attributesFilter = (queryArgs.where?.attributes?._eq as string) || '';
+    if (attributesFilter) {
+      // Delete 'attributes' condition before applyWhereCondition() call
+      // because of it's custom nature.
+      // And process this filter later.
+      delete queryArgs.where.attributes;
+    }
+
     this.applyWhereCondition(qb, queryArgs);
+
+    if (attributesFilter) {
+      // Apply attributes filter after main conditions for performance sake.
+      this.applyAttributesFilter(qb, attributesFilter);
+    }
+
     this.applyOrderCondition(qb, queryArgs);
+  }
+
+  private applyAttributesFilter(
+    qb: SelectQueryBuilder<Tokens>,
+    filterStringified: string,
+  ): void {
+    try {
+      const filterParsed = JSON.parse(filterStringified);
+      qb.andWhere(
+        new Brackets((qb) => {
+          filterParsed.forEach(([key, rawValue]) => {
+            if (!Number.isNaN(parseInt(rawValue))) {
+              // Select and multiselect field
+              qb.orWhere(
+                new Brackets((qb) => {
+                  const value = parseInt(rawValue);
+                  qb.where(
+                    `"Tokens".attributes->'${key}'->>'rawValue'='${value}'`,
+                  ).orWhere(
+                    `"Tokens".attributes->'${key}'->>'rawValue' LIKE '[%${value}%]'`,
+                  );
+                }),
+              );
+            } else {
+              // Text field.
+              // Example stringified value params: "[0,{\"_\":\"text-opt-1\"}]"
+              qb.orWhere(
+                `"Tokens".attributes->'${key}'->'rawValue'='${JSON.stringify(
+                  rawValue,
+                )}'::jsonb`,
+              );
+            }
+          });
+        }),
+      );
+    } catch (err) {
+      // Parse json error
+      // todo: Maybe someway report problem?
+      // console.error(err);
+    }
   }
 
   private select(qb: SelectQueryBuilder<Tokens>): void {
@@ -123,7 +180,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Collection.description', 'collection_description');
     qb.addSelect('"Collection".collection_cover', 'collection_cover');
     qb.addSelect(
-      `COALESCE("Statistics".transfers_count, 0::bigint)`,
+      'COALESCE("Statistics".transfers_count, 0::bigint)',
       'transfers_count',
     );
     qb.leftJoin(
