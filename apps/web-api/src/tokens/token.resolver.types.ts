@@ -57,6 +57,10 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   token_name?: GQLWhereOpsString;
 
+  /*
+  'attribute' where condition value is a stringified array of arrays:
+  Json.stringify([[attrKey: string, attrRawValue: string], ...])
+  */
   @Field(() => GQLWhereOpsStrEq, { nullable: true })
   attributes?: GQLWhereOpsStrEq;
 

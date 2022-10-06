@@ -7,7 +7,7 @@ export class AttributeValue {
   value?: object;
 
   @Field(() => String, { nullable: true })
-  raw_value?: string;
+  raw_value?: string; // Stringified attribute rawValue
 
   @Field(() => Int, { nullable: true })
   tokens_count?: number;
