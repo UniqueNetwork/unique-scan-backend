@@ -154,6 +154,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     } catch (err) {
       // Parse json error
       // todo: Maybe someway report problem?
+      // eslint-disable-next-line no-console
       console.error(err);
     }
   }
