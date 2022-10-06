@@ -133,6 +133,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
                   qb.where(
                     `"Tokens".attributes->'${key}'->>'rawValue'='${value}'`,
                   ).orWhere(
+                    // todo: Bad condition. Need To search value in array
                     `"Tokens".attributes->'${key}'->>'rawValue' LIKE '[%${value}%]'`,
                   );
                 }),
@@ -145,6 +146,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
                   rawValue,
                 )}'::jsonb`,
               );
+              // todo: Add array search too
             }
           });
         }),
@@ -152,7 +154,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     } catch (err) {
       // Parse json error
       // todo: Maybe someway report problem?
-      // console.error(err);
+      console.error(err);
     }
   }
 

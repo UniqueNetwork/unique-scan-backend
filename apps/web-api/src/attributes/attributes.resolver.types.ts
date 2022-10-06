@@ -10,7 +10,7 @@ import { AttributeDTO } from './attribute.dto';
 
 @InputType()
 export class AttributesWhereParams {
-  @Field(() => GQLWhereOpsInt, { nullable: true })
+  @Field(() => GQLWhereOpsInt)
   collection_id: GQLWhereOpsIntEq;
 }
 

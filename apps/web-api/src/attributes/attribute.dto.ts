@@ -1,9 +1,10 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { GraphQLJSONObject } from 'graphql-type-json';
 
 @ObjectType('attribute_value')
 export class AttributeValue {
-  @Field(() => String, { nullable: true })
-  value?: string;
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  value?: object;
 
   @Field(() => String, { nullable: true })
   raw_value?: string;
@@ -17,8 +18,8 @@ export class AttributeDTO {
   @Field(() => String)
   key?: string;
 
-  @Field(() => String)
-  name?: string;
+  @Field(() => GraphQLJSONObject)
+  name?: string | object;
 
   @Field(() => [AttributeValue])
   values?: AttributeValue[];

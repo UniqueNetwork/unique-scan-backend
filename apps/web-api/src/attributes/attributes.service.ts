@@ -17,7 +17,7 @@ export class AttributesService {
   constructor(private dataSource: DataSource) {}
 
   /**
-   * Creates full list of all possible token attributes with default token_counts = 0.
+   * Creates full list of all possible token attributes with default token_count = 0.
    */
   private getDefaultAttributesList(attributesSchema): AttributeDTO[] {
     return Object.entries(attributesSchema).map(
@@ -29,15 +29,15 @@ export class AttributesService {
 
         const attribute = {
           key: attrKey,
-          name: JSON.stringify(name),
+          name,
           values: [],
         } as AttributeDTO;
 
         if (enumValues) {
           attribute.values = Object.entries(enumValues).map(
-            ([enumKey, value]: [string, string | object]) => ({
+            ([enumKey, value]: [string, object]) => ({
               raw_value: String(enumKey),
-              value: JSON.stringify(value),
+              value,
               tokens_count: 0,
             }),
           );
@@ -89,14 +89,14 @@ export class AttributesService {
     if (isArray && Array.isArray(rawValue)) {
       rawValue.forEach((rawValue, index) => {
         result.push({
-          value: JSON.stringify(value[index]),
+          value: value[index],
           raw_value: String(rawValue),
           tokens_count: 0,
         });
       });
     } else {
       result.push({
-        value: JSON.stringify(value),
+        value,
         raw_value: JSON.stringify(rawValue),
         tokens_count: 0,
       });
@@ -106,7 +106,7 @@ export class AttributesService {
   }
 
   /**
-   * Iterates through collection tokens attributes and calculates 'token_counts' for every attribute value.
+   * Iterates through collection tokens attributes and calculates 'token_count' for every attribute value.
    */
   private async collectTokenCounts(
     collectionId: number,
@@ -149,7 +149,7 @@ export class AttributesService {
               attributeValueObj,
             );
 
-            // Itcrement count for exact attribute and value
+            // Increment count for exact attribute and value
             attribute.values[valueIndex].tokens_count += 1;
           });
         },
