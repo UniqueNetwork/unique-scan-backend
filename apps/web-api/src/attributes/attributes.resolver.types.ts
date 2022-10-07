@@ -1,7 +1,6 @@
 import { ArgsType, Field, InputType, ObjectType } from '@nestjs/graphql';
 import {
   GQLOrderByParamsArgs,
-  GQLWhereOpsInt,
   GQLWhereOpsIntEq,
   ListDataType,
   TOrderByParams,
@@ -10,7 +9,7 @@ import { AttributeDTO } from './attribute.dto';
 
 @InputType()
 export class AttributesWhereParams {
-  @Field(() => GQLWhereOpsInt)
+  @Field(() => GQLWhereOpsIntEq)
   collection_id: GQLWhereOpsIntEq;
 }
 
@@ -25,7 +24,7 @@ export class AttributesOrderByParams implements TOrderByParams<AttributeDTO> {
 
 @ArgsType()
 export class AttributesQueryArgs {
-  @Field(() => AttributesWhereParams, { nullable: true })
+  @Field(() => AttributesWhereParams)
   where: AttributesWhereParams;
 
   @Field(() => AttributesOrderByParams, { nullable: true })

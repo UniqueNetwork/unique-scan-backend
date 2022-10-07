@@ -11,6 +11,7 @@ import {
 } from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
 import { SentryWrapper } from '../utils/sentry.decorator';
+import { QueryArgs } from './token.resolver.types';
 
 const relationsFields = {
   token_prefix: 'Collection',
@@ -35,7 +36,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
   @SentryWrapper({ data: [], count: 0 })
   public async find(
-    queryArgs: IGQLQueryArgs<TokenDTO>,
+    queryArgs: QueryArgs,
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
 
@@ -44,7 +45,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return this.getDataAndCount(qb, queryArgs);
   }
 
-  public getByCollectionId(id: number, queryArgs: IGQLQueryArgs<TokenDTO>) {
+  public getByCollectionId(id: number, queryArgs: QueryArgs) {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, {
@@ -91,62 +92,54 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
   private applyFilters(
     qb: SelectQueryBuilder<Tokens>,
-    queryArgs: IGQLQueryArgs<TokenDTO>,
+    queryArgs: QueryArgs,
   ): void {
     this.select(qb);
 
     this.applyDistinctOn(qb, queryArgs);
     this.applyLimitOffset(qb, queryArgs);
 
-    const attributesFilter = (queryArgs.where?.attributes?._eq as string) || '';
-    if (attributesFilter) {
-      // Delete 'attributes' condition before applyWhereCondition() call
-      // because of it's custom nature.
-      // And process this filter later.
-      delete queryArgs.where.attributes;
-    }
-
     this.applyWhereCondition(qb, queryArgs);
 
-    if (attributesFilter) {
-      // Apply attributes filter after main conditions for performance sake.
-      this.applyAttributesFilter(qb, attributesFilter);
-    }
+    this.applyAttributesFilter(qb, queryArgs);
 
     this.applyOrderCondition(qb, queryArgs);
   }
 
   private applyAttributesFilter(
     qb: SelectQueryBuilder<Tokens>,
-    filterStringified: string,
+    queryArgs: QueryArgs,
   ): void {
     try {
-      const filterParsed = JSON.parse(filterStringified);
+      const attributesFilter = queryArgs?.attributes_filter;
+
+      if (!Array.isArray(attributesFilter)) {
+        return;
+      }
+
       qb.andWhere(
         new Brackets((qb) => {
-          filterParsed.forEach(([key, rawValue]) => {
-            if (!Number.isNaN(parseInt(rawValue))) {
-              // Select and multiselect field
+          attributesFilter.forEach(([key, rawValue]) => {
+            if (typeof rawValue == 'object') {
+              // Text field in format {_: "value"}
               qb.orWhere(
-                new Brackets((qb) => {
-                  const value = parseInt(rawValue);
-                  qb.where(
-                    `"Tokens".attributes->'${key}'->>'rawValue'='${value}'`,
-                  ).orWhere(
-                    // todo: Bad condition. Need To search value in array
-                    `"Tokens".attributes->'${key}'->>'rawValue' LIKE '[%${value}%]'`,
-                  );
-                }),
-              );
-            } else {
-              // Text field.
-              // Example stringified value params: "[0,{\"_\":\"text-opt-1\"}]"
-              qb.orWhere(
-                `"Tokens".attributes->'${key}'->'rawValue'='${JSON.stringify(
+                `attributes->'${key}'->'rawValue'='${JSON.stringify(
                   rawValue,
                 )}'::jsonb`,
               );
-              // todo: Add array search too
+            } else {
+              // Select and multiselect field
+              qb.orWhere(
+                new Brackets((qb) => {
+                  qb.where(
+                    `attributes->'${key}'->>'rawValue'='${String(rawValue)}'`,
+                  ).orWhere(
+                    // Search value in array
+                    // eslint-disable-next-line max-len
+                    `attributes->'${key}'->>'rawValue' ~ '^\\[\\s*((\\S+\\s*,\\s*)|\\s*)*(${rawValue})((\\s*,\\s*\\S+)|\\s*)*\\]$'`,
+                  );
+                }),
+              );
             }
           });
         }),

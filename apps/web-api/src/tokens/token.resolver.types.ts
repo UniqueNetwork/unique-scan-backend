@@ -5,11 +5,11 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
+import { GraphQLJSON } from 'graphql-type-json';
 import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
   GQLWhereOpsInt,
-  GQLWhereOpsStrEq,
   GQLWhereOpsString,
   IGQLQueryArgs,
   IWhereOperators,
@@ -22,6 +22,12 @@ import { CollectionDTO } from '../collection/collection.dto';
 
 registerEnumType(TokenDistinctFieldsEnum, { name: 'TokenEnum' });
 
+export type AttributeFilterValue = [
+  attributeKey: string, // key of attribute from collection.attributes_schema object
+  attributeRawValue: string | number | object,
+];
+
+export type AttributeFilter = AttributeFilterValue[];
 @InputType()
 export class TokenWhereParams implements TWhereParams<TokenDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
@@ -56,13 +62,6 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   token_name?: GQLWhereOpsString;
-
-  /*
-  'attribute' where condition value is a stringified array of arrays:
-  Json.stringify([[attrKey: string, attrRawValue: string], ...])
-  */
-  @Field(() => GQLWhereOpsStrEq, { nullable: true })
-  attributes?: GQLWhereOpsStrEq;
 
   @Field(() => [TokenWhereParams], { nullable: true })
   _and?: TokenWhereParams[];
@@ -111,6 +110,9 @@ export class QueryArgs
 
   @Field(() => TokenWhereParams, { nullable: true })
   where?: TokenWhereParams;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  attributes_filter?: AttributeFilter;
 
   @Field(() => TokenOrderByParams, { nullable: true })
   order_by?: TokenOrderByParams;

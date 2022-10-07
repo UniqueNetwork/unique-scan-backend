@@ -73,12 +73,6 @@ export class GQLWhereOpsIntEq implements IWhereOperators {
 }
 
 @InputType()
-export class GQLWhereOpsStrEq implements IWhereOperators {
-  @Field(() => String)
-  _eq: string;
-}
-
-@InputType()
 export class GQLWhereOpsInt implements IWhereOperators {
   @Field(() => Float, { nullable: true })
   _eq?: number;
