@@ -28,6 +28,7 @@ export type AttributeFilterValue = [
 ];
 
 export type AttributeFilter = AttributeFilterValue[];
+
 @InputType()
 export class TokenWhereParams implements TWhereParams<TokenDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
