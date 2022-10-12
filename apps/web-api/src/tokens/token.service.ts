@@ -110,46 +110,39 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb: SelectQueryBuilder<Tokens>,
     queryArgs: QueryArgs,
   ): void {
-    try {
-      const attributesFilter = queryArgs?.attributes_filter;
+    const attributesFilter = queryArgs?.attributes_filter;
 
-      if (!Array.isArray(attributesFilter)) {
-        return;
-      }
-
-      qb.andWhere(
-        new Brackets((qb) => {
-          attributesFilter.forEach(([key, rawValue]) => {
-            if (typeof rawValue == 'object') {
-              // Text field in format {_: "value"}
-              qb.orWhere(
-                `attributes->'${key}'->'rawValue'='${JSON.stringify(
-                  rawValue,
-                )}'::jsonb`,
-              );
-            } else {
-              // Select and multiselect field
-              qb.orWhere(
-                new Brackets((qb) => {
-                  qb.where(
-                    `attributes->'${key}'->>'rawValue'='${String(rawValue)}'`,
-                  ).orWhere(
-                    // Search value in array
-                    // eslint-disable-next-line max-len
-                    `attributes->'${key}'->>'rawValue' ~ '^\\[\\s*((\\S+\\s*,\\s*)|\\s*)*(${rawValue})((\\s*,\\s*\\S+)|\\s*)*\\]$'`,
-                  );
-                }),
-              );
-            }
-          });
-        }),
-      );
-    } catch (err) {
-      // Parse json error
-      // todo: Maybe someway report problem?
-      // eslint-disable-next-line no-console
-      console.error(err);
+    if (!Array.isArray(attributesFilter)) {
+      return;
     }
+
+    qb.andWhere(
+      new Brackets((qb) => {
+        attributesFilter.forEach(([key, rawValue]) => {
+          if (typeof rawValue === 'object') {
+            // Text field in format {_: "value"}
+            qb.orWhere(
+              `attributes->'${key}'->'rawValue'='${JSON.stringify(
+                rawValue,
+              )}'::jsonb`,
+            );
+          } else {
+            // Select and multiselect field
+            qb.orWhere(
+              new Brackets((qb) => {
+                qb.where(
+                  `attributes->'${key}'->>'rawValue'='${String(rawValue)}'`,
+                ).orWhere(
+                  // Search value in array
+                  // eslint-disable-next-line max-len
+                  `attributes->'${key}'->>'rawValue' ~ '^\\[\\s*((\\S+\\s*,\\s*)|\\s*)*(${rawValue})((\\s*,\\s*\\S+)|\\s*)*\\]$'`,
+                );
+              }),
+            );
+          }
+        });
+      }),
+    );
   }
 
   private select(qb: SelectQueryBuilder<Tokens>): void {
