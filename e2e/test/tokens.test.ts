@@ -41,6 +41,6 @@ describe('Tokens tests', function () {
     console.log(`collectionId: ${collectionId}, tokenId: ${tokenId}`);
 
     const getActualToken = async () => tokensApi.getById(tokenId, collectionId);
-    return await expectResponseContains(getActualToken, expectedToken);
+    await expectResponseContains(getActualToken, expectedToken);
   });
 });
