@@ -7,7 +7,7 @@ import {
   TokenByIdResult,
   TokenPropertiesResult,
 } from '@unique-nft/substrate-client/tokens';
-import { AllBalances } from '@unique-nft/substrate-client/types';
+import { AllBalances } from '@unique-nft/substrate-client/balance';
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 
@@ -34,17 +34,17 @@ export class SdkService {
   }
 
   @SdkCache('getTokenPropertyPermissions')
-  async getTokenPropertyPermissions(collectionId: number) {
-    let result: PropertyKeyPermission[] = [];
+  async getTokenPropertyPermissions(collectionId: number, at?: string) {
     try {
       const property = await this.sdk.collections.propertyPermissions({
         collectionId,
+        at: at ? `0x${at}` : undefined,
       });
 
-      result = property?.propertyPermissions;
-    } catch {}
-
-    return result;
+      return property?.propertyPermissions;
+    } catch {
+      return [] as PropertyKeyPermission[];
+    }
   }
 
   @SdkCache('getToken')

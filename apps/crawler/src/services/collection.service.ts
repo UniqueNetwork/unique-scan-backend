@@ -38,10 +38,8 @@ export class CollectionService {
 
   constructor(
     private sdkService: SdkService,
-
     @InjectRepository(Collections)
     private collectionsRepository: Repository<Collections>,
-
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -64,7 +62,7 @@ export class CollectionService {
 
     const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
       this.sdkService.getCollectionLimits(collectionId, at),
-      this.sdkService.getTokenPropertyPermissions(collectionId),
+      this.sdkService.getTokenPropertyPermissions(collectionId, at),
     ]);
 
     return {
