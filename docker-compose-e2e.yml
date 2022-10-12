@@ -122,7 +122,7 @@ services:
       - dev-chain
       - archive-db
     restart: on-failure
-    image: subsquid/substrate-ingest:firesquid
+    image: subsquid/substrate-ingest:1.2.2
     networks:
       - scan
     container_name: ingest
@@ -137,7 +137,7 @@ services:
     depends_on:
       - dev-chain
       - archive-db
-    image: subsquid/substrate-gateway:firesquid
+    image: subsquid/substrate-gateway:2.3.0
     networks:
       - scan
     environment:
@@ -150,7 +150,7 @@ services:
       - "8888:8000"
 
   explorer:
-    image: subsquid/substrate-explorer:firesquid
+    image: subsquid/substrate-explorer:2.0.1
     networks:
       - scan
     depends_on:
