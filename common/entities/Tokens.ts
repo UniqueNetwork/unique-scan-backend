@@ -2,8 +2,13 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum TokenType {
   NFT = 'NFT',
-  RFT = 'RFT',
+  FRACTIONAL = 'FRACTIONAL',
   NESTED = 'NESTED',
+}
+
+export interface ITokenChild {
+  collection_id: number;
+  token_id: number;
 }
 
 @Index('tokens_pkey', ['token_id', 'collection_id'], { unique: true })
@@ -57,4 +62,12 @@ export class Tokens {
     default: TokenType.NFT,
   })
   type: TokenType;
+
+  @Column({
+    type: 'jsonb',
+    array: false,
+    default: () => "'[]'",
+    nullable: false,
+  })
+  public children?: ITokenChild[];
 }

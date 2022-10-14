@@ -4,28 +4,19 @@ import {
   normalizeTimestamp,
   sanitizePropertiesValues,
 } from '@common/utils';
-import { Tokens, TokenType } from '@entities/Tokens';
+import { Tokens, TokenType, ITokenChild } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  CollectionInfoWithSchema,
-  TokenByIdResult,
-  TokenPropertiesResult,
-} from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
-import { SdkService } from '../sdk/sdk.service';
-
-interface TokenData {
-  tokenDecoded: TokenByIdResult;
-  tokenProperties: TokenPropertiesResult;
-  collectionDecoded: CollectionInfoWithSchema;
-}
+import { SdkService } from '../../sdk/sdk.service';
+import { TokenNestingService } from './nesting.service';
+import { TokenData } from './token.types';
 
 @Injectable()
 export class TokenService {
   constructor(
     private sdkService: SdkService,
-
+    private nestingService: TokenNestingService,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -33,26 +24,38 @@ export class TokenService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
+    at?: string,
   ): Promise<TokenData | null> {
-    const tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+    const tokenDecoded = await this.sdkService.getToken(
+      collectionId,
+      tokenId,
+      at,
+    );
 
     if (!tokenDecoded) {
       return null;
     }
-    const [tokenProperties, collectionDecoded] = await Promise.all([
+    const [tokenProperties, collectionDecoded, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.getCollection(collectionId),
+      this.sdkService.getCollection(collectionId, at),
+      this.sdkService.isTokenBundle(collectionId, tokenId, at),
     ]);
 
     return {
       tokenDecoded,
       tokenProperties,
       collectionDecoded,
+      isBundle,
     };
   }
 
-  prepareDataForDb(tokenData: TokenData): Omit<Tokens, 'id'> {
-    const { tokenDecoded, tokenProperties, collectionDecoded } = tokenData;
+  async prepareDataForDb(
+    tokenData: TokenData,
+    blockHash: string,
+  ): Promise<Omit<Tokens, 'id'>> {
+    const { tokenDecoded, tokenProperties, collectionDecoded, isBundle } =
+      tokenData;
+
     const {
       tokenId: token_id,
       collectionId: collection_id,
@@ -61,8 +64,8 @@ export class TokenService {
       nestingParentToken,
       owner,
     } = tokenDecoded;
-
     const { owner: collectionOwner, tokenPrefix } = collectionDecoded;
+
     let tokenType = TokenType.NFT;
     let parentId = null;
     if (nestingParentToken) {
@@ -70,6 +73,15 @@ export class TokenService {
       parentId = `${collectionId}_${tokenId}`;
       tokenType = TokenType.NESTED;
     }
+
+    if (isBundle) {
+      tokenType = TokenType.NESTED;
+    }
+
+    const children: ITokenChild[] = await this.nestingService.handleNesting(
+      tokenData,
+      blockHash,
+    );
 
     return {
       token_id,
@@ -85,6 +97,7 @@ export class TokenService {
       is_sold: owner !== collectionOwner,
       token_name: `${tokenPrefix} #${token_id}`,
       type: tokenType,
+      children,
     };
   }
 
@@ -93,18 +106,19 @@ export class TokenService {
     tokenId,
     eventName,
     blockTimestamp,
+    blockHash,
   }: {
     collectionId: number;
     tokenId: number;
     eventName: string;
     blockTimestamp: number;
+    blockHash: string;
   }): Promise<SubscriberAction> {
-    const tokenData = await this.getTokenData(collectionId, tokenId);
+    const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
 
     let result;
-
     if (tokenData) {
-      const preparedData = this.prepareDataForDb(tokenData);
+      const preparedData = await this.prepareDataForDb(tokenData, blockHash);
 
       // Write token data into db
       await this.tokensRepository.upsert(
@@ -121,7 +135,6 @@ export class TokenService {
       result = SubscriberAction.UPSERT;
     } else {
       // No entity returned from sdk. Most likely it was destroyed in a future block.
-
       // Delete db record
       await this.delete(collectionId, tokenId);
 

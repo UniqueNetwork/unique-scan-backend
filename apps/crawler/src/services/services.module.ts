@@ -9,12 +9,13 @@ import { Extrinsic } from '@entities/Extrinsic';
 import { Account } from '@entities/Account';
 import { CollectionService } from './collection.service';
 import { AccountService } from './account/account.service';
-import { TokenService } from './token.service';
+import { TokenService } from './token/token.service';
 import { BlockService } from './block.service';
 import { EventService } from './event/event.service';
 import { ExtrinsicService } from './extrinsic.service';
 import { EventArgumentsService } from './event/event.arguments.service';
 import { SdkModule } from '../sdk/sdk.module';
+import { TokenNestingService } from './token/nesting.service';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { SdkModule } from '../sdk/sdk.module';
     EventArgumentsService,
     ExtrinsicService,
     TokenService,
+    TokenNestingService,
   ],
   exports: [
     AccountService,
@@ -45,6 +47,7 @@ import { SdkModule } from '../sdk/sdk.module';
     EventService,
     ExtrinsicService,
     TokenService,
+    TokenNestingService,
   ],
 })
 export class ServicesModule {}

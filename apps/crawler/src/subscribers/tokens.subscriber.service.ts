@@ -5,7 +5,7 @@ import { EventName, SubscriberAction } from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
-import { TokenService } from '../services/token.service';
+import { TokenService } from '../services/token/token.service';
 
 @Injectable()
 export class TokensSubscriberService implements ISubscriberService {
@@ -13,7 +13,6 @@ export class TokensSubscriberService implements ISubscriberService {
 
   constructor(
     private tokenService: TokenService,
-
     @InjectSentry()
     private readonly sentry: SentryService,
   ) {
@@ -59,7 +58,11 @@ export class TokensSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: blockTimestamp },
+      block: {
+        height: blockNumber,
+        timestamp: blockTimestamp,
+        hash: blockHash,
+      },
       event: { name: eventName, args },
     } = ctx;
 
@@ -86,10 +89,12 @@ export class TokensSubscriberService implements ISubscriberService {
         tokenId,
         eventName,
         blockTimestamp,
+        blockHash,
       });
 
       this.logger.verbose({ ...log });
     } catch (err) {
+      console.log(err);
       this.logger.error({ ...log, error: err.message });
     }
   }
