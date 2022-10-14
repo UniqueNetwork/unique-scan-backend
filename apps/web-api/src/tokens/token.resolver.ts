@@ -28,16 +28,16 @@ export class TokenResolver {
     return this.service.find(args);
   }
 
-  @ResolveField()
-  async collection(@Parent() { collection_id }: TokenEntity) {
-    return this.collectionService.getCollectionById(collection_id);
-  }
-
   @Query(() => StatisticDataResponse)
   public async tokenStatistics(
     @Args() args: DateRangeArgs,
   ): Promise<StatisticDataResponse> {
     const data = await this.service.statistic(args);
     return { data };
+  }
+
+  @ResolveField()
+  async collection(@Parent() { collection_id }: TokenEntity) {
+    return this.collectionService.getCollectionById(collection_id);
   }
 }

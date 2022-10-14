@@ -2,6 +2,7 @@ import {
   ArgsType,
   Field,
   InputType,
+  Int,
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
@@ -108,6 +109,15 @@ export class QueryArgs
   order_by?: TokenOrderByParams;
 }
 
+@InputType()
+export class NestingArgs {
+  @Field(() => Int)
+  collection_id!: number;
+
+  @Field(() => Int)
+  token_id!: number;
+}
+
 @ObjectType()
 export class TokenEntity extends TokenDTO {
   @Field(() => CollectionDTO, { nullable: true })
@@ -116,3 +126,9 @@ export class TokenEntity extends TokenDTO {
 
 @ObjectType()
 export class TokenDataResponse extends ListDataType(TokenEntity) {}
+
+@ObjectType()
+export class NestingToken extends TokenEntity {
+  @Field(() => [NestingToken], { nullable: true })
+  nestingChildren?: NestingToken[];
+}

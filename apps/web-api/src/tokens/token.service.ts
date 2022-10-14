@@ -43,6 +43,32 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return this.getDataAndCount(qb, queryArgs);
   }
 
+  public async findOne(queryArgs: IGQLQueryArgs<TokenDTO>): Promise<TokenDTO> {
+    const qb = this.repo.createQueryBuilder();
+
+    this.applyFilters(qb, queryArgs);
+
+    return qb.getRawOne();
+  }
+
+  public async getToken(
+    collection_id: number,
+    token_id: number,
+  ): Promise<TokenDTO> {
+    const filter = {
+      where: {
+        collection_id: {
+          _eq: collection_id,
+        },
+        token_id: {
+          _eq: token_id,
+        },
+      },
+    };
+
+    return this.findOne(filter);
+  }
+
   public getByCollectionId(id: number, queryArgs: IGQLQueryArgs<TokenDTO>) {
     const qb = this.repo.createQueryBuilder();
 
@@ -67,6 +93,25 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       query: qb.getQuery(),
       params: qb.getParameters(),
     };
+  }
+
+  public findNestingChildren(
+    queryArgs: IGQLQueryArgs<TokenDTO>,
+    collection_id: number,
+    token_id: number,
+  ) {
+    return this.find({
+      where: {
+        _and: [
+          {
+            ...queryArgs.where,
+          },
+          {
+            parent_id: { _eq: `${collection_id}_${token_id}` },
+          },
+        ],
+      },
+    });
   }
 
   public async statistic({
