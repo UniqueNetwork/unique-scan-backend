@@ -28,7 +28,6 @@ describe('Tokens tests', function () {
         text_optional: 'optional text',
       },
     };
-    console.log(tokenId);
 
     const getActualToken = async () => tokensApi.getById(tokenId, collectionId);
 

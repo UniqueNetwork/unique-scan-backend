@@ -25,38 +25,46 @@ export class TokenNestingService {
       token_id,
     });
     let children: ITokenChild[] = [];
+    try {
+      // token nested. Update his children field. Update parent.
+      if (isBundle) {
+        const nestingBundle = await this.sdkService.getTokenBundle(
+          collection_id,
+          token_id,
+          blockHash,
+        );
 
-    // token nested. Update his children field. Update parent.
-    if (isBundle) {
-      const nestingBundle = await this.sdkService.getTokenBundle(
-        collection_id,
-        token_id,
-        blockHash,
-      );
+        children = this.getTokenChildren(
+          collection_id,
+          token_id,
+          nestingBundle,
+        );
 
-      children = this.getTokenChildren(collection_id, token_id, nestingBundle);
+        console.log(
+          'nesting children',
+          collection_id,
+          token_id,
+          blockHash,
+          children.length,
+        );
 
-      console.log(
-        'nesting children',
-        collection_id,
-        token_id,
-        blockHash,
-        children.length,
-      );
-      await this.updateTokenParents(
-        collection_id,
-        token_id,
-        nestingBundle,
-        blockHash,
-      );
+        await this.updateTokenParents(
+          collection_id,
+          token_id,
+          nestingBundle,
+          blockHash,
+        );
+      }
+
+      // token was nested. Remove token from parents children.
+      if (tokenFromDb?.parent_id && !isBundle) {
+        await this.removeTokenFromParents(collection_id, token_id);
+      }
+
+      return children;
+    } catch {
+      return children;
     }
-
-    // token was nested. Remove token from parents children.
-    if (tokenFromDb.parent_id && !isBundle) {
-      await this.removeTokenFromParents(collection_id, token_id);
-    }
-
-    return children;
   }
 
   private async updateTokenParents(
