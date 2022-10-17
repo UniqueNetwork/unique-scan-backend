@@ -5,8 +5,8 @@ import {
   SubstrateExtrinsic,
 } from '@subsquid/substrate-processor';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
+import { Prefix } from '@polkadot/util-crypto/types';
 import { ISubscriberService } from './subscribers.service';
-import { Prefix } from '@unique-nft/api/.';
 import { ProcessorService } from './processor/processor.service';
 import { BlockService } from '../services/block.service';
 import { ExtrinsicService } from '../services/extrinsic.service';
@@ -51,11 +51,8 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   constructor(
     private blockService: BlockService,
-
     private extrinsicService: ExtrinsicService,
-
     private eventService: EventService,
-
     @InjectSentry()
     private readonly sentry: SentryService,
   ) {
