@@ -6,6 +6,7 @@ import { BaseService } from '../utils/base.service';
 import {
   IDataListResponse,
   IDateRange,
+  IGQLPaginationArgs,
   IGQLQueryArgs,
   IStatsResponse,
 } from '../utils/gql-query-args';
@@ -96,22 +97,24 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   }
 
   public findNestingChildren(
-    queryArgs: IGQLQueryArgs<TokenDTO>,
+    paginationArgs: IGQLPaginationArgs,
     collection_id: number,
     token_id: number,
   ) {
-    return this.find({
+    const qb = this.repo.createQueryBuilder();
+
+    const queryArgs = {
       where: {
-        _and: [
-          {
-            ...queryArgs.where,
-          },
-          {
-            parent_id: { _eq: `${collection_id}_${token_id}` },
-          },
-        ],
+        parent_id: { _eq: `${collection_id}_${token_id}` },
       },
-    });
+      ...paginationArgs,
+    };
+
+    this.selectTokenFields(qb);
+    this.applyLimitOffset(qb, queryArgs);
+    this.applyWhereCondition(qb, queryArgs);
+
+    return this.getDataAndCount(qb, queryArgs);
   }
 
   public async statistic({
@@ -144,7 +147,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     this.applyOrderCondition(qb, queryArgs);
   }
 
-  private select(qb: SelectQueryBuilder<Tokens>): void {
+  private selectTokenFields(qb: SelectQueryBuilder<Tokens>): void {
     qb.select('Tokens.collection_id', 'collection_id');
     qb.addSelect('Tokens.token_id', 'token_id');
     qb.addSelect('Tokens.image', 'image');
@@ -156,6 +159,11 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.parent_id', 'parent_id');
     qb.addSelect('Tokens.is_sold', 'is_sold');
     qb.addSelect('Tokens.token_name', 'token_name');
+  }
+
+  private select(qb: SelectQueryBuilder<Tokens>): void {
+    this.selectTokenFields(qb);
+
     qb.leftJoinAndSelect(
       'collections',
       'Collection',

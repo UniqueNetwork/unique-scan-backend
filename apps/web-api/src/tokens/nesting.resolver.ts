@@ -4,10 +4,12 @@ import { TokenService } from './token.service';
 import { CollectionService } from '../collection/collection.service';
 import {
   NestingArgs,
+  NestingChildToken,
   NestingToken,
   QueryArgs,
   TokenEntity,
 } from './token.resolver.types';
+import { GQLQueryPaginationArgs } from '../utils/gql-query-args';
 
 @Resolver(() => NestingToken)
 export class NestingResolver {
@@ -18,7 +20,7 @@ export class NestingResolver {
   ) {}
 
   @Query(() => NestingToken, { nullable: true })
-  public async nestingToken(
+  public async tokenBundle(
     @Args('input') { collection_id, token_id }: NestingArgs,
   ) {
     const token = await this.service.getToken(collection_id, token_id);
@@ -31,12 +33,11 @@ export class NestingResolver {
     return token;
   }
 
-  @ResolveField()
+  @ResolveField(() => [NestingChildToken])
   async nestingChildren(
-    @Args() args: QueryArgs,
+    @Args() args: GQLQueryPaginationArgs,
     @Parent() { collection_id, token_id }: TokenEntity,
   ) {
-    // TODO: check for children
     const tokens = await this.service.findNestingChildren(
       args,
       collection_id,

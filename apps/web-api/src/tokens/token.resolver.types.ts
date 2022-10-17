@@ -17,7 +17,7 @@ import {
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
-import { TokenDistinctFieldsEnum, TokenDTO } from './token.dto';
+import { SimpleTokenDTO, TokenDistinctFieldsEnum, TokenDTO } from './token.dto';
 import { CollectionDTO } from '../collection/collection.dto';
 
 registerEnumType(TokenDistinctFieldsEnum, { name: 'TokenEnum' });
@@ -126,6 +126,12 @@ export class TokenEntity extends TokenDTO {
 
 @ObjectType()
 export class TokenDataResponse extends ListDataType(TokenEntity) {}
+
+@ObjectType()
+export class NestingChildToken extends SimpleTokenDTO {
+  @Field(() => [NestingChildToken], { nullable: true })
+  nestingChildren?: NestingChildToken[];
+}
 
 @ObjectType()
 export class NestingToken extends TokenEntity {

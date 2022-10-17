@@ -58,6 +58,11 @@ registerEnumType(GQLOrderByParamsArgs, {
   name: 'GQLOrderByParamsArgs',
 });
 
+export interface IGQLPaginationArgs {
+  limit?: number;
+  offset?: number;
+}
+
 export interface IGQLQueryArgs<T> {
   limit?: number;
   offset?: number;

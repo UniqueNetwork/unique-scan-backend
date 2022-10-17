@@ -12,6 +12,45 @@ export enum TokenDistinctFieldsEnum {
   token_name = 'token_name',
 }
 
+@ObjectType('simple-token')
+export class SimpleTokenDTO implements Partial<Tokens> {
+  @Field(() => Int)
+  token_id?: number;
+
+  @Field(() => Int)
+  collection_id?: number;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  attributes?: object;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  properties?: object;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  image?: object;
+
+  @Field(() => String)
+  owner?: string;
+
+  @Field(() => String)
+  owner_normalized?: string;
+
+  @Field(() => String)
+  token_prefix?: string;
+
+  @Field(() => String, { nullable: true })
+  token_name?: string;
+
+  @Field(() => Int, { nullable: true })
+  date_of_creation?: number;
+
+  @Field(() => String, { nullable: true })
+  parent_id?: string;
+
+  @Field(() => Boolean)
+  is_sold?: boolean;
+}
+
 @ObjectType('token')
 export class TokenDTO implements Partial<Tokens> {
   @Field(() => Int)
