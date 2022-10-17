@@ -3,7 +3,8 @@ import { Account } from '@entities/Account';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isEthereumAddress } from '@polkadot/util-crypto';
-import { Address, AllBalances } from '@unique-nft/substrate-client/types';
+import { Address } from '@unique-nft/substrate-client/types';
+import { AllBalances } from '@unique-nft/substrate-client/balance';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
 import { AccountRecord } from './account.types';
@@ -16,7 +17,6 @@ type BalancesExtended = AllBalances & {
 export class AccountService {
   constructor(
     private sdkService: SdkService,
-
     @InjectRepository(Account)
     private accountsRepository: Repository<Account>,
   ) {}

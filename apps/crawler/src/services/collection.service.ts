@@ -38,10 +38,8 @@ export class CollectionService {
 
   constructor(
     private sdkService: SdkService,
-
     @InjectRepository(Collections)
     private collectionsRepository: Repository<Collections>,
-
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -51,16 +49,20 @@ export class CollectionService {
    */
   private async getCollectionData(
     collectionId: number,
+    at: string,
   ): Promise<CollectionData | null> {
-    const collectionDecoded = await this.sdkService.getCollection(collectionId);
+    const collectionDecoded = await this.sdkService.getCollection(
+      collectionId,
+      at,
+    );
 
     if (!collectionDecoded) {
       return null;
     }
 
     const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
-      this.sdkService.getCollectionLimits(collectionId),
-      this.sdkService.getTokenPropertyPermissions(collectionId),
+      this.sdkService.getCollectionLimits(collectionId, at),
+      this.sdkService.getTokenPropertyPermissions(collectionId, at),
     ]);
 
     return {
@@ -161,7 +163,9 @@ export class CollectionService {
     return result as UniqueCollectionSchemaDecoded;
   }
 
-  private prepareDataForDb(collectionData: CollectionData): Collections {
+  private async prepareDataForDb(
+    collectionData: CollectionData,
+  ): Promise<Collections> {
     const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
       collectionData;
 
@@ -208,6 +212,10 @@ export class CollectionService {
       ownerCanDestroy: owner_can_destroy,
     } = collectionLimits;
 
+    const collection = await this.collectionsRepository.findOneBy({
+      collection_id,
+    });
+
     return {
       collection_id,
       owner,
@@ -234,6 +242,7 @@ export class CollectionService {
       nesting_enabled: nesting?.collectionAdmin || nesting?.tokenOwner,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
+      burned: collection?.burned ?? false,
     };
   }
 
@@ -241,17 +250,22 @@ export class CollectionService {
     collectionId,
     eventName,
     blockTimestamp,
+    blockHash,
   }: {
     collectionId: number;
     eventName: string;
     blockTimestamp: number;
+    blockHash: string;
   }): Promise<SubscriberAction> {
-    const collectionData = await this.getCollectionData(collectionId);
+    const collectionData = await this.getCollectionData(
+      collectionId,
+      blockHash,
+    );
 
     let result;
 
     if (collectionData) {
-      const preparedData = this.prepareDataForDb(collectionData);
+      const preparedData = await this.prepareDataForDb(collectionData);
 
       await this.collectionsRepository.upsert(
         {
@@ -267,7 +281,7 @@ export class CollectionService {
       result = SubscriberAction.UPSERT;
     } else {
       // No entity returned from sdk. Most likely it was destroyed in a future block.
-      await this.delete(collectionId);
+      await this.burn(collectionId);
 
       result = SubscriberAction.DELETE_NOT_FOUND;
     }
@@ -275,15 +289,16 @@ export class CollectionService {
     return result;
   }
 
-  async delete(collectionId: number) {
-    return this.deleteCollectionWithTokens(collectionId);
-  }
-
-  // Delete db collection record and related tokens
-  private async deleteCollectionWithTokens(collectionId: number) {
-    return Promise.all([
-      this.collectionsRepository.delete(collectionId),
-      this.tokensRepository.delete({ collection_id: collectionId }),
+  async burn(collectionId: number) {
+    return Promise.allSettled([
+      this.collectionsRepository.update(
+        { collection_id: collectionId },
+        { burned: true },
+      ),
+      this.tokensRepository.update(
+        { collection_id: collectionId },
+        { burned: true },
+      ),
     ]);
   }
 }

@@ -101,4 +101,7 @@ export class Collections {
     length: 255,
   })
   collection_cover: string | null;
+
+  @Column('boolean', { name: 'burned', default: false })
+  burned: boolean;
 }

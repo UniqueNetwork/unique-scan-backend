@@ -17,8 +17,8 @@ import { SdkService } from '../sdk/sdk.service';
 
 interface TokenData {
   tokenDecoded: TokenByIdResult;
-  tokenProperties: TokenPropertiesResult;
-  collectionDecoded: CollectionInfoWithSchema;
+  tokenProperties: TokenPropertiesResult | null;
+  collectionDecoded: CollectionInfoWithSchema | null;
 }
 
 @Injectable()
@@ -33,15 +33,20 @@ export class TokenService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
+    blockHash: string,
   ): Promise<TokenData | null> {
-    const tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+    const tokenDecoded = await this.sdkService.getToken(
+      collectionId,
+      tokenId,
+      blockHash,
+    );
 
     if (!tokenDecoded) {
       return null;
     }
     const [tokenProperties, collectionDecoded] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.getCollection(collectionId),
+      this.sdkService.getCollection(collectionId, blockHash),
     ]);
 
     return {
@@ -51,7 +56,7 @@ export class TokenService {
     };
   }
 
-  prepareDataForDb(tokenData: TokenData): Omit<Tokens, 'id'> {
+  async prepareDataForDb(tokenData: TokenData): Promise<Omit<Tokens, 'id'>> {
     const { tokenDecoded, tokenProperties, collectionDecoded } = tokenData;
     const {
       tokenId: token_id,
@@ -70,6 +75,11 @@ export class TokenService {
       parentId = `${collectionId}_${tokenId}`;
     }
 
+    const token = await this.tokensRepository.findOneBy({
+      collection_id,
+      token_id,
+    });
+
     return {
       token_id,
       collection_id,
@@ -83,6 +93,7 @@ export class TokenService {
       parent_id: parentId,
       is_sold: owner !== collectionOwner,
       token_name: `${tokenPrefix} #${token_id}`,
+      burned: token?.burned ?? false,
     };
   }
 
@@ -91,18 +102,20 @@ export class TokenService {
     tokenId,
     eventName,
     blockTimestamp,
+    blockHash,
   }: {
     collectionId: number;
     tokenId: number;
     eventName: string;
     blockTimestamp: number;
+    blockHash: string;
   }): Promise<SubscriberAction> {
-    const tokenData = await this.getTokenData(collectionId, tokenId);
+    const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
 
     let result;
 
     if (tokenData) {
-      const preparedData = this.prepareDataForDb(tokenData);
+      const preparedData = await this.prepareDataForDb(tokenData);
 
       // Write token data into db
       await this.tokensRepository.upsert(
@@ -119,9 +132,7 @@ export class TokenService {
       result = SubscriberAction.UPSERT;
     } else {
       // No entity returned from sdk. Most likely it was destroyed in a future block.
-
-      // Delete db record
-      await this.delete(collectionId, tokenId);
+      await this.burn(collectionId, tokenId);
 
       result = SubscriberAction.DELETE;
     }
@@ -129,10 +140,15 @@ export class TokenService {
     return result;
   }
 
-  async delete(collectionId: number, tokenId: number) {
-    return this.tokensRepository.delete({
-      collection_id: collectionId,
-      token_id: tokenId,
-    });
+  async burn(collectionId: number, tokenId: number) {
+    return this.tokensRepository.update(
+      {
+        collection_id: collectionId,
+        token_id: tokenId,
+      },
+      {
+        burned: true,
+      },
+    );
   }
 }
