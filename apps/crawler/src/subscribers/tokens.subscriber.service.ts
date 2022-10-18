@@ -13,6 +13,7 @@ export class TokensSubscriberService implements ISubscriberService {
 
   constructor(
     private tokenService: TokenService,
+
     @InjectSentry()
     private readonly sentry: SentryService,
   ) {
@@ -94,7 +95,6 @@ export class TokensSubscriberService implements ISubscriberService {
 
       this.logger.verbose({ ...log });
     } catch (err) {
-      console.log(err);
       this.logger.error({ ...log, error: err.message });
     }
   }
@@ -120,7 +120,7 @@ export class TokensSubscriberService implements ISubscriberService {
       log.tokenId = tokenId;
 
       // Delete db record
-      await this.tokenService.delete(collectionId, tokenId);
+      await this.tokenService.burn(collectionId, tokenId);
 
       this.logger.verbose({ ...log });
     } catch (error) {

@@ -5,13 +5,12 @@ import {
   SubstrateExtrinsic,
 } from '@subsquid/substrate-processor';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
+import { Prefix } from '@polkadot/util-crypto/types';
 import { ISubscriberService } from './subscribers.service';
-// import { Prefix } from '@unique-nft/api/.';
 import { ProcessorService } from './processor/processor.service';
 import { BlockService } from '../services/block.service';
 import { ExtrinsicService } from '../services/extrinsic.service';
 import { EventService } from '../services/event/event.service';
-import { Prefix } from '@polkadot/util-crypto/types';
 
 export interface IEvent {
   name: string;

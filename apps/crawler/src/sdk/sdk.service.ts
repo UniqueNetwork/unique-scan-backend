@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Sdk } from '@unique-nft/substrate-client';
 import {
   CollectionInfoWithSchema,
+  PropertyKeyPermission,
   TokenByIdResult,
   TokenPropertiesResult,
 } from '@unique-nft/substrate-client/tokens';
@@ -26,17 +27,23 @@ export class SdkService {
   }
 
   @SdkCache('getCollectionLimits')
-  async getCollectionLimits(collectionId: number) {
-    const result = await this.sdk.collections.getLimits({ collectionId });
+  async getCollectionLimits(collectionId: number, at?: string) {
+    const result = await this.sdk.collections.getLimits({ collectionId, at });
     return result?.limits;
   }
 
   @SdkCache('getTokenPropertyPermissions')
-  async getTokenPropertyPermissions(collectionId: number) {
-    const result = await this.sdk.collections.propertyPermissions({
-      collectionId,
-    });
-    return result?.propertyPermissions ?? [];
+  async getTokenPropertyPermissions(collectionId: number, at?: string) {
+    try {
+      const property = await this.sdk.collections.propertyPermissions({
+        collectionId,
+        at: at ? `0x${at}` : undefined,
+      });
+
+      return property?.propertyPermissions;
+    } catch {
+      return [] as PropertyKeyPermission[];
+    }
   }
 
   @SdkCache('getToken')

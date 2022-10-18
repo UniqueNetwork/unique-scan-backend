@@ -70,4 +70,7 @@ export class Tokens {
     nullable: false,
   })
   public children?: ITokenChild[];
+
+  @Column('boolean', { name: 'burned', default: false })
+  burned: boolean;
 }
