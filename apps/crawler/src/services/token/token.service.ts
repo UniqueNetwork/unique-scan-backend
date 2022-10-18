@@ -74,14 +74,18 @@ export class TokenService {
       tokenType = TokenType.NESTED;
     }
 
-    if (isBundle) {
-      tokenType = TokenType.NESTED;
-    }
-
     const children: ITokenChild[] = await this.nestingService.handleNesting(
       tokenData,
       blockHash,
     );
+
+    if (isBundle) {
+      tokenType = TokenType.NESTED;
+    }
+
+    if (!children.length && !parentId) {
+      tokenType = TokenType.NFT;
+    }
 
     return {
       token_id,
