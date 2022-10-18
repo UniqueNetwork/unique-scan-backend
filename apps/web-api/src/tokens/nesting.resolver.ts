@@ -2,14 +2,7 @@ import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { forwardRef, Inject } from '@nestjs/common';
 import { TokenService } from './token.service';
 import { CollectionService } from '../collection/collection.service';
-import {
-  NestingArgs,
-  NestingChildToken,
-  NestingToken,
-  QueryArgs,
-  TokenEntity,
-} from './token.resolver.types';
-import { GQLQueryPaginationArgs } from '../utils/gql-query-args';
+import { NestingArgs, NestingToken, TokenEntity } from './token.resolver.types';
 
 @Resolver(() => NestingToken)
 export class NestingResolver {
@@ -33,17 +26,8 @@ export class NestingResolver {
     return token;
   }
 
-  @ResolveField(() => [NestingChildToken])
-  async nestingChildren(
-    @Args() args: GQLQueryPaginationArgs,
-    @Parent() { collection_id, token_id }: TokenEntity,
-  ) {
-    const tokens = await this.service.findNestingChildren(
-      args,
-      collection_id,
-      token_id,
-    );
-
-    return tokens.data;
+  @ResolveField(() => [NestingToken])
+  async nestingChildren(@Parent() { collection_id, token_id }: TokenEntity) {
+    return this.service.findNestingChildren(collection_id, token_id);
   }
 }

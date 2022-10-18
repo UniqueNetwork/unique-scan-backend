@@ -52,31 +52,7 @@ export class SimpleTokenDTO implements Partial<Tokens> {
 }
 
 @ObjectType('token')
-export class TokenDTO implements Partial<Tokens> {
-  @Field(() => Int)
-  token_id?: number;
-
-  @Field(() => Int)
-  collection_id?: number;
-
-  @Field(() => GraphQLJSONObject, { nullable: true })
-  attributes?: object;
-
-  @Field(() => GraphQLJSON, { nullable: true })
-  properties?: object;
-
-  @Field(() => GraphQLJSONObject, { nullable: true })
-  image?: object;
-
-  @Field(() => String)
-  owner?: string;
-
-  @Field(() => String)
-  owner_normalized?: string;
-
-  @Field(() => String)
-  token_prefix?: string;
-
+export class TokenDTO extends SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => String)
   collection_name?: string;
 
@@ -92,18 +68,6 @@ export class TokenDTO implements Partial<Tokens> {
   @Field(() => String, { nullable: true })
   collection_owner_normalized?: string;
 
-  @Field(() => String, { nullable: true })
-  token_name?: string;
-
-  @Field(() => Int, { nullable: true })
-  date_of_creation?: number;
-
-  @Field(() => String, { nullable: true })
-  parent_id?: string;
-
   @Field(() => Int, { nullable: true })
   transfers_count?: number;
-
-  @Field(() => Boolean)
-  is_sold?: boolean;
 }

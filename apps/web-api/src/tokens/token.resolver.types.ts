@@ -128,13 +128,7 @@ export class TokenEntity extends TokenDTO {
 export class TokenDataResponse extends ListDataType(TokenEntity) {}
 
 @ObjectType()
-export class NestingChildToken extends SimpleTokenDTO {
-  @Field(() => [NestingChildToken], { nullable: true })
-  nestingChildren?: NestingChildToken[];
-}
-
-@ObjectType()
-export class NestingToken extends TokenEntity {
+export class NestingToken extends SimpleTokenDTO {
   @Field(() => [NestingToken], { nullable: true })
   nestingChildren?: NestingToken[];
 }

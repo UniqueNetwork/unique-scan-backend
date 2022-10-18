@@ -4,9 +4,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
+  GQLOrderByParamsArgs,
   IDataListResponse,
   IDateRange,
-  IGQLPaginationArgs,
   IGQLQueryArgs,
   IStatsResponse,
 } from '../utils/gql-query-args';
@@ -96,25 +96,25 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     };
   }
 
-  public findNestingChildren(
-    paginationArgs: IGQLPaginationArgs,
-    collection_id: number,
-    token_id: number,
-  ) {
+  public findNestingChildren(collection_id: number, token_id: number) {
     const qb = this.repo.createQueryBuilder();
 
     const queryArgs = {
       where: {
         parent_id: { _eq: `${collection_id}_${token_id}` },
       },
-      ...paginationArgs,
+      limit: null,
+      order_by: {
+        token_id: GQLOrderByParamsArgs.asc,
+      },
     };
 
     this.selectTokenFields(qb);
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
+    this.applyOrderCondition(qb, queryArgs);
 
-    return this.getDataAndCount(qb, queryArgs);
+    return qb.getRawMany();
   }
 
   public async statistic({
