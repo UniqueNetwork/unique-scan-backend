@@ -57,6 +57,9 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   token_name?: GQLWhereOpsString;
 
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  burned?: IWhereOperators;
+
   @Field(() => [TokenWhereParams], { nullable: true })
   _and?: TokenWhereParams[];
 
