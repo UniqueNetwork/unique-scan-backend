@@ -38,7 +38,6 @@ describe('Tokens tests', function () {
       owner: account.instance.address,
       token_name: `Pref #${tokenId}`,
     };
-    console.log(`collectionId: ${collectionId}, tokenId: ${tokenId}`);
 
     const getActualToken = async () => tokensApi.getById(tokenId, collectionId);
     await expectResponseContains(getActualToken, expectedToken);
