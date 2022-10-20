@@ -1,37 +1,46 @@
 /* eslint-disable no-console */
 
 import { expectResponseContains } from '../utils';
-import { createSdk, createCollection, createToken } from '../blockchain';
+import { createCollection, createSdk, createToken } from '../sdk';
 import { tokensApi } from '../api';
+import { getAccount } from '../utils/accounts';
+import { defaultTokenRequest } from '../sdk/tokens';
+import { defaultCollectionRequest } from '../sdk/collections';
 
 describe('Tokens tests', function () {
   it('Create collection and token ', async function () {
-    const sdk = await createSdk('//Eve');
+    const account = await getAccount('//Alice');
+    const sdk = await createSdk(account);
     const collectionId = await createCollection(
       sdk,
-      '5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw',
-      {
-        name: 'Collection',
-        description: 'The one!',
-      },
+      account.instance.address,
+      defaultCollectionRequest(
+        account.instance.address,
+        'Collection',
+        'The one!',
+        'Pref',
+      ),
+      true,
     );
 
     const tokenId = await createToken(
       sdk,
-      '5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw',
-      collectionId,
+      account.instance.address,
+      defaultTokenRequest(
+        collectionId,
+        account.instance.address,
+        account.instance.address,
+        'Hello',
+      ),
     );
 
     const expectedToken = {
-      data: {
-        text_required: 'required text',
-        text_optional: 'optional text',
-      },
+      owner: account.instance.address,
+      token_name: `Pref #${tokenId}`,
     };
-    console.log(tokenId);
+    console.log(`collectionId: ${collectionId}, tokenId: ${tokenId}`);
 
     const getActualToken = async () => tokensApi.getById(tokenId, collectionId);
-
-    return await expectResponseContains(getActualToken, expectedToken);
+    await expectResponseContains(getActualToken, expectedToken);
   });
 });

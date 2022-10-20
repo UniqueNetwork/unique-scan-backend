@@ -26,6 +26,7 @@ export const collectionsQuery = (args = {}) => {
           // sponsorship_confirmed: true,
           token_prefix: true,
           // variable_on_chain_schema: true,
+          properties: true,
         },
       },
     },

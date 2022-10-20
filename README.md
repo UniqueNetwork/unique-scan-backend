@@ -63,13 +63,13 @@ $ npm run test:cov
 
 ```bash
 # start environment
-$ npm run tests:start-environment
+$ npm run integration:tests:start-environment
 
 # run tests
-$ npm run tests
+$ npm run integration:tests
 
 # stop environment
-$ npm run tests:stop-environment
+$ npm run integration:tests:stop-environment
 ```
 
 ## Support

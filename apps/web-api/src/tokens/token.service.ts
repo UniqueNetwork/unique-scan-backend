@@ -1,7 +1,7 @@
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
   GQLOrderByParamsArgs,
@@ -12,6 +12,7 @@ import {
 } from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
 import { SentryWrapper } from '../utils/sentry.decorator';
+import { QueryArgs } from './token.resolver.types';
 
 const relationsFields = {
   token_prefix: 'Collection',
@@ -36,11 +37,12 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
   @SentryWrapper({ data: [], count: 0 })
   public async find(
-    queryArgs: IGQLQueryArgs<TokenDTO>,
+    queryArgs: QueryArgs,
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, queryArgs);
+
     return this.getDataAndCount(qb, queryArgs);
   }
 
@@ -122,7 +124,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     toDate,
   }: IDateRange): Promise<IStatsResponse[]> {
     const qb = await this.repo.createQueryBuilder();
-    qb.select(`date_trunc('hour', TO_TIMESTAMP(date_of_creation))`, 'date');
+    qb.select("date_trunc('hour', TO_TIMESTAMP(date_of_creation))", 'date');
     qb.addSelect('count(*)', 'count');
     qb.groupBy('date');
 
@@ -138,13 +140,57 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
   private applyFilters(
     qb: SelectQueryBuilder<Tokens>,
-    queryArgs: IGQLQueryArgs<TokenDTO>,
+    queryArgs: QueryArgs,
   ): void {
     this.select(qb);
+
     this.applyDistinctOn(qb, queryArgs);
     this.applyLimitOffset(qb, queryArgs);
+
     this.applyWhereCondition(qb, queryArgs);
+
+    this.applyAttributesFilter(qb, queryArgs);
+
     this.applyOrderCondition(qb, queryArgs);
+  }
+
+  private applyAttributesFilter(
+    qb: SelectQueryBuilder<Tokens>,
+    queryArgs: QueryArgs,
+  ): void {
+    const attributesFilter = queryArgs?.attributes_filter;
+
+    if (!Array.isArray(attributesFilter)) {
+      return;
+    }
+
+    qb.andWhere(
+      new Brackets((qb) => {
+        attributesFilter.forEach(([key, rawValue]) => {
+          if (typeof rawValue === 'object') {
+            // Text field in format {_: "value"}
+            qb.orWhere(
+              `attributes->'${key}'->'rawValue'='${JSON.stringify(
+                rawValue,
+              )}'::jsonb`,
+            );
+          } else {
+            // Select and multiselect field
+            qb.orWhere(
+              new Brackets((qb) => {
+                qb.where(
+                  `attributes->'${key}'->>'rawValue'='${String(rawValue)}'`,
+                ).orWhere(
+                  // Search value in array
+                  // eslint-disable-next-line max-len
+                  `attributes->'${key}'->>'rawValue' ~ '^\\[\\s*((\\S+\\s*,\\s*)|\\s*)*(${rawValue})((\\s*,\\s*\\S+)|\\s*)*\\]$'`,
+                );
+              }),
+            );
+          }
+        });
+      }),
+    );
   }
 
   private selectTokenFields(qb: SelectQueryBuilder<Tokens>): void {
@@ -177,7 +223,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Collection.description', 'collection_description');
     qb.addSelect('"Collection".collection_cover', 'collection_cover');
     qb.addSelect(
-      `COALESCE("Statistics".transfers_count, 0::bigint)`,
+      'COALESCE("Statistics".transfers_count, 0::bigint)',
       'transfers_count',
     );
     qb.leftJoin(
