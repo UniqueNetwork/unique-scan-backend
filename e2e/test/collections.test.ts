@@ -43,13 +43,6 @@ describe('Collections tests', function () {
       properties: testProperties,
     };
 
-    console.log(`collectionId: ${collectionId}`);
-
     await expectResponseContains(getActualCollection, expectedCollection);
-
-    console.log(
-      'Collection:',
-      JSON.stringify(await getActualCollection(), null, 2),
-    );
   });
 });
