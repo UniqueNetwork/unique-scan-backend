@@ -46,7 +46,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return this.getDataAndCount(qb, queryArgs);
   }
 
-  public async findOne(queryArgs: IGQLQueryArgs<TokenDTO>): Promise<TokenDTO> {
+  public async findOne(queryArgs: QueryArgs): Promise<TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, queryArgs);
@@ -72,7 +72,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return this.findOne(filter);
   }
 
-  public getByCollectionId(id: number, queryArgs: IGQLQueryArgs<TokenDTO>) {
+  public getByCollectionId(id: number, queryArgs: QueryArgs) {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, {

@@ -13,7 +13,7 @@ export class NestingResolver {
   ) {}
 
   @Query(() => NestingToken, { nullable: true })
-  public async tokenBundle(
+  public async bundleTree(
     @Args('input') { collection_id, token_id }: NestingArgs,
   ) {
     const token = await this.service.getToken(collection_id, token_id);
