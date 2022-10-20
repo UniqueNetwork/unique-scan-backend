@@ -18,6 +18,7 @@ export const tokensQuery = (args = {}) => {
           token_prefix: true,
           attributes: true,
           image: true,
+          token_name: true,
         },
       },
     },

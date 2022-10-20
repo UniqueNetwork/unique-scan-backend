@@ -3,7 +3,7 @@ import { expect } from 'chai';
 export const expectResponseContains = async (
   request,
   objContains,
-  timeout = 30000,
+  timeout = 300000,
   delayMS = 500,
 ) => {
   const now = Date.now();
