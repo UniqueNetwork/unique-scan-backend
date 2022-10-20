@@ -1,16 +1,10 @@
 import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
-import { forwardRef, Inject } from '@nestjs/common';
 import { TokenService } from './token.service';
-import { CollectionService } from '../collection/collection.service';
 import { NestingArgs, NestingToken, TokenEntity } from './token.resolver.types';
 
 @Resolver(() => NestingToken)
 export class NestingResolver {
-  constructor(
-    private service: TokenService,
-    @Inject(forwardRef(() => CollectionService))
-    private collectionService: CollectionService,
-  ) {}
+  constructor(private service: TokenService) {}
 
   @Query(() => NestingToken, { nullable: true })
   public async bundleTree(
