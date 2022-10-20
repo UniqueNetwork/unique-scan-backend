@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NestedToken } from '@unique-nft/substrate-client/tokens';
+import { normalizeTimestamp } from '@common/utils';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
 import { TokenData } from './token.types';
@@ -16,7 +17,11 @@ export class TokenNestingService {
     private dataSource: DataSource,
   ) {}
 
-  async handleNesting(tokenData: TokenData, blockHash: string) {
+  async handleNesting(
+    tokenData: TokenData,
+    blockHash: string,
+    blockTimestamp?: number,
+  ) {
     const { tokenDecoded, isBundle } = tokenData;
 
     const { tokenId: token_id, collectionId: collection_id } = tokenDecoded;
@@ -53,6 +58,7 @@ export class TokenNestingService {
           token_id,
           nestingBundle,
           blockHash,
+          blockTimestamp,
         );
       }
 
@@ -72,6 +78,7 @@ export class TokenNestingService {
     token_id: number,
     nestingBundle: NestedToken,
     blockHash: string,
+    blockTimestamp?: number,
   ) {
     try {
       const parent = await this.sdkService.getTokenParents(
@@ -85,6 +92,7 @@ export class TokenNestingService {
           parent.collectionId,
           parent.tokenId,
           nestingBundle,
+          blockTimestamp,
         );
 
         await this.updateTokenParents(
@@ -92,6 +100,7 @@ export class TokenNestingService {
           parent.tokenId,
           nestingBundle,
           blockHash,
+          blockTimestamp,
         );
       }
     } catch (e) {
@@ -103,23 +112,36 @@ export class TokenNestingService {
     collection_id: number,
     token_id: number,
     nestingBundle: NestedToken,
+    blockTimestamp?: number,
   ) {
     const children = this.getTokenChildren(
       collection_id,
       token_id,
       nestingBundle,
     );
-    console.log('parent children', collection_id, token_id, children.length);
-    await this.tokensRepository.update(
-      {
-        token_id,
+
+    if (children.length) {
+      console.log(
+        'blockTimestamp',
+        blockTimestamp,
+        'for',
         collection_id,
-      },
-      {
-        children,
-        type: TokenType.NESTED,
-      },
-    );
+        token_id,
+      );
+      await this.tokensRepository.update(
+        {
+          token_id,
+          collection_id,
+        },
+        {
+          children,
+          type: TokenType.NESTED,
+          bundle_created: blockTimestamp
+            ? normalizeTimestamp(blockTimestamp)
+            : undefined,
+        },
+      );
+    }
   }
 
   private async removeTokenFromParents(
@@ -141,8 +163,8 @@ export class TokenNestingService {
   > {
     const query = `
       SELECT collection_id, token_id, children
-      FROM tokens t2, jsonb_array_elements(children) tokensList
-      WHERE (tokensList->>'token_id')::int = ${token_id} AND (tokensList->>'collection_id')::int = ${collection_id}
+      FROM tokens
+      WHERE children @> '[{"token_id":${token_id}, "collection_id": ${collection_id}]'::jsonb
     `;
 
     return this.dataSource.query(query);

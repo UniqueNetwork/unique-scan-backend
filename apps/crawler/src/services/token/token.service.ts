@@ -8,7 +8,7 @@ import { Tokens, TokenType, ITokenChild } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SdkService } from '../sdk/sdk.service';
+import { SdkService } from '../../sdk/sdk.service';
 import { TokenNestingService } from './nesting.service';
 import { TokenData } from './token.types';
 
@@ -52,6 +52,7 @@ export class TokenService {
   async prepareDataForDb(
     tokenData: TokenData,
     blockHash: string,
+    blockTimestamp?: number,
   ): Promise<Omit<Tokens, 'id'>> {
     const { tokenDecoded, tokenProperties, collectionDecoded, isBundle } =
       tokenData;
@@ -78,6 +79,7 @@ export class TokenService {
     const children: ITokenChild[] = await this.nestingService.handleNesting(
       tokenData,
       blockHash,
+      blockTimestamp,
     );
 
     if (isBundle) {
@@ -130,7 +132,11 @@ export class TokenService {
     let result;
 
     if (tokenData) {
-      const preparedData = await this.prepareDataForDb(tokenData, blockHash);
+      const preparedData = await this.prepareDataForDb(
+        tokenData,
+        blockHash,
+        blockTimestamp,
+      );
 
       // Write token data into db
       await this.tokensRepository.upsert(

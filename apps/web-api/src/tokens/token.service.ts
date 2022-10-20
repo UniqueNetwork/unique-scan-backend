@@ -43,6 +43,18 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return this.getDataAndCount(qb, queryArgs);
   }
 
+  @SentryWrapper({ data: [], count: 0 })
+  public async findBundles(
+    queryArgs: IGQLQueryArgs<TokenDTO>,
+  ): Promise<IDataListResponse<TokenDTO>> {
+    const qb = this.repo.createQueryBuilder();
+    qb.andWhere('parent_id is null');
+    qb.andWhere('jsonb_array_length(children) > 0');
+
+    this.applyFilters(qb, queryArgs);
+    return this.getDataAndCount(qb, queryArgs);
+  }
+
   public getByCollectionId(id: number, queryArgs: IGQLQueryArgs<TokenDTO>) {
     const qb = this.repo.createQueryBuilder();
 
@@ -107,6 +119,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.properties', 'properties');
     qb.addSelect('Tokens.owner', 'owner');
     qb.addSelect('Tokens.date_of_creation', 'date_of_creation');
+    qb.addSelect('Tokens.bundle_created', 'bundle_created');
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
     qb.addSelect('Tokens.parent_id', 'parent_id');
     qb.addSelect('Tokens.is_sold', 'is_sold');
@@ -124,9 +137,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Collection.description', 'collection_description');
     qb.addSelect('"Collection".collection_cover', 'collection_cover');
     qb.addSelect(
-      `COALESCE("Statistics".transfers_count, 0::bigint)`,
+      `COALESCE("Statistics".transfers_count, 0)`,
       'transfers_count',
     );
+    qb.addSelect(`COALESCE("Statistics".children_count, 0)`, 'children_count');
     qb.leftJoin(
       'tokens_stats',
       'Statistics',

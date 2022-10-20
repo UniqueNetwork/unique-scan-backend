@@ -28,6 +28,13 @@ export class TokenResolver {
     return this.service.find(args);
   }
 
+  @Query(() => TokenDataResponse)
+  public tokenBundles(
+    @Args() args: QueryArgs,
+  ): Promise<IDataListResponse<TokenEntity>> {
+    return this.service.findBundles(args);
+  }
+
   @ResolveField()
   async collection(@Parent() { collection_id }: TokenEntity) {
     return this.collectionService.getCollectionById(collection_id);

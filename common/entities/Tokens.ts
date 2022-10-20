@@ -18,6 +18,7 @@ export interface ITokenChild {
   'owner',
 ])
 @Index('tokens_owner_normalized_idx', ['owner_normalized'])
+@Index('tokens_parent_id_idx', ['parent_id'])
 @Entity('tokens', { schema: 'public' })
 export class Tokens {
   @PrimaryGeneratedColumn({ type: 'bigint', name: 'id' })
@@ -73,4 +74,7 @@ export class Tokens {
 
   @Column('boolean', { name: 'burned', default: false })
   burned: boolean;
+
+  @Column('bigint', { name: 'bundle_created', nullable: true })
+  bundle_created?: number;
 }

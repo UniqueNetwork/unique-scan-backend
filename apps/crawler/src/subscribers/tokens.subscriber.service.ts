@@ -13,7 +13,6 @@ export class TokensSubscriberService implements ISubscriberService {
 
   constructor(
     private tokenService: TokenService,
-
     @InjectSentry()
     private readonly sentry: SentryService,
   ) {
