@@ -2,12 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Store } from '@subsquid/typeorm-store';
 import { EventName, SubscriberAction } from '@common/constants';
-import { SdkService } from '../sdk/sdk.service';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
-import {
-  ICollectionData,
-  CollectionWriterService,
-} from '../writers/collection.writer.service';
+import { CollectionService } from '../services/collection.service';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
 
@@ -16,8 +12,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(CollectionsSubscriberService.name);
 
   constructor(
-    private sdkService: SdkService,
-    private collectionWriterService: CollectionWriterService,
+    private collectionService: CollectionService,
     @InjectSentry()
     private readonly sentry: SentryService,
   ) {
@@ -55,29 +50,13 @@ export class CollectionsSubscriberService implements ISubscriberService {
     return typeof args === 'number' ? args : (args[0] as number);
   }
 
-  /**
-   * Recieves collection data from sdk.
-   */
-  private async getCollectionData(
-    collectionId: number,
-  ): Promise<ICollectionData> {
-    const [collectionDecoded, collectionLimits, tokenPropertyPermissions] =
-      await Promise.all([
-        this.sdkService.getCollection(collectionId),
-        this.sdkService.getCollectionLimits(collectionId),
-        this.sdkService.getTokenPropertyPermissions(collectionId),
-      ]);
-
-    return {
-      collectionDecoded,
-      collectionLimits,
-      tokenPropertyPermissions,
-    };
-  }
-
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
     const {
-      block: { height: blockNumber, timestamp: blockTimestamp },
+      block: {
+        height: blockNumber,
+        timestamp: blockTimestamp,
+        hash: blockHash,
+      },
       event: { name: eventName, args },
     } = ctx;
 
@@ -93,22 +72,12 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
       log.collectionId = collectionId;
 
-      const collectionData = await this.getCollectionData(collectionId);
-
-      if (collectionData.collectionDecoded) {
-        await this.collectionWriterService.upsert({
-          eventName,
-          blockTimestamp,
-          collectionData,
-        });
-
-        log.action = SubscriberAction.UPSERT;
-      } else {
-        // No entity returned from sdk. Most likely it was destroyed in a future block.
-        await this.collectionWriterService.delete(collectionId);
-
-        log.action = SubscriberAction.DELETE_NOT_FOUND;
-      }
+      log.action = await this.collectionService.update({
+        collectionId,
+        eventName,
+        blockTimestamp,
+        blockHash,
+      });
 
       this.logger.verbose({ ...log });
     } catch (error) {
@@ -135,7 +104,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
 
       log.collectionId = collectionId;
 
-      await this.collectionWriterService.delete(collectionId);
+      await this.collectionService.burn(collectionId);
 
       this.logger.verbose({ ...log });
     } catch (error) {

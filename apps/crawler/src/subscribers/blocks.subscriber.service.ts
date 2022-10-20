@@ -5,12 +5,12 @@ import {
   SubstrateExtrinsic,
 } from '@subsquid/substrate-processor';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
+import { Prefix } from '@polkadot/util-crypto/types';
 import { ISubscriberService } from './subscribers.service';
-import { Prefix } from '@unique-nft/api/.';
 import { ProcessorService } from './processor/processor.service';
-import { BlockWriterService } from '../writers/block.writer.service';
-import { ExtrinsicService } from '../writers/extrinsic/extrinsic.service';
-import { EventService } from '../writers/event/event.service';
+import { BlockService } from '../services/block.service';
+import { ExtrinsicService } from '../services/extrinsic.service';
+import { EventService } from '../services/event/event.service';
 
 export interface IEvent {
   name: string;
@@ -50,12 +50,9 @@ export class BlocksSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(BlocksSubscriberService.name);
 
   constructor(
-    private blockWriterService: BlockWriterService,
-
+    private blockService: BlockService,
     private extrinsicService: ExtrinsicService,
-
     private eventService: EventService,
-
     @InjectSentry()
     private readonly sentry: SentryService,
   ) {
@@ -102,7 +99,7 @@ export class BlocksSubscriberService implements ISubscriberService {
       });
 
       const [itemCounts] = await Promise.all([
-        this.blockWriterService.upsert({
+        this.blockService.upsert({
           block,
           blockItems,
         }),

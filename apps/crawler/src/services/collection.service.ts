@@ -1,4 +1,4 @@
-import { EventName } from '@common/constants';
+import { EventName, SubscriberAction } from '@common/constants';
 import {
   normalizeSubstrateAddress,
   normalizeTimestamp,
@@ -16,6 +16,7 @@ import {
   PropertyKeyPermission,
 } from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
+import { SdkService } from '../sdk/sdk.service';
 
 type ParsedSchemaFields = {
   collectionCover?: string;
@@ -25,22 +26,51 @@ type ParsedSchemaFields = {
   variableOnChainSchema?: object;
 };
 
-export interface ICollectionData {
+interface CollectionData {
   collectionDecoded: CollectionInfoWithSchema | null;
   collectionLimits: CollectionLimits | null;
   tokenPropertyPermissions: PropertyKeyPermission[];
 }
 
 @Injectable()
-export class CollectionWriterService {
-  private readonly logger = new Logger(CollectionWriterService.name);
+export class CollectionService {
+  private readonly logger = new Logger(CollectionService.name);
 
   constructor(
+    private sdkService: SdkService,
     @InjectRepository(Collections)
     private collectionsRepository: Repository<Collections>,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
+
+  /**
+   * Recieves collection data from sdk.
+   */
+  private async getCollectionData(
+    collectionId: number,
+    at: string,
+  ): Promise<CollectionData | null> {
+    const collectionDecoded = await this.sdkService.getCollection(
+      collectionId,
+      at,
+    );
+
+    if (!collectionDecoded) {
+      return null;
+    }
+
+    const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
+      this.sdkService.getCollectionLimits(collectionId, at),
+      this.sdkService.getTokenPropertyPermissions(collectionId, at),
+    ]);
+
+    return {
+      collectionDecoded,
+      collectionLimits,
+      tokenPropertyPermissions,
+    };
+  }
 
   private processJsonStringifiedValue(rawValue) {
     let result: object | null = null;
@@ -133,7 +163,9 @@ export class CollectionWriterService {
     return result as UniqueCollectionSchemaDecoded;
   }
 
-  private prepareDataForDb(collectionData: ICollectionData): Collections {
+  private async prepareDataForDb(
+    collectionData: CollectionData,
+  ): Promise<Collections> {
     const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
       collectionData;
 
@@ -180,6 +212,10 @@ export class CollectionWriterService {
       ownerCanDestroy: owner_can_destroy,
     } = collectionLimits;
 
+    const collection = await this.collectionsRepository.findOneBy({
+      collection_id,
+    });
+
     return {
       collection_id,
       owner,
@@ -206,41 +242,63 @@ export class CollectionWriterService {
       nesting_enabled: nesting?.collectionAdmin || nesting?.tokenOwner,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
+      burned: collection?.burned ?? false,
     };
   }
 
-  async upsert({
+  async update({
+    collectionId,
     eventName,
     blockTimestamp,
-    collectionData,
+    blockHash,
   }: {
+    collectionId: number;
     eventName: string;
     blockTimestamp: number;
-    collectionData: ICollectionData;
-  }) {
-    const preparedData = this.prepareDataForDb(collectionData);
-
-    return this.collectionsRepository.upsert(
-      {
-        ...preparedData,
-        date_of_creation:
-          eventName === EventName.COLLECTION_CREATED
-            ? normalizeTimestamp(blockTimestamp)
-            : undefined,
-      },
-      ['collection_id'],
+    blockHash: string;
+  }): Promise<SubscriberAction> {
+    const collectionData = await this.getCollectionData(
+      collectionId,
+      blockHash,
     );
+
+    let result;
+
+    if (collectionData) {
+      const preparedData = await this.prepareDataForDb(collectionData);
+
+      await this.collectionsRepository.upsert(
+        {
+          ...preparedData,
+          date_of_creation:
+            eventName === EventName.COLLECTION_CREATED
+              ? normalizeTimestamp(blockTimestamp)
+              : undefined,
+        },
+        ['collection_id'],
+      );
+
+      result = SubscriberAction.UPSERT;
+    } else {
+      // No entity returned from sdk. Most likely it was destroyed in a future block.
+      await this.burn(collectionId);
+
+      result = SubscriberAction.DELETE_NOT_FOUND;
+    }
+
+    return result;
   }
 
-  async delete(collectionId: number) {
-    return this.deleteCollectionWithTokens(collectionId);
-  }
-
-  // Delete db collection record and related tokens
-  private async deleteCollectionWithTokens(collectionId: number) {
-    return Promise.all([
-      this.collectionsRepository.delete(collectionId),
-      this.tokensRepository.delete({ collection_id: collectionId }),
+  async burn(collectionId: number) {
+    return Promise.allSettled([
+      this.collectionsRepository.update(
+        { collection_id: collectionId },
+        { burned: true },
+      ),
+      this.tokensRepository.update(
+        { collection_id: collectionId },
+        { burned: true },
+      ),
     ]);
   }
 }

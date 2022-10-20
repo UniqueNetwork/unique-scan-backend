@@ -11,7 +11,7 @@ import {
 } from '../subscribers/blocks.subscriber.service';
 
 @Injectable()
-export class BlockWriterService {
+export class BlockService {
   constructor(
     @InjectRepository(Block)
     private blocksRepository: Repository<Block>,
