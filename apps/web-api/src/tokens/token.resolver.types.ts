@@ -2,6 +2,7 @@ import {
   ArgsType,
   Field,
   InputType,
+  Int,
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
@@ -17,7 +18,7 @@ import {
   TOrderByParams,
   TWhereParams,
 } from '../utils/gql-query-args';
-import { TokenDistinctFieldsEnum, TokenDTO } from './token.dto';
+import { SimpleTokenDTO, TokenDistinctFieldsEnum, TokenDTO } from './token.dto';
 import { CollectionDTO } from '../collection/collection.dto';
 
 registerEnumType(TokenDistinctFieldsEnum, { name: 'TokenEnum' });
@@ -122,6 +123,15 @@ export class QueryArgs
   order_by?: TokenOrderByParams;
 }
 
+@InputType()
+export class NestingArgs {
+  @Field(() => Int)
+  collection_id!: number;
+
+  @Field(() => Int)
+  token_id!: number;
+}
+
 @ObjectType()
 export class TokenEntity extends TokenDTO {
   @Field(() => CollectionDTO, { nullable: true })
@@ -130,3 +140,9 @@ export class TokenEntity extends TokenDTO {
 
 @ObjectType()
 export class TokenDataResponse extends ListDataType(TokenEntity) {}
+
+@ObjectType()
+export class NestingToken extends SimpleTokenDTO {
+  @Field(() => [NestingToken], { nullable: true })
+  nestingChildren?: NestingToken[];
+}

@@ -12,8 +12,8 @@ export enum TokenDistinctFieldsEnum {
   token_name = 'token_name',
 }
 
-@ObjectType('token')
-export class TokenDTO implements Partial<Tokens> {
+@ObjectType('simple-token')
+export class SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => Int)
   token_id?: number;
 
@@ -38,6 +38,24 @@ export class TokenDTO implements Partial<Tokens> {
   @Field(() => String)
   token_prefix?: string;
 
+  @Field(() => String, { nullable: true })
+  token_name?: string;
+
+  @Field(() => Int, { nullable: true })
+  date_of_creation?: number;
+
+  @Field(() => String, { nullable: true })
+  parent_id?: string;
+
+  @Field(() => Boolean)
+  is_sold?: boolean;
+
+  @Field(() => Boolean)
+  burned?: boolean;
+}
+
+@ObjectType('token')
+export class TokenDTO extends SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => String)
   collection_name?: string;
 
@@ -53,21 +71,6 @@ export class TokenDTO implements Partial<Tokens> {
   @Field(() => String, { nullable: true })
   collection_owner_normalized?: string;
 
-  @Field(() => String, { nullable: true })
-  token_name?: string;
-
-  @Field(() => Int, { nullable: true })
-  date_of_creation?: number;
-
-  @Field(() => String, { nullable: true })
-  parent_id?: string;
-
   @Field(() => Int, { nullable: true })
   transfers_count?: number;
-
-  @Field(() => Boolean)
-  is_sold?: boolean;
-
-  @Field(() => Boolean)
-  burned?: boolean;
 }

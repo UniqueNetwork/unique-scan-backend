@@ -6,6 +6,7 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
   'token_id',
   'owner',
 ])
+@Index('tokens_parent_id_idx', ['parent_id'])
 @Index('tokens_owner_normalized_idx', ['owner_normalized'])
 @Entity('tokens', { schema: 'public' })
 export class Tokens {

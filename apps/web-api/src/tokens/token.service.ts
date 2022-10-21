@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
+  GQLOrderByParamsArgs,
   IDataListResponse,
   IDateRange,
   IGQLQueryArgs,
@@ -45,6 +46,32 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return this.getDataAndCount(qb, queryArgs);
   }
 
+  public async findOne(queryArgs: QueryArgs): Promise<TokenDTO> {
+    const qb = this.repo.createQueryBuilder();
+
+    this.applyFilters(qb, queryArgs);
+
+    return qb.getRawOne();
+  }
+
+  public async getToken(
+    collection_id: number,
+    token_id: number,
+  ): Promise<TokenDTO> {
+    const filter = {
+      where: {
+        collection_id: {
+          _eq: collection_id,
+        },
+        token_id: {
+          _eq: token_id,
+        },
+      },
+    };
+
+    return this.findOne(filter);
+  }
+
   public getByCollectionId(id: number, queryArgs: QueryArgs) {
     const qb = this.repo.createQueryBuilder();
 
@@ -69,6 +96,27 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       query: qb.getQuery(),
       params: qb.getParameters(),
     };
+  }
+
+  public findNestingChildren(collection_id: number, token_id: number) {
+    const qb = this.repo.createQueryBuilder();
+
+    const queryArgs = {
+      where: {
+        parent_id: { _eq: `${collection_id}_${token_id}` },
+      },
+      limit: null,
+      order_by: {
+        token_id: GQLOrderByParamsArgs.asc,
+      },
+    };
+
+    this.selectTokenFields(qb);
+    this.applyLimitOffset(qb, queryArgs);
+    this.applyWhereCondition(qb, queryArgs);
+    this.applyOrderCondition(qb, queryArgs);
+
+    return qb.getRawMany();
   }
 
   public async statistic({
@@ -145,7 +193,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     );
   }
 
-  private select(qb: SelectQueryBuilder<Tokens>): void {
+  private selectTokenFields(qb: SelectQueryBuilder<Tokens>): void {
     qb.select('Tokens.collection_id', 'collection_id');
     qb.addSelect('Tokens.token_id', 'token_id');
     qb.addSelect('Tokens.image', 'image');
@@ -158,6 +206,11 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.is_sold', 'is_sold');
     qb.addSelect('Tokens.burned', 'burned');
     qb.addSelect('Tokens.token_name', 'token_name');
+  }
+
+  private select(qb: SelectQueryBuilder<Tokens>): void {
+    this.selectTokenFields(qb);
+
     qb.leftJoinAndSelect(
       'collections',
       'Collection',
