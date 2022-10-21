@@ -53,6 +53,7 @@ export class TokenService {
     tokenData: TokenData,
     blockHash: string,
     blockTimestamp?: number,
+    needCheckNesting = false,
   ): Promise<Omit<Tokens, 'id'>> {
     const { tokenDecoded, tokenProperties, collectionDecoded, isBundle } =
       tokenData;
@@ -68,6 +69,11 @@ export class TokenService {
 
     const { owner: collectionOwner, tokenPrefix } = collectionDecoded;
 
+    const token = await this.tokensRepository.findOneBy({
+      collection_id,
+      token_id,
+    });
+
     let tokenType = TokenType.NFT;
     let parentId = null;
     if (nestingParentToken) {
@@ -76,11 +82,13 @@ export class TokenService {
       tokenType = TokenType.NESTED;
     }
 
-    const children: ITokenChild[] = await this.nestingService.handleNesting(
-      tokenData,
-      blockHash,
-      blockTimestamp,
-    );
+    const children: ITokenChild[] = needCheckNesting
+      ? await this.nestingService.handleNesting(
+          tokenData,
+          blockHash,
+          blockTimestamp,
+        )
+      : token?.children ?? [];
 
     if (isBundle) {
       tokenType = TokenType.NESTED;
@@ -89,11 +97,6 @@ export class TokenService {
     if (!children.length && !parentId) {
       tokenType = TokenType.NFT;
     }
-
-    const token = await this.tokensRepository.findOneBy({
-      collection_id,
-      token_id,
-    });
 
     return {
       token_id,
@@ -132,10 +135,12 @@ export class TokenService {
     let result;
 
     if (tokenData) {
+      const needCheckNesting = eventName === EventName.TRANSFER;
       const preparedData = await this.prepareDataForDb(
         tokenData,
         blockHash,
         blockTimestamp,
+        needCheckNesting,
       );
 
       // Write token data into db

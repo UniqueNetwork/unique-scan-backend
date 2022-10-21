@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NestedToken } from '@unique-nft/substrate-client/tokens';
+import { SentryService } from '@ntegral/nestjs-sentry';
 import { normalizeTimestamp } from '@common/utils';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
@@ -15,7 +16,10 @@ export class TokenNestingService {
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
     private dataSource: DataSource,
-  ) {}
+    private readonly sentry: SentryService,
+  ) {
+    this.sentry.setContext(TokenNestingService.name);
+  }
 
   async handleNesting(
     tokenData: TokenData,
@@ -31,7 +35,7 @@ export class TokenNestingService {
     });
     let children: ITokenChild[] = [];
     try {
-      // token nested. Update his children field. Update parent.
+      // token nested. Update his children. Update parent.
       if (isBundle) {
         const nestingBundle = await this.sdkService.getTokenBundle(
           collection_id,
@@ -43,14 +47,6 @@ export class TokenNestingService {
           collection_id,
           token_id,
           nestingBundle,
-        );
-
-        console.log(
-          'nesting children',
-          collection_id,
-          token_id,
-          blockHash,
-          children.length,
         );
 
         await this.updateTokenParents(
@@ -65,6 +61,12 @@ export class TokenNestingService {
       // token was nested. Remove token from parents children.
       if (tokenFromDb?.parent_id && !isBundle) {
         await this.removeTokenFromParents(collection_id, token_id);
+      }
+
+      // unnest token bundle
+      if (tokenFromDb?.parent_id && isBundle) {
+        // TODO: remove all token children from old parents
+        // await this.removeTokenFromParents(collection_id, token_id);
       }
 
       return children;
@@ -103,8 +105,8 @@ export class TokenNestingService {
           blockTimestamp,
         );
       }
-    } catch (e) {
-      console.log('updateTokenParents error: ', e);
+    } catch (error) {
+      this.sentry.instance().captureException({ error });
     }
   }
 
@@ -121,13 +123,6 @@ export class TokenNestingService {
     );
 
     if (children.length) {
-      console.log(
-        'blockTimestamp',
-        blockTimestamp,
-        'for',
-        collection_id,
-        token_id,
-      );
       await this.tokensRepository.update(
         {
           token_id,
