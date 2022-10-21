@@ -28,14 +28,18 @@ export class TokenNestingService {
   ) {
     const { tokenDecoded, isBundle } = tokenData;
 
-    const { tokenId: token_id, collectionId: collection_id } = tokenDecoded;
+    const {
+      tokenId: token_id,
+      collectionId: collection_id,
+      nestingParentToken,
+    } = tokenDecoded;
     const tokenFromDb = await this.tokensRepository.findOneBy({
       collection_id,
       token_id,
     });
     let children: ITokenChild[] = [];
     try {
-      // token nested. Update his children. Update parent.
+      // token nested. Update children. Update parent.
       if (isBundle) {
         const nestingBundle = await this.sdkService.getTokenBundle(
           collection_id,
@@ -63,15 +67,56 @@ export class TokenNestingService {
         await this.removeTokenFromParents(collection_id, token_id);
       }
 
-      // unnest token bundle
-      if (tokenFromDb?.parent_id && isBundle) {
-        // TODO: remove all token children from old parents
-        // await this.removeTokenFromParents(collection_id, token_id);
+      let parentId = null;
+      if (nestingParentToken) {
+        const { collectionId, tokenId } = nestingParentToken;
+        parentId = `${collectionId}_${tokenId}`;
+      }
+
+      // The token has been nested. Remove all children from old parents
+      if (tokenFromDb?.parent_id && isBundle && !parentId) {
+        await this.unnestBundle(tokenFromDb);
       }
 
       return children;
     } catch {
       return children;
+    }
+  }
+
+  // TODO: Find a way without recursion
+  private async unnestBundle(token: Tokens) {
+    const { parent_id, children } = token;
+    if (parent_id && children.length) {
+      const [collectionId, tokenId] = parent_id?.split('_');
+
+      const parent = await this.tokensRepository.findOneBy({
+        collection_id: Number(collectionId),
+        token_id: Number(tokenId),
+      });
+
+      if (parent) {
+        const childrenSet = new Set<string>(
+          children.map(
+            ({ collection_id, token_id }) => `${collection_id}_${token_id}`,
+          ),
+        );
+        const filteredChildren = parent.children.filter(
+          ({ collection_id, token_id }) =>
+            !childrenSet.has(`${collection_id}_${token_id}`),
+        );
+
+        await this.tokensRepository.update(
+          { id: parent.id },
+          {
+            children: filteredChildren,
+          },
+        );
+
+        if (parent.parent_id) {
+          await this.unnestBundle(parent);
+        }
+      }
     }
   }
 
