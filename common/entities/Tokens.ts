@@ -1,13 +1,24 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
+export enum TokenType {
+  NFT = 'NFT',
+  FRACTIONAL = 'FRACTIONAL',
+  NESTED = 'NESTED',
+}
+
+export interface ITokenChild {
+  collection_id: number;
+  token_id: number;
+}
+
 @Index('tokens_pkey', ['token_id', 'collection_id'], { unique: true })
 @Index('tokens_collection_id_token_id_owner_idx', [
   'collection_id',
   'token_id',
   'owner',
 ])
-@Index('tokens_parent_id_idx', ['parent_id'])
 @Index('tokens_owner_normalized_idx', ['owner_normalized'])
+@Index('tokens_parent_id_idx', ['parent_id'])
 @Entity('tokens', { schema: 'public' })
 export class Tokens {
   @PrimaryGeneratedColumn({ type: 'bigint', name: 'id' })
@@ -46,6 +57,24 @@ export class Tokens {
   @Column('text', { name: 'token_name', nullable: true })
   token_name: string;
 
+  @Column({
+    type: 'enum',
+    enum: TokenType,
+    default: TokenType.NFT,
+  })
+  type: TokenType;
+
+  @Column({
+    type: 'jsonb',
+    array: false,
+    default: () => "'[]'",
+    nullable: false,
+  })
+  public children?: ITokenChild[];
+
   @Column('boolean', { name: 'burned', default: false })
   burned: boolean;
+
+  @Column('bigint', { name: 'bundle_created', nullable: true })
+  bundle_created?: number;
 }
