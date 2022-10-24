@@ -73,9 +73,9 @@ export class TokenNestingService {
         parentId = `${collectionId}_${tokenId}`;
       }
 
-      // The token has been nested. Remove all children from old parents
+      // The token bundle has been unnested. Remove all children from old parents
       if (tokenFromDb?.parent_id && isBundle && !parentId) {
-        await this.unnestBundle(tokenFromDb);
+        await this.unnestBundle(tokenFromDb, tokenFromDb.children);
       }
 
       return children;
@@ -85,7 +85,10 @@ export class TokenNestingService {
   }
 
   // TODO: Find a way without recursion
-  private async unnestBundle(token: Tokens) {
+  private async unnestBundle(
+    token: Tokens,
+    childrenToBeDeleted: ITokenChild[],
+  ) {
     const { parent_id, children } = token;
     if (parent_id && children.length) {
       const [collectionId, tokenId] = parent_id?.split('_');
@@ -97,7 +100,7 @@ export class TokenNestingService {
 
       if (parent) {
         const childrenSet = new Set<string>(
-          children.map(
+          childrenToBeDeleted.map(
             ({ collection_id, token_id }) => `${collection_id}_${token_id}`,
           ),
         );
@@ -114,7 +117,7 @@ export class TokenNestingService {
         );
 
         if (parent.parent_id) {
-          await this.unnestBundle(parent);
+          await this.unnestBundle(parent, childrenToBeDeleted);
         }
       }
     }

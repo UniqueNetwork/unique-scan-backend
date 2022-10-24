@@ -1,5 +1,5 @@
 import { Tokens } from '@entities/Tokens';
-import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSONObject, GraphQLJSON } from 'graphql-type-json';
 
 export enum TokenDistinctFieldsEnum {
@@ -56,7 +56,7 @@ export class SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => Int, { nullable: true })
   children_count?: number;
 
-  @Field(() => Float, { nullable: true })
+  @Field(() => Int, { nullable: true })
   bundle_created?: number;
 }
 

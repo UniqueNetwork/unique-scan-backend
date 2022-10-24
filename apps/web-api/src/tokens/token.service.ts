@@ -1,4 +1,4 @@
-import { Tokens } from '@entities/Tokens';
+import { Tokens, TokenType } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
@@ -52,7 +52,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
     qb.andWhere('parent_id is null');
-    qb.andWhere('jsonb_array_length(children) > 0');
+    qb.andWhere(`type = ${TokenType.NESTED}`);
 
     this.applyFilters(qb, queryArgs);
     return this.getDataAndCount(qb, queryArgs);
@@ -84,7 +84,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return this.findOne(filter);
   }
 
-  public getByCollectionId(id: number, queryArgs: IGQLQueryArgs<TokenDTO>) {
+  public getByCollectionId(id: number, queryArgs: QueryArgs) {
     const qb = this.repo.createQueryBuilder();
 
     this.applyFilters(qb, {
