@@ -17,6 +17,7 @@ export interface ITokenChild {
   'token_id',
   'owner',
 ])
+@Index('tokens_parent_id_idx', ['parent_id'])
 @Index('tokens_owner_normalized_idx', ['owner_normalized'])
 @Index('tokens_parent_id_idx', ['parent_id'])
 @Entity('tokens', { schema: 'public' })

@@ -58,12 +58,23 @@ registerEnumType(GQLOrderByParamsArgs, {
   name: 'GQLOrderByParamsArgs',
 });
 
+export interface IGQLPaginationArgs {
+  limit?: number;
+  offset?: number;
+}
+
 export interface IGQLQueryArgs<T> {
   limit?: number;
   offset?: number;
   where?: TWhere<T>;
   order_by?: TOrderByParams<T>;
   distinct_on?: string;
+}
+
+@InputType()
+export class GQLWhereOpsIntEq implements IWhereOperators {
+  @Field(() => Float)
+  _eq: number;
 }
 
 @InputType()
