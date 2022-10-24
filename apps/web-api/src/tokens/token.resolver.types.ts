@@ -24,11 +24,17 @@ registerEnumType(TokenDistinctFieldsEnum, { name: 'TokenEnum' });
 
 @InputType()
 export class AttributeFilterValue {
-  @Field()
-  key: string; // key of attribute from collection.attributes_schema object
+  @Field({
+    description:
+      "The 'key' of attribute from 'attributes' object from the attributes query",
+  })
+  key: string;
 
-  @Field()
-  raw_value: string; // 'raw_value' of the attribute value from attributes query attributes[key].values
+  @Field({
+    description:
+      "The 'raw_value' of the attribute value from 'attributes[key].values[N]' object from the attributes query",
+  })
+  raw_value: string;
 }
 
 @InputType()
