@@ -52,6 +52,12 @@ export class SimpleTokenDTO implements Partial<Tokens> {
 
   @Field(() => Boolean)
   burned?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  children_count?: number;
+
+  @Field(() => Int, { nullable: true })
+  bundle_created?: number;
 }
 
 @ObjectType('token')

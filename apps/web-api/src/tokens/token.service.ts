@@ -1,4 +1,4 @@
-import { Tokens } from '@entities/Tokens';
+import { Tokens, TokenType } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
@@ -43,6 +43,18 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     this.applyFilters(qb, queryArgs);
 
+    return this.getDataAndCount(qb, queryArgs);
+  }
+
+  @SentryWrapper({ data: [], count: 0 })
+  public async findBundles(
+    queryArgs: QueryArgs,
+  ): Promise<IDataListResponse<TokenDTO>> {
+    const qb = this.repo.createQueryBuilder();
+    qb.andWhere('parent_id is null');
+    qb.andWhere(`type = ${TokenType.NESTED}`);
+
+    this.applyFilters(qb, queryArgs);
     return this.getDataAndCount(qb, queryArgs);
   }
 
@@ -201,6 +213,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.properties', 'properties');
     qb.addSelect('Tokens.owner', 'owner');
     qb.addSelect('Tokens.date_of_creation', 'date_of_creation');
+    qb.addSelect('Tokens.bundle_created', 'bundle_created');
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
     qb.addSelect('Tokens.parent_id', 'parent_id');
     qb.addSelect('Tokens.is_sold', 'is_sold');
@@ -223,9 +236,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Collection.description', 'collection_description');
     qb.addSelect('"Collection".collection_cover', 'collection_cover');
     qb.addSelect(
-      'COALESCE("Statistics".transfers_count, 0::bigint)',
+      'COALESCE("Statistics".transfers_count, 0)',
       'transfers_count',
     );
+    qb.addSelect(`COALESCE("Statistics".children_count, 0)`, 'children_count');
     qb.leftJoin(
       'tokens_stats',
       'Statistics',

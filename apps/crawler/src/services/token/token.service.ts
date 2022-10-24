@@ -4,28 +4,19 @@ import {
   normalizeTimestamp,
   sanitizePropertiesValues,
 } from '@common/utils';
-import { Tokens } from '@entities/Tokens';
+import { Tokens, TokenType, ITokenChild } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  CollectionInfoWithSchema,
-  TokenByIdResult,
-  TokenPropertiesResult,
-} from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
-import { SdkService } from '../sdk/sdk.service';
-
-interface TokenData {
-  tokenDecoded: TokenByIdResult;
-  tokenProperties: TokenPropertiesResult | null;
-  collectionDecoded: CollectionInfoWithSchema | null;
-}
+import { SdkService } from '../../sdk/sdk.service';
+import { TokenNestingService } from './nesting.service';
+import { TokenData } from './token.types';
 
 @Injectable()
 export class TokenService {
   constructor(
     private sdkService: SdkService,
-
+    private nestingService: TokenNestingService,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -44,20 +35,29 @@ export class TokenService {
     if (!tokenDecoded) {
       return null;
     }
-    const [tokenProperties, collectionDecoded] = await Promise.all([
+    const [tokenProperties, collectionDecoded, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
       this.sdkService.getCollection(collectionId, blockHash),
+      this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
     ]);
 
     return {
       tokenDecoded,
       tokenProperties,
       collectionDecoded,
+      isBundle,
     };
   }
 
-  async prepareDataForDb(tokenData: TokenData): Promise<Omit<Tokens, 'id'>> {
-    const { tokenDecoded, tokenProperties, collectionDecoded } = tokenData;
+  async prepareDataForDb(
+    tokenData: TokenData,
+    blockHash: string,
+    blockTimestamp?: number,
+    needCheckNesting = false,
+  ): Promise<Omit<Tokens, 'id'>> {
+    const { tokenDecoded, tokenProperties, collectionDecoded, isBundle } =
+      tokenData;
+
     const {
       tokenId: token_id,
       collectionId: collection_id,
@@ -69,16 +69,34 @@ export class TokenService {
 
     const { owner: collectionOwner, tokenPrefix } = collectionDecoded;
 
-    let parentId = null;
-    if (nestingParentToken) {
-      const { collectionId, tokenId } = nestingParentToken;
-      parentId = `${collectionId}_${tokenId}`;
-    }
-
     const token = await this.tokensRepository.findOneBy({
       collection_id,
       token_id,
     });
+
+    let tokenType = TokenType.NFT;
+    let parentId = null;
+    if (nestingParentToken) {
+      const { collectionId, tokenId } = nestingParentToken;
+      parentId = `${collectionId}_${tokenId}`;
+      tokenType = TokenType.NESTED;
+    }
+
+    const children: ITokenChild[] = needCheckNesting
+      ? await this.nestingService.handleNesting(
+          tokenData,
+          blockHash,
+          blockTimestamp,
+        )
+      : token?.children ?? [];
+
+    if (isBundle) {
+      tokenType = TokenType.NESTED;
+    }
+
+    if (!children.length && !parentId) {
+      tokenType = TokenType.NFT;
+    }
 
     return {
       token_id,
@@ -94,6 +112,8 @@ export class TokenService {
       is_sold: owner !== collectionOwner,
       token_name: `${tokenPrefix} #${token_id}`,
       burned: token?.burned ?? false,
+      type: tokenType,
+      children,
     };
   }
 
@@ -115,7 +135,13 @@ export class TokenService {
     let result;
 
     if (tokenData) {
-      const preparedData = await this.prepareDataForDb(tokenData);
+      const needCheckNesting = eventName === EventName.TRANSFER;
+      const preparedData = await this.prepareDataForDb(
+        tokenData,
+        blockHash,
+        blockTimestamp,
+        needCheckNesting,
+      );
 
       // Write token data into db
       await this.tokensRepository.upsert(

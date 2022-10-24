@@ -14,4 +14,7 @@ export class TokensStats {
 
   @Column('bigint', { name: 'transfers_count' })
   transfers_count: number;
+
+  @Column('bigint', { name: 'children_count', nullable: true })
+  children_count: number;
 }
