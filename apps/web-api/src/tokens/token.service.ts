@@ -86,10 +86,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       new Brackets((qb) => {
         qb.where('parent_id is null')
           .andWhere('token_id = :token_id', {
-            token_id: token_id,
+            token_id,
           })
           .andWhere('collection_id = :collection_id', {
-            collection_id: collection_id,
+            collection_id,
           })
           .andWhere(`type = :type`, { type: TokenType.NESTED });
       }),
