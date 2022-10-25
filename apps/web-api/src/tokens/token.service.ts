@@ -52,7 +52,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
     qb.andWhere('parent_id is null');
-    qb.andWhere(`type = ${TokenType.NESTED}`);
+    qb.andWhere(`type = :type`, { type: TokenType.NESTED });
 
     this.applyFilters(qb, queryArgs);
     return this.getDataAndCount(qb, queryArgs);
