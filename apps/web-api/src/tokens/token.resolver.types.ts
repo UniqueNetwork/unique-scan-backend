@@ -6,7 +6,6 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
-import { GraphQLJSON } from 'graphql-type-json';
 import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
@@ -23,12 +22,20 @@ import { CollectionDTO } from '../collection/collection.dto';
 
 registerEnumType(TokenDistinctFieldsEnum, { name: 'TokenEnum' });
 
-export type AttributeFilterValue = [
-  attributeKey: string, // key of attribute from collection.attributes_schema object
-  attributeRawValue: string | number | object,
-];
+@InputType()
+export class AttributeFilterValue {
+  @Field({
+    description:
+      "The 'key' of attribute from 'attributes' object from the attributes query",
+  })
+  key: string;
 
-export type AttributeFilter = AttributeFilterValue[];
+  @Field({
+    description:
+      "The 'raw_value' of the attribute value from 'attributes[key].values[N]' object from the attributes query",
+  })
+  raw_value: string;
+}
 
 @InputType()
 export class TokenWhereParams implements TWhereParams<TokenDTO> {
@@ -119,8 +126,8 @@ export class QueryArgs
   @Field(() => TokenWhereParams, { nullable: true })
   where?: TokenWhereParams;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  attributes_filter?: AttributeFilter;
+  @Field(() => [AttributeFilterValue], { nullable: true })
+  attributes_filter?: AttributeFilterValue[];
 
   @Field(() => TokenOrderByParams, { nullable: true })
   order_by?: TokenOrderByParams;
