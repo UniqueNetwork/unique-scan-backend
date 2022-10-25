@@ -66,22 +66,36 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return qb.getRawOne();
   }
 
-  public async getToken(
+  public async getBundleRoot(
     collection_id: number,
     token_id: number,
   ): Promise<TokenDTO> {
-    const filter = {
-      where: {
-        collection_id: {
-          _eq: collection_id,
-        },
-        token_id: {
-          _eq: token_id,
-        },
-      },
-    };
+    const qb = this.repo.createQueryBuilder();
 
-    return this.findOne(filter);
+    await this.selectTokenFields(qb);
+
+    qb.where(
+      new Brackets((qb) => {
+        qb.where('parent_id is null').andWhere(
+          `children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
+        );
+      }),
+    );
+
+    qb.orWhere(
+      new Brackets((qb) => {
+        qb.where('parent_id is null')
+          .andWhere('token_id = :token_id', {
+            token_id: token_id,
+          })
+          .andWhere('collection_id = :collection_id', {
+            collection_id: collection_id,
+          })
+          .andWhere(`type = :type`, { type: TokenType.NESTED });
+      }),
+    );
+
+    return qb.getRawOne();
   }
 
   public getByCollectionId(id: number, queryArgs: QueryArgs) {
