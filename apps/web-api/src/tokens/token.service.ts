@@ -192,14 +192,12 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     qb.andWhere(
       new Brackets((qb) => {
-        attributesFilter.forEach(([key, rawValue]) => {
-          if (typeof rawValue === 'object') {
+        attributesFilter.forEach(({ key, raw_value: rawValue }) => {
+          const rawValueParsed = JSON.parse(rawValue);
+
+          if (typeof rawValueParsed === 'object') {
             // Text field in format {_: "value"}
-            qb.orWhere(
-              `attributes->'${key}'->'rawValue'='${JSON.stringify(
-                rawValue,
-              )}'::jsonb`,
-            );
+            qb.orWhere(`attributes->'${key}'->'rawValue'='${rawValue}'::jsonb`);
           } else {
             // Select and multiselect field
             qb.orWhere(
