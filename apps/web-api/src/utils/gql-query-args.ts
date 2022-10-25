@@ -10,8 +10,8 @@ import {
 import { Type } from '@nestjs/common';
 
 export interface IWhereOperators {
-  _eq?: number | string;
-  _neq?: number | string;
+  _eq?: number | string | boolean;
+  _neq?: number | string | boolean;
   _like?: number | string;
   _ilike?: number | string;
   _in?: number[] | string[];
@@ -111,6 +111,15 @@ export class GQLWhereOpsString implements IWhereOperators {
 
   @Field(() => [String], { nullable: true })
   _in?: string[];
+}
+
+@InputType()
+export class GQLWhereOpsBoolean implements IWhereOperators {
+  @Field(() => Boolean, { nullable: true })
+  _eq?: boolean;
+
+  @Field(() => String, { nullable: true })
+  _neq?: boolean;
 }
 
 @ArgsType()

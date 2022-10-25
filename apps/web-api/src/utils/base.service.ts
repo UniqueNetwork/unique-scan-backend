@@ -15,8 +15,8 @@ import {
 
 export class BaseService<T, S> {
   private readonly DEFAULT_PAGE_SIZE = 10;
-  private readonly aliasFields: ISetting = {};
-  private readonly relationsFields: ISetting = {};
+  protected readonly aliasFields: ISetting = {};
+  protected readonly relationsFields: ISetting = {};
   private readonly relations: string[] = [];
 
   constructor(schemas: ISettingsSchema = {}) {
@@ -273,7 +273,10 @@ export class BaseService<T, S> {
     return GQLToORMOperationsMap[gqlWhereOperator];
   }
 
-  private getConditionField(qb: SelectQueryBuilder<T>, field: string): string {
+  protected getConditionField(
+    qb: SelectQueryBuilder<T>,
+    field: string,
+  ): string {
     return `"${this.relationsFields[field] ?? qb.alias}"."${
       this.aliasFields[field] ?? field
     }"`;
