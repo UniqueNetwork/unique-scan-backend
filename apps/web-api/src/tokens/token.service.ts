@@ -231,6 +231,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.is_sold', 'is_sold');
     qb.addSelect('Tokens.burned', 'burned');
     qb.addSelect('Tokens.token_name', 'token_name');
+    qb.addSelect(`split_part(Tokens.token_name, ' ', 1)`, 'token_prefix');
   }
 
   private select(qb: SelectQueryBuilder<Tokens>): void {
