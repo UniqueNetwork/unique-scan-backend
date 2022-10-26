@@ -27,6 +27,9 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   collection_id?: GQLWhereOpsInt;
 
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  tokens_count?: GQLWhereOpsInt;
+
   @Field(() => GQLWhereOpsString, { nullable: true })
   owner?: GQLWhereOpsString;
 

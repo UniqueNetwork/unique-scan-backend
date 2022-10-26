@@ -10,14 +10,14 @@ export class NestingResolver {
   public async bundleTree(
     @Args('input') { collection_id, token_id }: NestingArgs,
   ) {
-    const token = await this.service.getToken(collection_id, token_id);
-    if (!token) {
+    const bundle = await this.service.getBundleRoot(collection_id, token_id);
+    if (!bundle) {
       throw Error(
-        `Token with collection_id ${collection_id} and token_id ${token_id} not found`,
+        `Bundle for collection_id ${collection_id} and token_id ${token_id} not found`,
       );
     }
 
-    return token;
+    return bundle;
   }
 
   @ResolveField(() => [NestingToken])
