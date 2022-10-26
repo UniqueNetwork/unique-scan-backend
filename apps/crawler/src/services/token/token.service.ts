@@ -82,6 +82,13 @@ export class TokenService {
       tokenType = TokenType.NESTED;
     }
 
+    console.log(
+      'needCheckNesting',
+      blockHash,
+      needCheckNesting,
+      collection_id,
+      token_id,
+    );
     const children: ITokenChild[] = needCheckNesting
       ? await this.nestingService.handleNesting(
           tokenData,
