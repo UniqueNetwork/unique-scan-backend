@@ -10,6 +10,7 @@ import { CollectionsStats } from './CollectionsStats';
 import { Tokens } from './Tokens';
 
 @Index('collections_pkey', ['collection_id'], { unique: true })
+@Index('collections_owner_normalized_idx', ['owner_normalized'], {})
 @Entity('collections', { schema: 'public' })
 export class Collections {
   @Column('bigint', { primary: true, name: 'collection_id' })
@@ -87,6 +88,9 @@ export class Collections {
 
   @Column('bigint', { name: 'date_of_creation', nullable: true })
   date_of_creation?: number;
+
+  @Column('text', { name: 'owner_normalized' })
+  owner_normalized: string;
 
   @OneToOne(() => CollectionsStats)
   @JoinColumn([

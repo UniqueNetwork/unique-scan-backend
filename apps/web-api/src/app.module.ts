@@ -19,6 +19,7 @@ import { ExtrinsicModule } from './extrinsic/extrinsic.module';
 import { Extrinsic } from '@entities/Extrinsic';
 import { AccountModule } from './account/account.module';
 import { Account } from '@entities/Account';
+import { BlockModule } from './block/block.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { Account } from '@entities/Account';
       debug: true,
       playground: true,
       sortSchema: true,
+      path: '/v1/graphql',
     }),
     HolderModule,
     TransferModule,
@@ -48,6 +50,7 @@ import { Account } from '@entities/Account';
     EventModule,
     ExtrinsicModule,
     AccountModule,
+    BlockModule,
   ],
   controllers: [AppController],
   providers: [AppService],

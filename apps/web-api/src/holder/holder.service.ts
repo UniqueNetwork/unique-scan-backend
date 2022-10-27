@@ -1,10 +1,14 @@
 import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, createQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import { IGQLQueryArgs } from '../utils/gql-query-args';
+import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { HolderDTO } from './holder.dto';
+
+interface IQueryParameters {
+  [key: string]: any;
+}
 
 @Injectable()
 export class HolderService extends BaseService<Tokens, HolderDTO> {
@@ -12,15 +16,42 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     super();
   }
 
-  public async find(queryArgs: IGQLQueryArgs<HolderDTO>): Promise<Tokens[]> {
+  public async find(
+    queryArgs: IGQLQueryArgs<HolderDTO>,
+  ): Promise<IDataListResponse<Tokens>> {
     const qb = this.repo.createQueryBuilder();
-    qb.select(['collection_id', 'owner']);
+    qb.select(['collection_id', 'owner', 'owner_normalized']);
     qb.addSelect('count(token_id)', 'count');
     qb.addGroupBy('Tokens.collection_id');
     qb.addGroupBy('owner');
-    this.applyLimitOffset(qb, queryArgs);
+    qb.addGroupBy('owner_normalized');
     this.applyWhereCondition(qb, queryArgs);
-    const tokens = await qb.getRawMany();
-    return tokens;
+    this.applyOrderCondition(qb, queryArgs);
+    const { count } = await this.getCount(qb.getQuery(), qb.getParameters());
+    this.applyLimitOffset(qb, queryArgs);
+    const data = await qb.getRawMany();
+
+    return { data, count };
+  }
+
+  private async getCount(
+    queryString: string,
+    params: IQueryParameters,
+  ): Promise<{ count: number }> {
+    const countBuilder = createQueryBuilder();
+    const query = this.replaceQueryParams(queryString, params);
+
+    return countBuilder
+      .select('count(true)', 'count')
+      .from('(' + query + ')', 't1')
+      .getRawOne();
+  }
+
+  private replaceQueryParams(queryString: string, params: IQueryParameters) {
+    for (const key in params) {
+      queryString = queryString.replace(`:${key}`, `'${params[key]}'`);
+    }
+
+    return queryString;
   }
 }

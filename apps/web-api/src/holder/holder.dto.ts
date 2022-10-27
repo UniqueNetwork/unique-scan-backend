@@ -9,6 +9,9 @@ export class HolderDTO implements Partial<Tokens> {
   @Field(() => String)
   owner?: string;
 
+  @Field(() => String)
+  owner_normalized?: string;
+
   @Field(() => Int)
   collection_id?: number;
 }
