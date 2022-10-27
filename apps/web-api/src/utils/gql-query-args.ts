@@ -15,6 +15,7 @@ export interface IWhereOperators {
   _like?: number | string;
   _ilike?: number | string;
   _in?: number[] | string[];
+  _is_null?: boolean;
 }
 
 type TWhereOperations<T> = {
@@ -78,7 +79,13 @@ export class GQLWhereOpsIntEq implements IWhereOperators {
 }
 
 @InputType()
-export class GQLWhereOpsInt implements IWhereOperators {
+export class GQLWhereNullOps implements IWhereOperators {
+  @Field(() => Boolean, { nullable: true })
+  _is_null?: boolean;
+}
+
+@InputType()
+export class GQLWhereOpsInt extends GQLWhereNullOps implements IWhereOperators {
   @Field(() => Float, { nullable: true })
   _eq?: number;
 
@@ -96,7 +103,10 @@ export class GQLWhereOpsInt implements IWhereOperators {
 }
 
 @InputType()
-export class GQLWhereOpsString implements IWhereOperators {
+export class GQLWhereOpsString
+  extends GQLWhereNullOps
+  implements IWhereOperators
+{
   @Field(() => String, { nullable: true })
   _eq?: string;
 
