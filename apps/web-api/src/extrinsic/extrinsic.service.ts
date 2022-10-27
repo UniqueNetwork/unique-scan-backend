@@ -6,12 +6,17 @@ import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { ExtrinsicDTO } from './extrinsic.dto';
 
+const aliasFields = {
+  from_owner: 'signer',
+  from_owner_normalized: 'signer_normalized',
+};
+
 @Injectable()
 export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
   constructor(
     @InjectRepository(Extrinsic) private repo: Repository<Extrinsic>,
   ) {
-    super();
+    super({ aliasFields });
   }
 
   public async find(

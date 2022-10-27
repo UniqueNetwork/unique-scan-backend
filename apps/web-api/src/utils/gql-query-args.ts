@@ -16,14 +16,20 @@ export interface IWhereOperators {
   _in?: number[] | string[];
 }
 
-export interface IWhereOperations extends IWhereOperators {
-  _and?: IWhereOperators[];
-  _or?: IWhereOperators[];
-}
+type TWhereOperations<T> = {
+  _and?: {
+    [key in keyof T]: TWhereOperations<T> & IWhereOperators;
+  }[];
+  _or?: {
+    [key in keyof T]: TWhereOperations<T> & IWhereOperators;
+  }[];
+};
 
 export type TWhereParams<T> = {
   [key in keyof T]: IWhereOperators;
 };
+
+export type TWhere<T> = TWhereParams<T> & TWhereOperations<T>;
 
 export interface IOrderByOperators {
   asc: string;
@@ -54,7 +60,7 @@ registerEnumType(GQLOrderByParamsArgs, {
 export interface IGQLQueryArgs<T> {
   limit?: number;
   offset?: number;
-  where?: TWhereParams<T>;
+  where?: TWhere<T>;
   order_by?: TOrderByParams<T>;
   distinct_on?: string;
 }

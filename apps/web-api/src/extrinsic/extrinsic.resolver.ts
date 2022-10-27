@@ -35,6 +35,30 @@ class ExtrinsicWhereParams implements TWhereParams<ExtrinsicDTO> {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   amount?: GQLWhereOpsInt;
 
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  from_owner?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  from_owner_normalized?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  to_owner?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  to_owner_normalized?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  fee?: GQLWhereOpsInt;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  section?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  timestamp?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  hash?: GQLWhereOpsString;
+
   @Field(() => [ExtrinsicWhereParams], { nullable: true })
   _and?: ExtrinsicWhereParams[];
 
@@ -51,7 +75,22 @@ class ExtrinsicOrderByParams implements TOrderByParams<ExtrinsicDTO> {
   block_number?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  from_owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
   amount?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  from_owner_normalized?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  to_owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  to_owner_normalized?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  fee?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   timestamp?: GQLOrderByParamsArgs;

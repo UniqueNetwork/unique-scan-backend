@@ -28,6 +28,9 @@ class TransferWhereParams implements TWhereParams<TransferDTO> {
   @Field(() => GQLWhereOpsString, { nullable: true })
   section?: GQLWhereOpsString;
 
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  method?: GQLWhereOpsString;
+
   @Field(() => [TransferWhereParams], { nullable: true })
   _and?: TransferWhereParams[];
 
@@ -42,6 +45,9 @@ class TransferOrderByParams implements TOrderByParams<TransferDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   section?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  method?: GQLOrderByParamsArgs;
 }
 
 @ObjectType()

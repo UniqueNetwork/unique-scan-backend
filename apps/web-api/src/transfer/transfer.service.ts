@@ -20,6 +20,7 @@ export class TransferService extends BaseService<Event, TransferDTO> {
     qb.addSelect(`concat(block_number, '-', event_index)`, 'block_index');
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
+    this.applyOrderCondition(qb, queryArgs);
     qb.andWhere({ method: 'Transfer' });
 
     const data = await qb.getRawMany();

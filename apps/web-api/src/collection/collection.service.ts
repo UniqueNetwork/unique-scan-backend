@@ -1,17 +1,36 @@
 import { Collections } from '@entities/Collections';
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
+import { pickBy, isEmpty } from 'lodash';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
+import { TokenDTO } from '../tokens/token.dto';
+import { TokenService } from '../tokens/token.service';
+
+const relationsFields = {
+  tokens_count: 'Statistics',
+  actions_count: 'Statistics',
+  holders_count: 'Statistics',
+};
+
+type TCollectionWithTokens = CollectionDTO & { tokens?: TokenDTO[] };
 
 @Injectable()
 export class CollectionService extends BaseService<Collections, CollectionDTO> {
+  private relations: string[] = [];
+
   constructor(
     @InjectRepository(Collections) private repo: Repository<Collections>,
+    @Inject(forwardRef(() => TokenService)) private tokenService: TokenService,
   ) {
-    super();
+    super({ relationsFields });
+
+    const relations = this.repo.metadata.ownRelations;
+    relations.forEach(({ propertyName }) => {
+      this.relations.push(propertyName);
+    });
   }
 
   public async find(
@@ -19,11 +38,6 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   ): Promise<IDataListResponse<CollectionDTO>> {
     const qb = this.repo.createQueryBuilder();
     this.applyFilters(qb, queryArgs);
-
-    this.applyWhereCondition(qb, queryArgs);
-    this.applyOrderCondition(qb, queryArgs);
-    this.applyLimitOffset(qb, queryArgs);
-    this.applyDistinctOn(qb, queryArgs);
 
     const data = await qb.getRawMany();
     const count = await this.getCountByFilters(qb, queryArgs);
@@ -52,9 +66,37 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     queryArgs: IGQLQueryArgs<CollectionDTO>,
   ): void {
     this.select(qb);
+    this.applyTokensSubQuery(qb, queryArgs);
     this.applyLimitOffset(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    this.applyWhereCondition(qb, queryArgs);
+    this.applyWhereCondition(qb, this.getCollectionQueryArgs(queryArgs));
+    this.applyDistinctOn(qb, queryArgs);
+  }
+
+  private applyTokensSubQuery(
+    qb: SelectQueryBuilder<Collections>,
+    queryArgs: IGQLQueryArgs<TCollectionWithTokens>,
+  ) {
+    if (queryArgs.where?.tokens) {
+      const { query, params } = this.tokenService.getCollectionIdsQuery({
+        limit: null,
+        where: queryArgs.where.tokens,
+      } as IGQLQueryArgs<TokenDTO>);
+
+      if (!isEmpty(params)) {
+        qb.andWhere(`Collections.collection_id IN ( ${query} )`, params);
+      }
+    }
+  }
+
+  private getCollectionQueryArgs(queryArgs: IGQLQueryArgs<CollectionDTO>) {
+    return {
+      ...queryArgs,
+      where: pickBy(
+        queryArgs.where,
+        (_val, key: string) => !this.relations.includes(key),
+      ),
+    } as IGQLQueryArgs<CollectionDTO>;
   }
 
   private select(qb: SelectQueryBuilder<Collections>): void {
@@ -66,10 +108,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.offchain_schema', 'offchain_schema');
     qb.addSelect('Collections.token_limit', 'token_limit');
     qb.addSelect('Collections.token_prefix', 'token_prefix');
-    qb.addSelect(
-      `"Collections".variable_on_chain_schema::json ->> 'collectionCover'::text`,
-      'collection_cover',
-    );
+    qb.addSelect('Collections.collection_cover', 'collection_cover');
     qb.addSelect('Collections.mode', 'type');
     qb.addSelect('Collections.mint_mode', 'mint_mode');
     qb.addSelect(
@@ -111,7 +150,6 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
       'actions_count',
     );
     qb.addSelect('Collections.date_of_creation', 'date_of_creation');
-
     qb.leftJoin('Collections.statistics', 'Statistics');
   }
 }
