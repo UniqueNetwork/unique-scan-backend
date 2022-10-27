@@ -251,9 +251,15 @@ export class BaseService<T, S> {
         break;
       case '_like':
       case '_ilike':
+        query = `${fieldWithAlias} ${operation} :${paramName}`;
+        break;
       case '_eq':
       case '_neq':
-        query = `${fieldWithAlias} ${operation} :${paramName}`;
+        if (value === null) {
+          query = `${fieldWithAlias} ${op === '_eq' ? 'is' : 'is not'} null`;
+        } else {
+          query = `${fieldWithAlias} ${operation} :${paramName}`;
+        }
         break;
       default:
         throw new Error(`Unknown filter operation: ${op}`);
