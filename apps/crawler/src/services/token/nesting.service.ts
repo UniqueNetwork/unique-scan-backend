@@ -40,21 +40,12 @@ export class TokenNestingService {
     let children: ITokenChild[] = [];
     try {
       // token nested. Update children. Update parent.
-      console.log('isBundle', isBundle);
       if (isBundle) {
         const nestingBundle = await this.sdkService.getTokenBundle(
           collection_id,
           token_id,
-          blockHash,
         );
 
-        console.log(
-          'nestingBundle',
-          nestingBundle,
-          collection_id,
-          token_id,
-          blockHash,
-        );
         children = this.getTokenChildren(
           collection_id,
           token_id,
@@ -71,12 +62,6 @@ export class TokenNestingService {
       }
 
       // token was nested. Remove token from parents children.
-      console.log(
-        'tokenFromDb?.parent_id && !isBundle',
-        tokenFromDb?.parent_id,
-        !isBundle,
-        tokenFromDb?.parent_id && !isBundle,
-      );
       if (tokenFromDb?.parent_id && !isBundle) {
         await this.removeTokenFromParents(collection_id, token_id);
       }
@@ -88,15 +73,14 @@ export class TokenNestingService {
       }
 
       // The token bundle has been unnested. Remove all children from old parents
-      console.log(
-        'tokenFromDb?.parent_id && isBundle && !parentId',
-        tokenFromDb?.parent_id,
-        isBundle,
-        !parentId,
-        tokenFromDb?.parent_id && isBundle && !parentId,
-      );
       if (tokenFromDb?.parent_id && isBundle && !parentId) {
-        await this.unnestBundle(tokenFromDb, tokenFromDb.children);
+        await this.unnestBundle(tokenFromDb, [
+          ...tokenFromDb.children,
+          {
+            token_id,
+            collection_id,
+          },
+        ]);
       }
 
       return children;
@@ -105,7 +89,6 @@ export class TokenNestingService {
     }
   }
 
-  // TODO: Find a way without recursion
   private async unnestBundle(
     token: Tokens,
     childrenToBeDeleted: ITokenChild[],
@@ -125,15 +108,14 @@ export class TokenNestingService {
             ({ collection_id, token_id }) => `${collection_id}_${token_id}`,
           ),
         );
-        const filteredChildren = parent.children.filter(
-          ({ collection_id, token_id }) =>
-            !childrenSet.has(`${collection_id}_${token_id}`),
-        );
 
         await this.tokensRepository.update(
           { id: parent.id },
           {
-            children: filteredChildren,
+            children: parent.children.filter(
+              ({ collection_id, token_id }) =>
+                !childrenSet.has(`${collection_id}_${token_id}`),
+            ),
           },
         );
 
@@ -155,10 +137,8 @@ export class TokenNestingService {
       const parent = await this.sdkService.getTokenParents(
         collection_id,
         token_id,
-        blockHash,
       );
 
-      console.log('parent', parent, collection_id, token_id, blockHash);
       if (parent) {
         await this.updateParent(
           parent.collectionId,
@@ -215,7 +195,6 @@ export class TokenNestingService {
   ) {
     const parents = await this.getParentsByChildren(collection_id, token_id);
 
-    console.log('parents', parents);
     for (const parent of parents) {
       await this.removeChildFromToken(parent, collection_id, token_id);
     }
@@ -233,7 +212,6 @@ export class TokenNestingService {
       WHERE children @> '[{"token_id":${token_id}, "collection_id": ${collection_id}}]'::jsonb
     `;
 
-    console.log('query', query);
     return this.dataSource.query(query);
   }
 
@@ -246,17 +224,6 @@ export class TokenNestingService {
     child_collection_id: number,
     child_token_id: number,
   ) {
-    const childs = parent.children.filter(
-      ({ token_id, collection_id }) =>
-        child_collection_id !== collection_id && child_token_id !== token_id,
-    );
-    console.log('filter childs', childs);
-    console.log(
-      'child_collection_id, child_token_id',
-      child_collection_id,
-      child_token_id,
-    );
-
     return this.tokensRepository.update(
       {
         collection_id: parent.collection_id,
@@ -265,8 +232,10 @@ export class TokenNestingService {
       {
         children: parent.children.filter(
           ({ token_id, collection_id }) =>
-            child_collection_id !== collection_id &&
-            child_token_id !== token_id,
+            !(
+              child_collection_id === collection_id &&
+              child_token_id === token_id
+            ),
         ),
       },
     );

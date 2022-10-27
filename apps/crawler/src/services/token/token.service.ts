@@ -82,13 +82,6 @@ export class TokenService {
       tokenType = TokenType.NESTED;
     }
 
-    console.log(
-      'needCheckNesting',
-      blockHash,
-      needCheckNesting,
-      collection_id,
-      token_id,
-    );
     const children: ITokenChild[] = needCheckNesting
       ? await this.nestingService.handleNesting(
           tokenData,
@@ -121,6 +114,7 @@ export class TokenService {
       burned: token?.burned ?? false,
       type: tokenType,
       children,
+      bundle_created: tokenType === TokenType.NFT ? null : undefined,
     };
   }
 
