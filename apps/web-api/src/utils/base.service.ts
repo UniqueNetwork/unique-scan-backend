@@ -244,7 +244,6 @@ export class BaseService<T, S> {
     const paramName = `${field}_${Date.now()}_${random(1, 1000)}`;
     const operation = this.getOrmWhereOperator(op);
     let query = '';
-
     switch (op) {
       case '_in':
         query = `${fieldWithAlias} ${operation} (:...${paramName})`;
@@ -254,6 +253,9 @@ export class BaseService<T, S> {
       case '_eq':
       case '_neq':
         query = `${fieldWithAlias} ${operation} :${paramName}`;
+        break;
+      case '_is_null':
+        query = `${fieldWithAlias} ${value ? 'is null' : 'is not null'}`;
         break;
       default:
         throw new Error(`Unknown filter operation: ${op}`);
