@@ -94,6 +94,9 @@ export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
   collection_name?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  token_name?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
   collection_id?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
@@ -110,6 +113,9 @@ export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   transfers_count?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  children_count?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   bundle_created?: GQLOrderByParamsArgs;

@@ -20,6 +20,7 @@ const relationsFields = {
   collection_owner: 'Collection',
   collection_owner_normalized: 'Collection',
   transfers_count: 'Statistics',
+  children_count: 'Statistics',
 };
 
 const aliasFields = {
