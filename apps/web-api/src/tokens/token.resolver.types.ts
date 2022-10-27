@@ -6,6 +6,7 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
+import { TokenType } from '@entities/Tokens';
 import {
   GQLOrderByParamsArgs,
   GQLQueryPaginationArgs,
@@ -20,7 +21,20 @@ import {
 import { SimpleTokenDTO, TokenDistinctFieldsEnum, TokenDTO } from './token.dto';
 import { CollectionDTO } from '../collection/collection.dto';
 
+registerEnumType(TokenType, { name: 'TokenTypeEnum' });
 registerEnumType(TokenDistinctFieldsEnum, { name: 'TokenEnum' });
+
+@InputType()
+export class GQLWhereTokensType {
+  @Field(() => TokenType, { nullable: true })
+  _eq?: TokenType;
+
+  @Field(() => TokenType, { nullable: true })
+  _neq?: TokenType;
+
+  @Field(() => [TokenType], { nullable: true })
+  _in?: TokenType[];
+}
 
 @InputType()
 export class AttributeFilterValue {
@@ -74,6 +88,9 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   burned?: IWhereOperators;
+
+  @Field(() => GQLWhereTokensType, { nullable: true })
+  type?: IWhereOperators;
 
   @Field(() => [TokenWhereParams], { nullable: true })
   _and?: TokenWhereParams[];

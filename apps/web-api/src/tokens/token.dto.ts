@@ -1,4 +1,4 @@
-import { Tokens } from '@entities/Tokens';
+import { Tokens, TokenType } from '@entities/Tokens';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSONObject, GraphQLJSON } from 'graphql-type-json';
 
@@ -58,6 +58,9 @@ export class SimpleTokenDTO implements Partial<Tokens> {
 
   @Field(() => Int, { nullable: true })
   bundle_created?: number;
+
+  @Field(() => TokenType, { nullable: true })
+  type?: TokenType;
 }
 
 @ObjectType('token')
