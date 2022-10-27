@@ -2,9 +2,14 @@ import { Collections } from '@entities/Collections';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { pickBy, isEmpty } from 'lodash';
+import { isEmpty } from 'lodash';
 import { BaseService } from '../utils/base.service';
-import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
+import { OperatorMethods } from '../utils/base.service.types';
+import {
+  IDataListResponse,
+  IGQLQueryArgs,
+  TWhere,
+} from '../utils/gql-query-args';
 import { CollectionDTO } from './collection.dto';
 import { TokenDTO } from '../tokens/token.dto';
 import { TokenService } from '../tokens/token.service';
@@ -15,22 +20,13 @@ const relationsFields = {
   holders_count: 'Statistics',
 };
 
-type TCollectionWithTokens = CollectionDTO & { tokens?: TokenDTO[] };
-
 @Injectable()
 export class CollectionService extends BaseService<Collections, CollectionDTO> {
-  private relations: string[] = [];
-
   constructor(
     @InjectRepository(Collections) private repo: Repository<Collections>,
     @Inject(forwardRef(() => TokenService)) private tokenService: TokenService,
   ) {
-    super({ relationsFields });
-
-    const relations = this.repo.metadata.ownRelations;
-    relations.forEach(({ propertyName }) => {
-      this.relations.push(propertyName);
-    });
+    super({ relationsFields, relations: ['tokens'] });
   }
 
   public async find(
@@ -66,37 +62,29 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     queryArgs: IGQLQueryArgs<CollectionDTO>,
   ): void {
     this.select(qb);
-    this.applyTokensSubQuery(qb, queryArgs);
     this.applyLimitOffset(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
-    this.applyWhereCondition(qb, this.getCollectionQueryArgs(queryArgs));
+    this.applyWhereCondition(
+      qb,
+      queryArgs,
+      this.applyRelationFilter.bind(this),
+    );
     this.applyDistinctOn(qb, queryArgs);
   }
 
-  private applyTokensSubQuery(
+  private applyRelationFilter(
     qb: SelectQueryBuilder<Collections>,
-    queryArgs: IGQLQueryArgs<TCollectionWithTokens>,
+    where: TWhere<TokenDTO>,
+    op?: OperatorMethods.AND,
   ) {
-    if (queryArgs.where?.tokens) {
-      const { query, params } = this.tokenService.getCollectionIdsQuery({
-        limit: null,
-        where: queryArgs.where.tokens,
-      } as IGQLQueryArgs<TokenDTO>);
+    const { query, params } = this.tokenService.getCollectionIdsQuery({
+      limit: null,
+      where,
+    } as IGQLQueryArgs<TokenDTO>);
 
-      if (!isEmpty(params)) {
-        qb.andWhere(`Collections.collection_id IN ( ${query} )`, params);
-      }
+    if (!isEmpty(params)) {
+      qb[op](`Collections.collection_id IN ( ${query} )`, params);
     }
-  }
-
-  private getCollectionQueryArgs(queryArgs: IGQLQueryArgs<CollectionDTO>) {
-    return {
-      ...queryArgs,
-      where: pickBy(
-        queryArgs.where,
-        (_val, key: string) => !this.relations.includes(key),
-      ),
-    } as IGQLQueryArgs<CollectionDTO>;
   }
 
   private select(qb: SelectQueryBuilder<Collections>): void {
