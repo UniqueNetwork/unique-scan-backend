@@ -1,44 +1,28 @@
-import { ScanProcessor } from './scan-processor';
 import { Injectable, Logger } from '@nestjs/common';
-import { Connection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Tokens } from '@entities/Tokens';
+import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
+import { Tokens } from '@entities/Tokens';
 import { SdkService } from '../sdk.service';
+import { ProcessorService } from './processor.service';
 import { EventName } from '@common/constants';
-import { normalizeSubstrateAddress, parseNestingAddress } from '@common/utils';
-import { ProcessorConfigService } from '../processor.config.service';
-
-type TokenData =
-  | {
-      name: string;
-      tokenPrefix: string;
-      owner: string;
-    }
-  | object; // todo: remove me
+import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import ISubscriberService from './subscriber.interface';
+import { TokenDecoded } from '@unique-nft/sdk/tokens';
 
 @Injectable()
-export class TokensProcessor {
-  private readonly logger = new Logger(TokensProcessor.name);
-  private processor: ScanProcessor;
-  public name = 'tokens';
+export class TokensSubscriberService implements ISubscriberService {
+  private readonly logger = new Logger(TokensSubscriberService.name);
 
   constructor(
     @InjectRepository(Tokens)
-    private modelRepository: Repository<Tokens>,
-    protected connection: Connection,
-    protected sdkService: SdkService,
-    private processorConfigService: ProcessorConfigService,
-  ) {
-    this.processor = new ScanProcessor(
-      this.name,
-      this.connection,
-      processorConfigService.getDataSource(),
-      processorConfigService.getRange(),
-      processorConfigService.getTypesBundle(),
-    );
+    private tokensRepository: Repository<Tokens>,
+    private processorService: ProcessorService,
+    private sdkService: SdkService,
+  ) {}
 
-    // todo: Remove some items when models rework is done
+  subscribe() {
     const EVENTS_TO_UPDATE = [
       // Insert
       EventName.ITEM_CREATED,
@@ -52,10 +36,13 @@ export class TokensProcessor {
     ];
 
     EVENTS_TO_UPDATE.forEach((eventName) =>
-      this.processor.addEventHandler(eventName, this.upsertHandler.bind(this)),
+      this.processorService.processor.addEventHandler(
+        eventName,
+        this.upsertHandler.bind(this),
+      ),
     );
 
-    this.processor.addEventHandler(
+    this.processorService.processor.addEventHandler(
       EventName.ITEM_DESTROYED,
       this.destroyHandler.bind(this),
     );
@@ -64,37 +51,54 @@ export class TokensProcessor {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
-  ): Promise<TokenData | null> {
+  ): Promise<TokenDecoded | null> {
     const result = await this.sdkService.getToken(collectionId, tokenId);
 
     return result ? result : null;
   }
 
-  prepareDataToWrite(sdkEntity) {
+  prepareDataToWrite(sdkEntity: TokenDecoded) {
     const {
-      id: token_id,
+      tokenId: token_id,
       collectionId: collection_id,
-      owner,
-      properties: { constData: data = {} } = {},
+      image,
+      attributes,
+      parent,
     } = sdkEntity;
 
-    const parsedNestingAddress = parseNestingAddress(owner);
-    const parent_id = parsedNestingAddress
-      ? `${parsedNestingAddress.collectionId}_${parsedNestingAddress.tokenId}`
-      : null;
+    const {
+      owner: rawOwner,
+    }: { owner: { Ethereum?: string; Substrate?: string } } = sdkEntity;
+
+    const owner = rawOwner?.Ethereum || rawOwner?.Substrate;
+
+    let parentId = null;
+    if (parent) {
+      const { collectionId, tokenId } = parent;
+      parentId = `${collectionId}_${tokenId}`;
+    }
 
     return {
       token_id,
       collection_id,
       owner,
       owner_normalized: normalizeSubstrateAddress(owner),
-      data,
-      parent_id,
+      // todo: Find out what should we store here
+      data: {
+        image: image.fullUrl || image.ipfsCid,
+        attributes: Object.fromEntries(
+          Object.values(attributes).map(({ name, value }) => [name, value]),
+        ),
+      },
+      parent_id: parentId,
     };
   }
 
-  private async upsertHandler(ctx: EventHandlerContext): Promise<void> {
-    const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
+  private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
+    const {
+      block: { height: blockNumber, timestamp: blockTimestamp },
+      event: { name: eventName, args },
+    } = ctx;
 
     const log = {
       eventName,
@@ -106,8 +110,7 @@ export class TokensProcessor {
     };
 
     try {
-      const collectionId = params[0].value as number;
-      const tokenId = params[1].value as number;
+      const [collectionId, tokenId] = args as [number, number];
 
       log.collectionId = collectionId;
       log.tokenId = tokenId;
@@ -124,11 +127,13 @@ export class TokensProcessor {
         log.entity = dataToWrite;
 
         // Write collection data into db
-        await this.modelRepository.upsert(
+        await this.tokensRepository.upsert(
           {
             ...dataToWrite,
             date_of_creation:
-              eventName === EventName.ITEM_CREATED ? blockTimestamp : undefined,
+              eventName === EventName.ITEM_CREATED
+                ? normalizeTimestamp(blockTimestamp)
+                : undefined,
           },
           ['collection_id', 'token_id'],
         );
@@ -137,7 +142,7 @@ export class TokensProcessor {
         log.entity = null;
 
         // Delete db record
-        await this.modelRepository.delete({
+        await this.tokensRepository.delete({
           collection_id: collectionId,
           token_id: tokenId,
         });
@@ -149,8 +154,11 @@ export class TokensProcessor {
     }
   }
 
-  private async destroyHandler(ctx: EventHandlerContext): Promise<void> {
-    const { name: eventName, blockNumber, blockTimestamp, params } = ctx.event;
+  private async destroyHandler(ctx: EventHandlerContext<Store>): Promise<void> {
+    const {
+      block: { height: blockNumber, timestamp: blockTimestamp },
+      event: { name: eventName, args },
+    } = ctx;
 
     const log = {
       eventName,
@@ -161,14 +169,13 @@ export class TokensProcessor {
     };
 
     try {
-      const collectionId = params[0].value as number;
-      const tokenId = params[1].value as number;
+      const [collectionId, tokenId] = args as [number, number];
 
       log.collectionId = collectionId;
       log.tokenId = tokenId;
 
       // Delete db record
-      await this.modelRepository.delete({
+      await this.tokensRepository.delete({
         collection_id: collectionId,
         token_id: tokenId,
       });
@@ -176,18 +183,6 @@ export class TokensProcessor {
       this.logger.verbose({ ...log });
     } catch (err) {
       this.logger.error({ ...log, error: err.message });
-      process.exit(1);
     }
-  }
-
-  public run(): void {
-    const params = this.processorConfigService.getAllParams();
-
-    this.logger.log({
-      msg: `Starting ${this.name} crawler...`,
-      params,
-    });
-
-    this.processor.run();
   }
 }
