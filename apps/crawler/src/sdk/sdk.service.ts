@@ -6,6 +6,7 @@ import {
   TokenByIdResult,
   TokenPropertiesResult,
 } from '@unique-nft/substrate-client/tokens';
+import { AllBalances } from '@unique-nft/substrate-client/types';
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 
@@ -21,7 +22,7 @@ export class SdkService {
   getCollection(
     collectionId: number,
   ): Promise<CollectionInfoWithSchema | null> {
-    return this.sdk.collections.get_new({ collectionId });
+    return this.sdk.collections.get({ collectionId });
   }
 
   @SdkCache('getCollectionLimits')
@@ -43,7 +44,7 @@ export class SdkService {
     collectionId: number,
     tokenId: number,
   ): Promise<TokenByIdResult | null> {
-    return this.sdk.tokens.get_new({ collectionId, tokenId });
+    return this.sdk.tokens.get({ collectionId, tokenId });
   }
 
   @SdkCache('getTokenProperties')
@@ -55,7 +56,7 @@ export class SdkService {
   }
 
   @SdkCache('getBalances')
-  getBalances(rawAddress: string) {
+  async getBalances(rawAddress: string): Promise<AllBalances> {
     return this.sdk.balance.get({ address: rawAddress });
   }
 }

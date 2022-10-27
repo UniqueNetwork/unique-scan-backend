@@ -1,6 +1,6 @@
 import { Collections } from '@entities/Collections';
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
-import { GraphQLJSON } from 'graphql-type-json';
+import { GraphQLJSON, GraphQLJSONObject } from 'graphql-type-json';
 
 export enum CollectionEnum {
   collection_id = 'collection_id',
@@ -44,6 +44,9 @@ export class CollectionDTO implements Partial<Collections> {
 
   @Field(() => Boolean)
   mint_mode?: boolean;
+
+  @Field(() => Boolean)
+  nesting_enabled?: boolean;
 
   @Field(() => Int, { nullable: true })
   limits_account_ownership?: number;
@@ -92,6 +95,9 @@ export class CollectionDTO implements Partial<Collections> {
 
   @Field(() => GraphQLJSON, { nullable: true })
   properties?: object;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  permissions?: object;
 
   @Field(() => GraphQLJSON, { nullable: true })
   token_property_permissions?: object;
