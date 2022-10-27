@@ -55,12 +55,10 @@ export class SdkService {
     return this.sdk.tokens.get({ collectionId, tokenId, at });
   }
 
-  @SdkCache('isBundle')
   isTokenBundle(collectionId: number, tokenId: number, at?: string) {
     return this.sdk.tokens.isBundle({ collectionId, tokenId, at });
   }
 
-  @SdkCache('getTokenBundle')
   getTokenBundle(collectionId: number, tokenId: number, at?: string) {
     return this.sdk.tokens.getBundle({
       collectionId,
@@ -69,7 +67,6 @@ export class SdkService {
     });
   }
 
-  @SdkCache('getTokenParents')
   getTokenParents(collectionId: number, tokenId: number, at?: string) {
     return this.sdk.tokens.parent({ collectionId, tokenId, at });
   }

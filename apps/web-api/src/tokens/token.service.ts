@@ -20,6 +20,7 @@ const relationsFields = {
   collection_owner: 'Collection',
   collection_owner_normalized: 'Collection',
   transfers_count: 'Statistics',
+  children_count: 'Statistics',
 };
 
 const aliasFields = {
@@ -231,6 +232,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.is_sold', 'is_sold');
     qb.addSelect('Tokens.burned', 'burned');
     qb.addSelect('Tokens.token_name', 'token_name');
+    qb.addSelect('Tokens.type', 'type');
     qb.addSelect(`split_part(Tokens.token_name, ' ', 1)`, 'token_prefix');
   }
 

@@ -114,6 +114,7 @@ export class TokenService {
       burned: token?.burned ?? false,
       type: tokenType,
       children,
+      bundle_created: tokenType === TokenType.NFT ? null : undefined,
     };
   }
 
