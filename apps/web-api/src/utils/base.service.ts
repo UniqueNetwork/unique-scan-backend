@@ -26,6 +26,34 @@ export class BaseService<T, S> {
     this.relations = relations;
   }
 
+  protected applySelect(qb: SelectQueryBuilder<T>, fieldsMap: S) {
+    let firstSelect = true;
+    // console.log(qb.getSql());
+
+    Object.entries(fieldsMap).forEach(([k, v]) => {
+      if (typeof v === 'object') {
+        // todo: Process nested object
+      } else {
+        // todo: Get value from service map
+        const selection = k;
+        // eslint-disable-next-line prefer-const
+        let selectionAliasName = undefined;
+
+        // console.log(selection, selectionAliasName);
+        if (firstSelect) {
+          console.log('select', selection, selectionAliasName);
+          qb.select(selection, selectionAliasName);
+          firstSelect = false;
+        } else {
+          qb.addSelect(selection, selectionAliasName);
+          console.log('addSelect', selection, selectionAliasName);
+        }
+      }
+    });
+
+    // console.log(qb.getSql());
+  }
+
   protected applyLimitOffset(
     qb: SelectQueryBuilder<T>,
     args: IGQLQueryArgs<S>,

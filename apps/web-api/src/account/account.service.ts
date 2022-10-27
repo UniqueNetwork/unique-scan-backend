@@ -21,16 +21,11 @@ export class AccountService extends BaseService<Account, AccountDTO> {
   @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<AccountDTO>,
+    queryFields: AccountDTO,
   ): Promise<IDataListResponse<Account>> {
     const qb = this.repo.createQueryBuilder();
-    qb.select('Account.account_id', 'account_id');
-    qb.addSelect('Account.available_balance', 'available_balance');
-    qb.addSelect('Account.free_balance', 'free_balance');
-    qb.addSelect('Account.locked_balance', 'locked_balance');
-    qb.addSelect('Account.timestamp', 'timestamp');
-    qb.addSelect('Account.block_height', 'block_height');
-    qb.addSelect('Account.account_id_normalized', 'account_id_normalized');
 
+    this.applySelect(qb, queryFields);
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);

@@ -59,11 +59,11 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     });
   }
 
-  public async statistic({
+  public statistic({
     fromDate,
     toDate,
   }: IDateRange): Promise<IStatsResponse[]> {
-    const qb = await this.repo.createQueryBuilder();
+    const qb = this.repo.createQueryBuilder();
     qb.select(`date_trunc('hour', TO_TIMESTAMP(date_of_creation))`, 'date');
     qb.addSelect('count(*)', 'count');
     qb.groupBy('date');
@@ -71,6 +71,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     if (fromDate) {
       qb.where(`"date_of_creation" >= ${this.formatDate(fromDate)}`);
     }
+
     if (toDate) {
       qb.andWhere(`"date_of_creation" <= ${this.formatDate(fromDate)}`);
     }
@@ -139,7 +140,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.schema_version', 'schema_version');
     qb.addSelect('Collections.sponsorship', 'sponsorship');
     qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
-    qb.addSelect('Collections.burned', 'burned')
+    qb.addSelect('Collections.burned', 'burned');
     qb.addSelect('Collections.properties', 'properties');
     qb.addSelect('Collections.permissions', 'permissions');
     qb.addSelect(
