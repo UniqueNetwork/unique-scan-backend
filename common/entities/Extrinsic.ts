@@ -33,9 +33,6 @@ export class Extrinsic {
   @Column('text', { name: 'hash' })
   hash: string;
 
-  @Column('text', { name: 'doc' })
-  doc: string;
-
   @Column('boolean', { name: 'success' })
   success: boolean;
 

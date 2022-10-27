@@ -50,11 +50,11 @@ export class Collections {
   @Column('integer', { name: 'limits_sponsore_data_rate', nullable: true })
   limits_sponsore_data_rate: number | null;
 
-  @Column('boolean', { name: 'owner_can_transfer', default: false })
-  owner_can_transfer: boolean;
+  @Column('boolean', { name: 'owner_can_transfer', nullable: true })
+  owner_can_transfer: boolean | null;
 
-  @Column('boolean', { name: 'owner_can_destroy', default: false })
-  owner_can_destroy: boolean;
+  @Column('boolean', { name: 'owner_can_destroy', nullable: true })
+  owner_can_destroy: boolean | null;
 
   @Column('character varying', {
     name: 'sponsorship',
