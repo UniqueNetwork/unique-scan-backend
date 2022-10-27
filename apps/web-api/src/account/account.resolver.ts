@@ -8,7 +8,6 @@ import {
   Query,
   Resolver,
 } from '@nestjs/graphql';
-import { fieldsMap } from 'graphql-fields-list';
 import {
   DateRangeArgs,
   GQLOrderByParamsArgs,
@@ -93,10 +92,7 @@ export class AccountResolver {
     @Args() args: QueryArgs,
     @Info() info,
   ): Promise<IDataListResponse<AccountDTO>> {
-    return this.service.find(
-      args,
-      fieldsMap(info, { path: 'data', skip: ['__*', 'data.__*'] }),
-    );
+    return this.service.find(args, info);
   }
 
   @Query(() => StatisticDataResponse)

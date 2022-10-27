@@ -6,6 +6,7 @@ import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { BlockDto } from './block.dto';
 import { SentryWrapper } from '../utils/sentry.decorator';
+import { GraphQLResolveInfo } from 'graphql';
 
 @Injectable()
 export class BlockService extends BaseService<Block, BlockDto> {
@@ -16,25 +17,11 @@ export class BlockService extends BaseService<Block, BlockDto> {
   @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<BlockDto>,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<Block>> {
     const qb = this.repo.createQueryBuilder();
 
-    qb.select([
-      'block_number',
-      'timestamp',
-      'block_hash',
-      'parent_hash',
-      'extrinsics_root',
-      'state_root',
-      'spec_name',
-      'spec_version',
-      'total_events',
-      'num_transfers',
-      'new_accounts',
-      'timestamp',
-      'total_extrinsics',
-    ]);
-
+    this.applySelect(qb, this.getQueryFields(queryInfo));
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);

@@ -12,6 +12,8 @@ import {
   OperatorMethods,
   TParamValue,
 } from './base.service.types';
+import { FieldsListOptions, fieldsMap } from 'graphql-fields-list';
+import { GraphQLResolveInfo } from 'graphql';
 
 export class BaseService<T, S> {
   private readonly DEFAULT_PAGE_SIZE = 10;
@@ -26,11 +28,18 @@ export class BaseService<T, S> {
     this.relations = relations;
   }
 
-  protected applySelect(qb: SelectQueryBuilder<T>, fieldsMap: S) {
+  protected getQueryFields(
+    info: GraphQLResolveInfo,
+    options: FieldsListOptions = { path: 'data', skip: ['__*', 'data.__*'] },
+  ) {
+    return fieldsMap(info, options);
+  }
+
+  protected applySelect(qb: SelectQueryBuilder<T>, queryFields: S) {
     let firstSelect = true;
     // console.log(qb.getSql());
 
-    Object.entries(fieldsMap).forEach(([k, v]) => {
+    Object.entries(queryFields).forEach(([k, v]) => {
       if (typeof v === 'object') {
         // todo: Process nested object
       } else {
@@ -41,12 +50,12 @@ export class BaseService<T, S> {
 
         // console.log(selection, selectionAliasName);
         if (firstSelect) {
-          console.log('select', selection, selectionAliasName);
+          // console.log('select', selection, selectionAliasName);
           qb.select(selection, selectionAliasName);
           firstSelect = false;
         } else {
           qb.addSelect(selection, selectionAliasName);
-          console.log('addSelect', selection, selectionAliasName);
+          // console.log('addSelect', selection, selectionAliasName);
         }
       }
     });

@@ -11,6 +11,7 @@ import {
 } from '../utils/gql-query-args';
 import { AccountDTO } from './account.dto';
 import { SentryWrapper } from '../utils/sentry.decorator';
+import { GraphQLResolveInfo } from 'graphql';
 
 @Injectable()
 export class AccountService extends BaseService<Account, AccountDTO> {
@@ -21,11 +22,11 @@ export class AccountService extends BaseService<Account, AccountDTO> {
   @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<AccountDTO>,
-    queryFields: AccountDTO,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<Account>> {
     const qb = this.repo.createQueryBuilder();
 
-    this.applySelect(qb, queryFields);
+    this.applySelect(qb, this.getQueryFields(queryInfo));
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
