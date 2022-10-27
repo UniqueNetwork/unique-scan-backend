@@ -66,6 +66,9 @@ export const EventName = {
   BALANCES_ENDOWED: `${EventSection.BALANCES}.${EventMethod.ENDOWED}`,
   BALANCES_WITHDRAW: `${EventSection.BALANCES}.${EventMethod.WITHDRAW}`,
   BALANCES_TRANSFER: `${EventSection.BALANCES}.${EventMethod.TRANSFER}`,
+
+  // Treasury
+  TREASURY_DEPOSIT: `${EventSection.TREASURY}.${EventMethod.DEPOSIT}`,
 };
 
 export enum ExtrinsicSection {
@@ -82,9 +85,20 @@ export enum ExtrinsicMethod {
   VESTED_TRANSFER = 'vested_transfer',
 }
 
-export const ETHEREUM_ADDRESS_MAX_LENGTH = 42;
-
 export const STATE_SCHEMA_NAME_BY_MODE = {
   SCAN: 'scan_status',
   RESCAN: 'rescan_status',
 };
+
+export enum SubscriberName {
+  ACCOUNTS = 'account',
+  BLOCKS = 'blocks',
+  COLLECTIONS = 'collections',
+  TOKENS = 'tokens',
+}
+
+export enum SubscriberAction {
+  UPSERT = 'UPSERT',
+  DELETE = 'DELETE',
+  DELETE_NOT_FOUND = 'DELETE: NOT FOUND',
+}

@@ -26,24 +26,19 @@ export class BlockService extends BaseService<Block, BlockDto> {
       'parent_hash',
       'extrinsics_root',
       'state_root',
-      'session_length',
       'spec_name',
       'spec_version',
       'total_events',
       'num_transfers',
       'new_accounts',
-      'total_issuance',
       'timestamp',
       'total_extrinsics',
-      'need_rescan',
     ]);
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
 
-    const data = await qb.getRawMany();
-    const count = await qb.getCount();
-    return { data, count };
+    return this.getDataAndCount(qb, queryArgs);
   }
 }

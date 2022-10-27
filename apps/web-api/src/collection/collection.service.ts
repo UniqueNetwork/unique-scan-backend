@@ -40,10 +40,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     const qb = this.repo.createQueryBuilder();
     this.applyFilters(qb, queryArgs);
 
-    const data = await qb.getRawMany();
-    const count = await this.getCountByFilters(qb, queryArgs);
-
-    return { data, count };
+    return this.getDataAndCount(qb, queryArgs);
   }
 
   public async findOne(
@@ -141,6 +138,11 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.schema_version', 'schema_version');
     qb.addSelect('Collections.sponsorship', 'sponsorship');
     qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
+    qb.addSelect('Collections.properties', 'properties');
+    qb.addSelect(
+      'Collections.token_property_permissions',
+      'token_property_permissions',
+    );
     qb.addSelect(
       `COALESCE("Statistics".tokens_count, 0::bigint)`,
       'tokens_count',

@@ -8,7 +8,7 @@ import {
 } from '@subsquid/typeorm-store';
 import { Connection, DataSource } from 'typeorm';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
-import { ProcessorConfigService } from '../processor.config.service';
+import { ProcessorConfigService } from '../../config/processor.config.service';
 
 interface IScanDatabaseOptions extends TypeormDatabaseOptions {
   stateSchema: string;
@@ -70,10 +70,9 @@ export class ProcessorService {
     private processorConfigService: ProcessorConfigService,
     @InjectSentry() private readonly sentry: SentryService,
   ) {
-    this.stateSchema =
-      this.processorConfigService.getForceMode() === 'true'
-        ? STATE_SCHEMA_NAME_BY_MODE.RESCAN
-        : STATE_SCHEMA_NAME_BY_MODE.SCAN;
+    this.stateSchema = this.processorConfigService.isRescan()
+      ? STATE_SCHEMA_NAME_BY_MODE.RESCAN
+      : STATE_SCHEMA_NAME_BY_MODE.SCAN;
 
     const db = new ScanDatabase({
       stateSchema: this.stateSchema,

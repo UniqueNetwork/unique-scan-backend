@@ -1,26 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
-import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { Store } from '@subsquid/typeorm-store';
-import { Collections } from '@entities/Collections';
-import { Tokens } from '@entities/Tokens';
 import { EventName } from '@common/constants';
 import {
   normalizeSubstrateAddress,
   normalizeTimestamp,
   sanitizePropertiesValues,
 } from '@common/utils';
+import { Collections } from '@entities/Collections';
+import { Tokens } from '@entities/Tokens';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import {
   CollectionInfoWithSchema,
   CollectionLimits,
   CollectionProperty,
   UniqueCollectionSchemaDecoded,
+  PropertyKeyPermission,
 } from '@unique-nft/substrate-client/tokens';
-import { SdkService } from '../sdk/sdk.service';
-import { ProcessorService } from './processor.service';
-import ISubscriberService from './subscriber.interface';
-import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
+import { Repository } from 'typeorm';
 
 type ParsedSchemaFields = {
   collectionCover?: string;
@@ -30,62 +25,22 @@ type ParsedSchemaFields = {
   variableOnChainSchema?: object;
 };
 
+export interface ICollectionData {
+  collectionDecoded: CollectionInfoWithSchema | null;
+  collectionLimits: CollectionLimits | null;
+  tokenPropertyPermissions: PropertyKeyPermission[];
+}
+
 @Injectable()
-export class CollectionsSubscriberService implements ISubscriberService {
-  private readonly logger = new Logger(CollectionsSubscriberService.name);
+export class CollectionWriterService {
+  private readonly logger = new Logger(CollectionWriterService.name);
 
   constructor(
     @InjectRepository(Collections)
     private collectionsRepository: Repository<Collections>,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
-    private processorService: ProcessorService,
-    private sdkService: SdkService,
-    @InjectSentry() private readonly sentry: SentryService,
-  ) {
-    this.sentry.setContext(CollectionsSubscriberService.name);
-  }
-
-  subscribe() {
-    // todo: Remove some items when models rework is done
-    const EVENTS_TO_UPDATE_COLLECTION = [
-      // Insert
-      EventName.COLLECTION_CREATED,
-
-      // Update
-      EventName.COLLECTION_PROPERTY_SET,
-      EventName.COLLECTION_PROPERTY_DELETED,
-      EventName.PROPERTY_PERMISSION_SET,
-      EventName.COLLECTION_SPONSOR_REMOVED,
-      EventName.COLLECTION_OWNED_CHANGED,
-      EventName.SPONSORSHIP_CONFIRMED,
-      // EventName.ALLOW_LIST_ADDRESS_ADDED, // todo: Too many events. Do we really need to process this event?
-      EventName.ALLOW_LIST_ADDRESS_REMOVED,
-      EventName.COLLECTION_LIMIT_SET,
-      EventName.COLLECTION_SPONSOR_SET,
-    ];
-
-    EVENTS_TO_UPDATE_COLLECTION.forEach((eventName) =>
-      this.processorService.processor.addEventHandler(
-        eventName,
-        this.upsertHandler.bind(this),
-      ),
-    );
-
-    this.processorService.processor.addEventHandler(
-      EventName.COLLECTION_DESTROYED,
-      this.destroyHandler.bind(this),
-    );
-  }
-
-  private async getCollectionData(
-    collectionId: number,
-  ): Promise<[CollectionInfoWithSchema | null, CollectionLimits | null]> {
-    return Promise.all([
-      this.sdkService.getCollection(collectionId),
-      this.sdkService.getCollectionLimits(collectionId),
-    ]);
-  }
+  ) {}
 
   private processJsonStringifiedValue(rawValue) {
     let result: object | null = null;
@@ -178,10 +133,10 @@ export class CollectionsSubscriberService implements ISubscriberService {
     return result as UniqueCollectionSchemaDecoded;
   }
 
-  prepareDataToWrite(
-    collectionInfo: CollectionInfoWithSchema,
-    collectionLimits: CollectionLimits,
-  ) {
+  private prepareDataForDb(collectionData: ICollectionData): Collections {
+    const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
+      collectionData;
+
     const {
       id: collection_id,
       owner,
@@ -191,9 +146,9 @@ export class CollectionsSubscriberService implements ISubscriberService {
       tokenPrefix: token_prefix,
       mode,
       schema,
-      permissions: { mintMode: mint_mode },
+      permissions,
       properties = [],
-    } = collectionInfo;
+    } = collectionDecoded;
 
     let schemaFromProperties = {} as UniqueCollectionSchemaDecoded;
     if (!schema) {
@@ -231,6 +186,7 @@ export class CollectionsSubscriberService implements ISubscriberService {
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
       properties: sanitizePropertiesValues(properties),
+      token_property_permissions: tokenPropertyPermissions,
       attributes_schema: attributesSchema,
       const_chain_schema: constOnChainSchema,
       variable_on_chain_schema: variableOnChainSchema,
@@ -243,105 +199,44 @@ export class CollectionsSubscriberService implements ISubscriberService {
       schema_version: schemaVersion,
       token_prefix,
       mode,
-      mint_mode,
+      mint_mode: permissions.mintMode,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
     };
   }
 
-  private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
-    const {
-      block: { height: blockNumber, timestamp: blockTimestamp },
-      event: { name: eventName, args },
-    } = ctx;
+  async upsert({
+    eventName,
+    blockTimestamp,
+    collectionData,
+  }: {
+    eventName: string;
+    blockTimestamp: number;
+    collectionData: ICollectionData;
+  }) {
+    const preparedData = this.prepareDataForDb(collectionData);
 
-    const log = {
-      eventName,
-      blockNumber,
-      blockTimestamp,
-      entity: null as null | object | string,
-      collectionId: null as null | number,
-    };
-
-    try {
-      const collectionId = this.getCollectionIdFromArgs(args);
-
-      log.collectionId = collectionId;
-
-      const [collectionInfo, collectionLimits] = await this.getCollectionData(
-        collectionId,
-      );
-
-      if (collectionInfo) {
-        const dataToWrite = this.prepareDataToWrite(
-          collectionInfo,
-          collectionLimits,
-        );
-
-        // console.log('dataToWrite', dataToWrite);
-
-        // Do not log the full entity because this object is quite big
-        log.entity = dataToWrite.name;
-
-        await this.collectionsRepository.upsert(
-          {
-            ...dataToWrite,
-            date_of_creation:
-              eventName === EventName.COLLECTION_CREATED
-                ? normalizeTimestamp(blockTimestamp)
-                : undefined,
-          },
-          ['collection_id'],
-        );
-      } else {
-        // No entity returned from sdk. Most likely it was destroyed in a future block.
-        log.entity = null;
-
-        await this.deleteCollection(collectionId);
-      }
-
-      this.logger.verbose({ ...log });
-    } catch (err) {
-      this.logger.error({ ...log, error: err.message });
-    }
+    return this.collectionsRepository.upsert(
+      {
+        ...preparedData,
+        date_of_creation:
+          eventName === EventName.COLLECTION_CREATED
+            ? normalizeTimestamp(blockTimestamp)
+            : undefined,
+      },
+      ['collection_id'],
+    );
   }
 
-  private async destroyHandler(ctx: EventHandlerContext<Store>): Promise<void> {
-    const {
-      block: { height: blockNumber, timestamp: blockTimestamp },
-      event: { name: eventName, args },
-    } = ctx;
-
-    const log = {
-      eventName,
-      blockNumber,
-      blockTimestamp,
-      collectionId: null as null | number,
-    };
-
-    try {
-      const collectionId = this.getCollectionIdFromArgs(args);
-
-      log.collectionId = collectionId;
-
-      await this.deleteCollection(collectionId);
-
-      this.logger.verbose({ ...log });
-    } catch (error) {
-      this.logger.error({ ...log, error: error.message });
-      this.sentry.instance().captureException({ ...log, error });
-    }
+  async delete(collectionId: number) {
+    return this.deleteCollectionWithTokens(collectionId);
   }
 
   // Delete db collection record and related tokens
-  private deleteCollection(collectionId) {
+  private async deleteCollectionWithTokens(collectionId: number) {
     return Promise.all([
       this.collectionsRepository.delete(collectionId),
       this.tokensRepository.delete({ collection_id: collectionId }),
     ]);
-  }
-
-  private getCollectionIdFromArgs(args): number {
-    return typeof args === 'number' ? args : (args[0] as number);
   }
 }
