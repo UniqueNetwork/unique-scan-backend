@@ -44,7 +44,6 @@ export class TokenNestingService {
         const nestingBundle = await this.sdkService.getTokenBundle(
           collection_id,
           token_id,
-          blockHash,
         );
 
         children = this.getTokenChildren(
@@ -75,7 +74,13 @@ export class TokenNestingService {
 
       // The token bundle has been unnested. Remove all children from old parents
       if (tokenFromDb?.parent_id && isBundle && !parentId) {
-        await this.unnestBundle(tokenFromDb, tokenFromDb.children);
+        await this.unnestBundle(tokenFromDb, [
+          ...tokenFromDb.children,
+          {
+            token_id,
+            collection_id,
+          },
+        ]);
       }
 
       return children;
@@ -84,7 +89,6 @@ export class TokenNestingService {
     }
   }
 
-  // TODO: Find a way without recursion
   private async unnestBundle(
     token: Tokens,
     childrenToBeDeleted: ITokenChild[],
@@ -104,15 +108,14 @@ export class TokenNestingService {
             ({ collection_id, token_id }) => `${collection_id}_${token_id}`,
           ),
         );
-        const filteredChildren = parent.children.filter(
-          ({ collection_id, token_id }) =>
-            !childrenSet.has(`${collection_id}_${token_id}`),
-        );
 
         await this.tokensRepository.update(
           { id: parent.id },
           {
-            children: filteredChildren,
+            children: parent.children.filter(
+              ({ collection_id, token_id }) =>
+                !childrenSet.has(`${collection_id}_${token_id}`),
+            ),
           },
         );
 
@@ -134,7 +137,6 @@ export class TokenNestingService {
       const parent = await this.sdkService.getTokenParents(
         collection_id,
         token_id,
-        blockHash,
       );
 
       if (parent) {
@@ -207,7 +209,7 @@ export class TokenNestingService {
     const query = `
       SELECT collection_id, token_id, children
       FROM tokens
-      WHERE children @> '[{"token_id":${token_id}, "collection_id": ${collection_id}]'::jsonb
+      WHERE children @> '[{"token_id":${token_id}, "collection_id": ${collection_id}}]'::jsonb
     `;
 
     return this.dataSource.query(query);
@@ -230,8 +232,10 @@ export class TokenNestingService {
       {
         children: parent.children.filter(
           ({ token_id, collection_id }) =>
-            child_collection_id !== collection_id &&
-            child_token_id !== token_id,
+            !(
+              child_collection_id === collection_id &&
+              child_token_id === token_id
+            ),
         ),
       },
     );
