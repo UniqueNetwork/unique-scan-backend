@@ -7,6 +7,7 @@ import {
   SubstrateBlock,
   SubstrateExtrinsic,
 } from '@subsquid/substrate-processor';
+import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor.service';
 import ISubscriberService from './subscriber.interface';
 import { Block } from '@entities/Block';
@@ -23,24 +24,17 @@ import {
 } from '@common/constants';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Event } from '@entities/Event';
+import { Prefix } from '@unique-nft/api/.';
 
 const EVENT_TRANSFER = `${EventSection.BALANCES}.${EventMethod.TRANSFER}`;
 const EVENT_ENDOWED = `${EventSection.BALANCES}.${EventMethod.ENDOWED}`;
 
-const EXTRINSICS_SECTIONS_TO_SKIP = [
-  ExtrinsicSection.PARACHAIN_SYSTEM,
-  ExtrinsicSection.TIMESTAMP,
-];
-
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
+  ExtrinsicMethod.TRANSFER_FROM,
   ExtrinsicMethod.TRANSFER_ALL,
   ExtrinsicMethod.TRANSFER_KEEP_ALIVE,
   ExtrinsicMethod.VESTED_TRANSFER,
-];
-
-const EVENT_NAMES_TO_SKIP = [
-  `${EventSection.SYSTEM}.${EventMethod.EXTRINSIC_SUCCESS}`,
 ];
 
 interface IExtrinsicExtended extends SubstrateExtrinsic {
@@ -76,6 +70,7 @@ interface IExtrinsicRecipient {
 interface IBlockCommonData {
   timestamp: number;
   blockNumber: number;
+  ss58Prefix: Prefix;
 }
 
 @Injectable()
@@ -83,17 +78,15 @@ export class BlocksSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(BlocksSubscriberService.name);
 
   constructor(
-    @InjectRepository(Block)
-    private blocksRepository: Repository<Block>,
-
+    @InjectRepository(Block) private blocksRepository: Repository<Block>,
     @InjectRepository(Extrinsic)
     private extrinsicsRepository: Repository<Extrinsic>,
-
-    @InjectRepository(Event)
-    private eventsRepository: Repository<Event>,
-
+    @InjectRepository(Event) private eventsRepository: Repository<Event>,
+    @InjectSentry() private readonly sentry: SentryService,
     private processorService: ProcessorService,
-  ) {}
+  ) {
+    this.sentry.setContext(BlocksSubscriberService.name);
+  }
 
   subscribe() {
     this.processorService.processor.addPreHook(
@@ -132,7 +125,8 @@ export class BlocksSubscriberService implements ISubscriberService {
         return acc;
       }
 
-      const rawAmount = args?.amount || args?.value;
+      const rawAmount =
+        typeof args === 'string' ? args : args?.amount || args?.value;
 
       if (name === `${EventSection.BALANCES}.${EventMethod.TRANSFER}`) {
         // Save extrinsic amount
@@ -158,14 +152,26 @@ export class BlocksSubscriberService implements ISubscriberService {
     };
   }
 
-  private processContextData(block: SubstrateBlock, items: IBlockItem[]) {
+  private processContextData({
+    block,
+    items,
+    ss58Prefix,
+  }: {
+    block: SubstrateBlock;
+    items: IBlockItem[];
+    ss58Prefix: Prefix;
+  }) {
     const processedEventsItems = this.processEventItems(items);
 
     const processedExtrinsicsItems = this.processExtrinsicItems(items);
 
     const { height: blockNumber, timestamp: rawTimestamp } = block;
     const timestamp = normalizeTimestamp(rawTimestamp);
-    const blockCommonData = { blockNumber, timestamp } as IBlockCommonData;
+    const blockCommonData = {
+      blockNumber,
+      timestamp,
+      ss58Prefix,
+    } as IBlockCommonData;
 
     // Create extrinsics data to write
     const { extrinsicsValues } = processedEventsItems;
@@ -241,40 +247,37 @@ export class BlocksSubscriberService implements ISubscriberService {
           ExtrinsicMethod,
         ];
 
-        // Skip processing common extrinsic types
-        if (EXTRINSICS_SECTIONS_TO_SKIP.includes(section)) {
-          return null;
-        }
+        const { timestamp, blockNumber, ss58Prefix } = blockCommonData;
 
         let signer = null;
         const { signature } = extrinsic;
         if (signature) {
-          ({
-            address: { value: signer },
-          } = signature);
+          const {
+            address: { value: rawSigner },
+          } = signature;
+
+          signer = normalizeSubstrateAddress(rawSigner, ss58Prefix);
         }
+
+        const {
+          call: { args },
+        } = extrinsic;
 
         let toOwner = null;
         if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
-          const {
-            call: { args },
-          } = extrinsic;
-
           const recipientAddress = args as IExtrinsicRecipient;
-          toOwner =
+          const rawToOwner =
             recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
+          toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix);
         }
 
         const { id, hash, indexInBlock, success } = extrinsic;
 
         const { amount = '0', fee = '0' } = extrinsicsEventValues[id] || {};
 
-        const { timestamp, blockNumber } = blockCommonData;
-
         return {
           timestamp: String(timestamp),
           block_number: String(blockNumber),
-          // todo: Do we need this field?
           block_index: `${blockNumber}-${indexInBlock}`,
           extrinsic_index: indexInBlock,
           section,
@@ -286,8 +289,6 @@ export class BlocksSubscriberService implements ISubscriberService {
           signer_normalized: signer && normalizeSubstrateAddress(signer),
           to_owner: toOwner,
           to_owner_normalized: toOwner && normalizeSubstrateAddress(toOwner),
-          // todo: Do we realy need that data?
-          args: '', // JSON.stringify(args),
           amount,
           fee,
         };
@@ -304,11 +305,6 @@ export class BlocksSubscriberService implements ISubscriberService {
         const { name, indexInBlock, phase, extrinsic, args } = event;
         const { timestamp, blockNumber } = blockCommonData;
 
-        // Skip redundant events
-        if (phase === 'Initialization' || EVENT_NAMES_TO_SKIP.includes(name)) {
-          return null;
-        }
-
         const [section, method] = name.split('.') as [
           EventSection,
           EventMethod,
@@ -320,8 +316,9 @@ export class BlocksSubscriberService implements ISubscriberService {
           timestamp: String(timestamp),
           block_number: String(blockNumber),
           event_index: indexInBlock,
-          // todo: Do we need this field?
-          block_index: `${blockNumber}-${indexInBlock}`,
+          block_index: `${blockNumber}-${
+            extrinsic ? extrinsic.indexInBlock : ''
+          }`,
           section,
           method,
           // todo: Make more clean connect to extrinsic
@@ -336,7 +333,6 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: BlockHandlerContext<Store>): Promise<void> {
     const { block, items } = ctx;
-
     const { height: blockNumber } = block;
 
     const log = {
@@ -344,9 +340,17 @@ export class BlocksSubscriberService implements ISubscriberService {
     };
 
     try {
+      const ss58Prefix = ctx._chain?.getConstant(
+        'System',
+        'SS58Prefix',
+      ) as Prefix;
+
       const { blockData, extrinsicsData, eventsData } = this.processContextData(
-        block,
-        items,
+        {
+          block,
+          items,
+          ss58Prefix,
+        },
       );
 
       await Promise.all([
@@ -371,6 +375,7 @@ export class BlocksSubscriberService implements ISubscriberService {
       });
     } catch (error) {
       this.logger.error({ ...log, error: error.message || error });
+      this.sentry.instance().captureException({ ...log, error });
     }
   }
 }

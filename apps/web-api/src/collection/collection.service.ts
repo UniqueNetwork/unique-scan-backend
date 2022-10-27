@@ -15,11 +15,13 @@ import {
 import { CollectionDTO } from './collection.dto';
 import { TokenDTO } from '../tokens/token.dto';
 import { TokenService } from '../tokens/token.service';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 const relationsFields = {
   tokens_count: 'Statistics',
   actions_count: 'Statistics',
   holders_count: 'Statistics',
+  transfers_count: 'Statistics',
 };
 
 @Injectable()
@@ -31,6 +33,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     super({ relationsFields, relations: ['tokens'] });
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<CollectionDTO>,
   ): Promise<IDataListResponse<CollectionDTO>> {
@@ -120,6 +123,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.collection_cover', 'collection_cover');
     qb.addSelect('Collections.mode', 'type');
     qb.addSelect('Collections.mint_mode', 'mint_mode');
+    qb.addSelect('Collections.attributes_schema', 'attributes_schema');
     qb.addSelect(
       'Collections.limits_account_ownership',
       'limits_account_ownership',
@@ -138,27 +142,26 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     qb.addSelect('Collections.sponsorship', 'sponsorship');
     qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
     qb.addSelect(
-      `CASE
-        WHEN COALESCE("Statistics".tokens_count, 0::bigint) > 0 THEN COALESCE("Statistics".tokens_count, 0::bigint)
-        ELSE 0::bigint
-      END`,
+      `COALESCE("Statistics".tokens_count, 0::bigint)`,
       'tokens_count',
     );
     qb.addSelect(
-      `CASE
-        WHEN COALESCE("Statistics".holders_count, 0::bigint) > 0 THEN COALESCE("Statistics".holders_count, 0::bigint)
-        ELSE 0::bigint
-      END`,
+      `COALESCE("Statistics".holders_count, 0::bigint)`,
       'holders_count',
     );
     qb.addSelect(
-      `CASE
-        WHEN COALESCE("Statistics".actions_count, 0::bigint) > 0 THEN COALESCE("Statistics".actions_count, 0::bigint)
-        ELSE 0::bigint
-      END`,
+      `COALESCE("Statistics".actions_count, 0::bigint)`,
       'actions_count',
     );
+    qb.addSelect(
+      `COALESCE("Statistics".transfers_count, 0::bigint)`,
+      'transfers_count',
+    );
     qb.addSelect('Collections.date_of_creation', 'date_of_creation');
-    qb.leftJoin('Collections.statistics', 'Statistics');
+    qb.leftJoin(
+      'collections_stats',
+      'Statistics',
+      '"Collections".collection_id = "Statistics".collection_id',
+    );
   }
 }

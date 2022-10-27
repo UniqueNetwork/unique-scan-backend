@@ -17,7 +17,7 @@ export class CrawlerService {
     private tokensSubscriberService: TokensSubscriberService,
   ) {}
 
-  async subscribe(forceRescan = false) {
+  run(forceRescan = false) {
     if (this.configService.get('ACCOUNTS_SUBSCRIBER_DISABLE') !== 'true') {
       this.accountsSubscriberService.subscribe();
     }

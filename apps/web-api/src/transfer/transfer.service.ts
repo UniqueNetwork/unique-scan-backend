@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { TransferDTO } from './transfer.dto';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 @Injectable()
 export class TransferService extends BaseService<Event, TransferDTO> {
@@ -12,6 +13,7 @@ export class TransferService extends BaseService<Event, TransferDTO> {
     super();
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<TransferDTO>,
   ): Promise<IDataListResponse<Event>> {

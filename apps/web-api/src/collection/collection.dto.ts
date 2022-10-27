@@ -78,9 +78,15 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => Int)
   actions_count?: number;
 
+  @Field(() => Int)
+  transfers_count?: number;
+
   @Field(() => Int, { nullable: true })
   date_of_creation?: number;
 
   @Field(() => GraphQLJSON, { nullable: true })
   variable_on_chain_schema?: object;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  attributes_schema?: object;
 }

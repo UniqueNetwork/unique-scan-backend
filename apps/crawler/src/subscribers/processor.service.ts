@@ -1,3 +1,4 @@
+import { STATE_SCHEMA_NAME_BY_MODE } from '@common/constants';
 import { Injectable, Logger } from '@nestjs/common';
 import { SubstrateProcessor } from '@subsquid/substrate-processor';
 import {
@@ -6,6 +7,7 @@ import {
   TypeormDatabaseOptions,
 } from '@subsquid/typeorm-store';
 import { Connection, DataSource } from 'typeorm';
+import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorConfigService } from '../processor.config.service';
 
 interface IScanDatabaseOptions extends TypeormDatabaseOptions {
@@ -14,6 +16,8 @@ interface IScanDatabaseOptions extends TypeormDatabaseOptions {
 }
 
 class ScanDatabase extends TypeormDatabase {
+  private readonly sentry = new SentryService();
+
   constructor(options: IScanDatabaseOptions) {
     const { con, ...typeormDatabaseOptions } = options;
     super(typeormDatabaseOptions);
@@ -46,6 +50,7 @@ class ScanDatabase extends TypeormDatabase {
     } catch (e: any) {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       await this.con.destroy().catch(() => {}); // ignore error
+      this.sentry.instance().captureException(e);
       throw e;
     }
   }
@@ -53,7 +58,7 @@ class ScanDatabase extends TypeormDatabase {
 
 @Injectable()
 export class ProcessorService {
-  private stateSchema = 'scan_status';
+  private stateSchema;
 
   private substrateProcessor: SubstrateProcessor<Store>;
 
@@ -63,17 +68,27 @@ export class ProcessorService {
     private dataSource: DataSource,
     private connection: Connection,
     private processorConfigService: ProcessorConfigService,
+    @InjectSentry() private readonly sentry: SentryService,
   ) {
+    this.stateSchema =
+      this.processorConfigService.getForceMode() === 'true'
+        ? STATE_SCHEMA_NAME_BY_MODE.RESCAN
+        : STATE_SCHEMA_NAME_BY_MODE.SCAN;
+
     const db = new ScanDatabase({
       stateSchema: this.stateSchema,
       con: this.connection,
     });
 
     this.substrateProcessor = new SubstrateProcessor(db);
+    this.substrateProcessor.setPrometheusPort(
+      this.processorConfigService.getPrometheusPort(),
+    );
 
     this.substrateProcessor
       .setDataSource(this.processorConfigService.getDataSource())
-      .setBlockRange(this.processorConfigService.getRange());
+      .setBlockRange(this.processorConfigService.getRange())
+      .setBatchSize(this.processorConfigService.getBatchSize());
   }
 
   async run(forceRescan) {
@@ -82,9 +97,7 @@ export class ProcessorService {
       forceRescan,
       ...this.processorConfigService.getAllParams(),
     });
-
     const range = this.processorConfigService.getRange();
-
     if (forceRescan && !isNaN(range.from)) {
       try {
         // Set status height to range.from to rescan old blocks
@@ -93,9 +106,9 @@ export class ProcessorService {
         );
       } catch (err) {
         // First run, no schema yet
+        this.sentry.instance().captureException(err);
       }
     }
-
     return this.processor.run();
   }
 

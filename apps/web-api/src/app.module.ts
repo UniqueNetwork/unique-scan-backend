@@ -1,17 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApolloDriver } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { Block } from '@entities/Block';
-import { Tokens } from '@entities/Tokens';
-import { Event } from '@entities/Event';
-import { CollectionsStats } from '@entities/CollectionsStats';
-import { Extrinsic } from '@entities/Extrinsic';
 import typeormConfig from '@common/typeorm.config';
-import { Account } from '@entities/Account';
-import { Collections } from '@entities/Collections';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HolderModule } from './holder/holder.module';
@@ -23,24 +16,15 @@ import { ExtrinsicModule } from './extrinsic/extrinsic.module';
 import { AccountModule } from './account/account.module';
 import { BlockModule } from './block/block.module';
 import { TimestampTransformInterceptor } from './timestamp.interceptor';
-import { Total } from '@entities/Total';
 import { StatisticsModule } from './statistics/statistics.module';
+import { TransactionModule } from './transaction/transaction.module';
+import { SentryModule } from '@ntegral/nestjs-sentry';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       ...typeormConfig,
-      entities: [
-        Block,
-        Tokens,
-        Collections,
-        CollectionsStats,
-        Event,
-        Extrinsic,
-        Account,
-        Total,
-      ],
     }),
     GraphQLModule.forRoot({
       driver: ApolloDriver,
@@ -49,6 +33,19 @@ import { StatisticsModule } from './statistics/statistics.module';
       playground: true,
       sortSchema: true,
       path: '/v1/graphql',
+    }),
+    SentryModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (config: ConfigService) => ({
+        dsn: config.get('SENTRY_DSN'),
+        debug: config.get('SENTRY_DEBUG') === '1',
+        environment: process.env.NODE_ENV ?? 'development',
+        logLevels: config.get('SENTRY_LOG_LEVELS')
+          ? config.get('SENTRY_LOG_LEVELS').split(',')
+          : ['error'], // ['log' | 'error' | 'warn' | 'debug' | 'verbose'];
+        enabled: !!config.get('SENTRY_DSN'),
+      }),
+      inject: [ConfigService],
     }),
     HolderModule,
     TransferModule,
@@ -59,6 +56,7 @@ import { StatisticsModule } from './statistics/statistics.module';
     AccountModule,
     BlockModule,
     StatisticsModule,
+    TransactionModule,
   ],
   controllers: [AppController],
   providers: [

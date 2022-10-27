@@ -12,6 +12,7 @@ import {
 } from '../utils/gql-query-args';
 import { ExtrinsicDTO } from './extrinsic.dto';
 import { ExtrinsicsStatsEnumType } from './extrinsic.resolver';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 const aliasFields = {
   from_owner: 'signer',
@@ -26,6 +27,7 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
     super({ aliasFields });
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<ExtrinsicDTO>,
   ): Promise<IDataListResponse<ExtrinsicDTO>> {

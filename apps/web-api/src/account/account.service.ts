@@ -10,6 +10,7 @@ import {
   IStatsResponse,
 } from '../utils/gql-query-args';
 import { AccountDTO } from './account.dto';
+import { SentryWrapper } from '../utils/sentry.decorator';
 
 @Injectable()
 export class AccountService extends BaseService<Account, AccountDTO> {
@@ -17,16 +18,15 @@ export class AccountService extends BaseService<Account, AccountDTO> {
     super();
   }
 
+  @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<AccountDTO>,
   ): Promise<IDataListResponse<Account>> {
     const qb = this.repo.createQueryBuilder();
     qb.select('Account.account_id', 'account_id');
-    qb.addSelect('Account.balances', 'balances');
     qb.addSelect('Account.available_balance', 'available_balance');
     qb.addSelect('Account.free_balance', 'free_balance');
     qb.addSelect('Account.locked_balance', 'locked_balance');
-    qb.addSelect('Account.nonce', 'nonce');
     qb.addSelect('Account.timestamp', 'timestamp');
     qb.addSelect('Account.block_height', 'block_height');
     qb.addSelect('Account.account_id_normalized', 'account_id_normalized');

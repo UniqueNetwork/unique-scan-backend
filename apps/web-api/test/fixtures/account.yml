@@ -7,7 +7,6 @@ items:
     free_balance: 1
     locked_balance: 1
     timestamp: 1653962321
-    nonce: test_text
     block_height: 123
     account_id_normalized: asd
   account1:
@@ -16,7 +15,6 @@ items:
     available_balance: 11451
     free_balance: 11451
     locked_balance: 0
-    nonce: 0
     timestamp: 1653962320
     block_height: 934550
     account_id_normalized: 5E5AwrjUu6NYtXkKrVTsyrRxMMCw42pCxsvqNnvv5kzwSVa
@@ -26,7 +24,6 @@ items:
     available_balance: 4217
     free_balance: 4217
     locked_balance: 0
-    nonce: 0
     timestamp: 1653962321
     block_height: 934550
     account_id_normalized: 5DkP3V9QUi7Wja8yRpvWhqW4A9nZeqnjNNZnUGyWhWSmnJm
@@ -36,7 +33,6 @@ items:
     available_balance: 32.471179108254875144
     free_balance: 89.14717627999904
     locked_balance: 56675997171744164856
-    nonce: 8
     timestamp: 1653962322
     block_height: 934550
     account_id_normalized: 5HQkh8eL9R7oj6xVX5MvTxrmypbpgWyYv4cepfmwYiTkZt5
@@ -46,7 +42,6 @@ items:
     available_balance: 226.064588
     free_balance: 226.064588
     locked_balance: 0
-    nonce: 132
     timestamp: 1653962324
     block_height: 934550
     account_id_normalized: 5Hjjaak1TgCxzMde7hYYPd3wUHj2cfG6FKcUcJgoXDpB15S
@@ -56,7 +51,6 @@ items:
     available_balance: 0.046493
     free_balance: 0.046493
     locked_balance: 0
-    nonce: 1
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5FZaUjGEAHrHyfmnBMeBScC5A2Hz7fm5DpVZtPEEC2eSPAj
@@ -66,7 +60,6 @@ items:
     available_balance: 1
     free_balance: 848.9522067999976
     locked_balance: 847952206799997600000
-    nonce: 0
     timestamp: 1653962323
     block_height: 934550
     account_id_normalized: 5CXNRkCSbsykb54oP5B6hzYZQtuGkoDj1bxZFCPRjUhekVh
@@ -76,7 +69,6 @@ items:
     available_balance: 1
     free_balance: 42.52250404999648
     locked_balance: 41522504049996480000
-    nonce: 0
     timestamp: 1653962323
     block_height: 934550
     account_id_normalized: 5EFcVjNGTGjxuBKQoZw8ZvWLPj91naiZqu3LZHsxqokEFZE
@@ -86,7 +78,6 @@ items:
     available_balance: 1
     free_balance: 6045.0689049999976
     locked_balance: 6044068904999997600000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5Gzs5Ed7GHXCXdeCpy2tWK4oudC6JAPjpDcndMsSN2sMPze
@@ -96,7 +87,6 @@ items:
     available_balance: 1
     free_balance: 108.0336488999968
     locked_balance: 107033648899996800000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5DRdqiinPoiBu8QdNzEaixbiz2rwPLXb7eZk3GL9v9MrQaH
@@ -106,7 +96,6 @@ items:
     available_balance: 1
     free_balance: 498.88946489999968
     locked_balance: 497889464899999680000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5GjP3f3Adigf42E4tjFpTccb9yPwMyrNHUtpi4513Yse6iU
@@ -116,7 +105,6 @@ items:
     available_balance: 1
     free_balance: 425.76469369999696
     locked_balance: 424764693699996960000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5FnD8VuVchMDzNtjdk6MDaVyHPYaiJMdrboPozBSPxyVNKg
@@ -126,7 +114,6 @@ items:
     available_balance: 3.40311822988124484
     free_balance: 90.4109579599968
     locked_balance: 87007839730115555160
-    nonce: 1
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5FcHBbuJsUf7y93z1XhLTqhW53HQdK5q8NP1yMTSgKAZVRn
@@ -136,7 +123,6 @@ items:
     available_balance: 1
     free_balance: 684.5332273999984
     locked_balance: 683533227399998400000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5HNXSztGZCmhdRFdx3jpW74EXYGr3BTWG6o1E4XQqgmuDZc
@@ -146,7 +132,6 @@ items:
     available_balance: 16876.731062
     free_balance: 16876.731062
     locked_balance: 0
-    nonce: 13
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5DMH9cCnSpNMubzWG6YNh4R6nmVJjqNLndT68zQZ9o8nubo
@@ -156,7 +141,6 @@ items:
     available_balance: 1
     free_balance: 6834.06241299999712
     locked_balance: 6833062412999997120000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5EckbstMBbe2sEV6MCgydsK3Bo9vBU8RBEdsxjRJgFoZ6fx
@@ -166,7 +150,6 @@ items:
     available_balance: 18.329796867439551555
     free_balance: 438.9940699999992
     locked_balance: 420664273132559648445
-    nonce: 1
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5HB7PYuQV74WEf4hGi4oh3VsMGAFQMncmv9uYSk8r6tEqgF
@@ -176,7 +159,6 @@ items:
     available_balance: 1
     free_balance: 43.42492936999648
     locked_balance: 42424929369996480000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5HGzbFf67JkZvTuJaktVBgNvWg48Qmc4t1nyVeRWkryFr5j
@@ -186,7 +168,6 @@ items:
     available_balance: 87.311430590892750212
     free_balance: 436.79481189999776
     locked_balance: 349483381309105009788
-    nonce: 2
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5CvqSKZACvK9RVQ1JFQRuz8bd5ZZUetKPueHebgRgwRnMPn
@@ -196,7 +177,6 @@ items:
     available_balance: 0
     free_balance: 9722222.22200000544
     locked_balance: 9722222222000005440000000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5HRHgsNee8yUp2JotBknPkmSLca38Ue1icymzTnciTrYvZT
@@ -206,7 +186,6 @@ items:
     available_balance: 1
     free_balance: 533.567098399996
     locked_balance: 532567098399996000000
-    nonce: 0
     timestamp: 1653962335
     block_height: 934550
     account_id_normalized: 5Ck9yXmDSXTNidcoPk7k37fpGBxV9vBZjtG2DDArfBzeNEp
@@ -216,7 +195,6 @@ items:
     available_balance: 624.556183971455353962
     free_balance: 2450.79033399999648
     locked_balance: 1826234150028541126038
-    nonce: 1
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5C5JV54FU7nJDHjtLaR8EHbgAVvNEFN2YV63gXekkqnae2N
@@ -226,7 +204,6 @@ items:
     available_balance: 1
     free_balance: 43.4243293799968
     locked_balance: 42424329379996800000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5EhVnShyuwDTXheuVDfvAfgxmyuYptrRem1XFfnK2gUSpij
@@ -236,7 +213,6 @@ items:
     available_balance: 1
     free_balance: 466.562067799996
     locked_balance: 465562067799996000000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5HTH8oFCGptJa4xvdHQWGvV1Bi3V8MEUXTSjHztFnmnVxto
@@ -246,7 +222,6 @@ items:
     available_balance: 1
     free_balance: 883.6409377
     locked_balance: 882640937700000000000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5E75B348xsBTH5QRf6UuowFW459GR9qTFPmufepSDw6JCYJ
@@ -256,7 +231,6 @@ items:
     available_balance: 940.653508
     free_balance: 940.653508
     locked_balance: 0
-    nonce: 6
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5HMXofEZpLaanRQTthbfkpxAD2Ps7e9jfMqmhDKFLgww8mv
@@ -266,7 +240,6 @@ items:
     available_balance: 1
     free_balance: 51.34651540999984
     locked_balance: 50346515409999840000
-    nonce: 0
     timestamp: 1653962340
     block_height: 934550
     account_id_normalized: 5GgMWLz32kv32CbZsLo1dMrQf2zFc6zCGttqYKaetgVVAhZ
@@ -276,7 +249,6 @@ items:
     available_balance: 950.814529
     free_balance: 950.814529
     locked_balance: 0
-    nonce: 2
     timestamp: 1653962320
     block_height: 934550
     account_id_normalized: 5FKYWGQLcAVvjj17rcoyeB4X7zQWgGr4dc46x1MqgBkY95V
@@ -286,7 +258,6 @@ items:
     available_balance: 1
     free_balance: 43.16572578999952
     locked_balance: 42165725789999520000
-    nonce: 0
     timestamp: 1653962323
     block_height: 934550
     account_id_normalized: 5G9ipxngwWtqb85f6ug2kvQ1Htq77XVoFbxbPJEa6MdtGij
@@ -296,7 +267,6 @@ items:
     available_balance: 2897
     free_balance: 2897
     locked_balance: 0
-    nonce: 0
     timestamp: 1653962323
     block_height: 934550
     account_id_normalized: 5G6qdqVxus1dT3UaXULcuC2weXmwrGREKzrErVwEPsppYaL
@@ -306,7 +276,6 @@ items:
     available_balance: 1
     free_balance: 482.36802399999856
     locked_balance: 481368023999998560000
-    nonce: 0
     timestamp: 1653962323
     block_height: 934550
     account_id_normalized: 5G3dETLMbWGNNXJvCUsCKzDYeAANwqZwNQniNcRC7RPNZWi

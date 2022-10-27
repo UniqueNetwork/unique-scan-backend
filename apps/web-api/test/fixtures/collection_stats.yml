@@ -5,3 +5,4 @@ items:
     tokens_count: 9($current)
     holders_count: 7($current)
     actions_count: 14($current)
+    transfers_count: 14($current)
