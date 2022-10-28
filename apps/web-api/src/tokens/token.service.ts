@@ -68,6 +68,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
+
     qb.andWhere('parent_id is null');
     qb.andWhere(`type = :type`, { type: TokenType.NESTED });
 
@@ -76,15 +77,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return this.getDataAndCount(qb, queryArgs);
   }
 
-  public async findOne(queryArgs: QueryArgs): Promise<TokenDTO> {
-    const qb = this.repo.createQueryBuilder();
-
-    // todo: Third argument
-    this.applyArgs(qb, queryArgs);
-
-    return qb.getRawOne();
-  }
-
+  // todo: FROM HERE Check this method
   public async getBundleRoot(
     collection_id: number,
     token_id: number,
@@ -118,16 +111,19 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return qb.getRawOne();
   }
 
-  public getByCollectionId(id: number, queryArgs: QueryArgs) {
+  public getByCollectionId(
+    id: number,
+    queryArgs: QueryArgs,
+    queryInfo: GraphQLResolveInfo,
+  ) {
     const qb = this.repo.createQueryBuilder();
 
-    // todo: Third argument
-    this.applyArgs(qb, {
-      ...queryArgs,
-      where: {
-        _and: [{ collection_id: { _eq: id } }, { ...queryArgs.where }],
-      },
-    });
+    qb.where('collection_id = :id', { id });
+    this.applyWhereCondition(qb, queryArgs);
+
+    const queryFields = this.getQueryFields(queryInfo, { skip: ['__*'] });
+
+    this.applySelect(qb, queryFields);
 
     return qb.getRawMany();
   }
@@ -145,6 +141,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     };
   }
 
+  // todo: FROM HERE Check this method
   public findNestingChildren(collection_id: number, token_id: number) {
     const qb = this.repo.createQueryBuilder();
 
@@ -266,8 +263,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     queryInfo?: GraphQLResolveInfo,
   ): void {
     const queryFields = this.getQueryFields(queryInfo);
-
-    // console.log(queryFields);
 
     const relations = {
       [COLLECTION_RELATION_ALIAS]: {

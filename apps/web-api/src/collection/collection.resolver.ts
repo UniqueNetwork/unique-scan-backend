@@ -41,8 +41,9 @@ export class CollectionResolver {
   async tokens(
     @Parent() { collection_id }: CollectionEntity,
     @Args({ nullable: true, defaultValue: {} }) args: TokenQueryArgs,
+    @Info() info,
   ) {
-    return this.tokenService.getByCollectionId(collection_id, args);
+    return this.tokenService.getByCollectionId(collection_id, args, info);
   }
 
   @Query(() => StatisticDataResponse)

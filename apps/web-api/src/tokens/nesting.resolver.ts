@@ -2,6 +2,7 @@ import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { TokenService } from './token.service';
 import { NestingArgs, NestingToken, TokenEntity } from './token.resolver.types';
 
+// todo: FROM HERE
 @Resolver(() => NestingToken)
 export class NestingResolver {
   constructor(private service: TokenService) {}

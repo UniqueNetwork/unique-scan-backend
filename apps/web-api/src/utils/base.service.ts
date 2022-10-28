@@ -77,10 +77,7 @@ export class BaseService<T, S> {
 
     // Add query fields
     Object.entries(queryFields).forEach(([field, v]) => {
-      if (typeof v === 'object') {
-        // todo: Process nested object
-        console.log(`Field '${field}' is an object!`);
-      } else {
+      if (typeof v !== 'object') {
         usedRelalations.add(this.relationsFields[field]);
 
         const { selection, alias } = this.getQuerySelectionAndAlias(qb, field);

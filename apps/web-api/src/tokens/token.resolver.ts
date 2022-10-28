@@ -53,7 +53,7 @@ export class TokenResolver {
   }
 
   @ResolveField()
-  async collection(@Parent() { collection_id }: TokenEntity) {
-    return this.collectionService.getCollectionById(collection_id);
+  async collection(@Parent() { collection_id }: TokenEntity, @Info() info) {
+    return this.collectionService.getCollectionById(collection_id, info);
   }
 }

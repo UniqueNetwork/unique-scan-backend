@@ -56,21 +56,18 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     return this.getDataAndCount(qb, queryArgs);
   }
 
-  public async findOne(
-    queryArgs: IGQLQueryArgs<CollectionDTO>,
+  public getCollectionById(
+    id: number,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<CollectionDTO> {
     const qb = this.repo.createQueryBuilder();
+    qb.where(`collection_id = :id`, { id });
 
-    // todo: разобраться с отсутсвием info - создавать полный объект и передавать его
-    // this.applyArgs(qb, queryArgs);
+    const queryFields = this.getQueryFields(queryInfo, { skip: ['__*'] });
+
+    this.applySelect(qb, queryFields);
 
     return qb.getRawOne();
-  }
-
-  public getCollectionById(id: number): Promise<CollectionDTO> {
-    return this.findOne({
-      where: { collection_id: { _eq: id } },
-    });
   }
 
   public statistic({
