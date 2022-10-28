@@ -6,6 +6,7 @@ import {
   GQLToORMOperationsMap,
   GQLToORMOperatorsDict,
   GQLToORMOrderByOperatorsMap,
+  IRelations,
   ISetting,
   ISettingsSchema,
   Operator,
@@ -42,11 +43,16 @@ export class BaseService<T, S> {
     return fieldsMap(info, options);
   }
 
-  private getQuerySelectionAndAlias(queryField: string): {
+  private getQuerySelectionAndAlias(
+    qb: SelectQueryBuilder<T>,
+    queryField: string,
+  ): {
     selection: string;
     alias: string | undefined;
   } {
-    const selection = this.customQueryFields[queryField] || queryField;
+    const selection =
+      this.customQueryFields[queryField] ||
+      this.getConditionField(qb, queryField);
     const alias = this.customQueryFields[queryField] ? queryField : undefined;
 
     return {
@@ -55,28 +61,43 @@ export class BaseService<T, S> {
     };
   }
 
-  protected applySelect(qb: SelectQueryBuilder<T>, queryFields: S) {
+  protected applySelect(
+    qb: SelectQueryBuilder<T>,
+    queryFields: S,
+    relations: IRelations = {},
+  ) {
     let firstSelect = true;
+    const usedRelalations = new Set();
 
-    Object.entries(queryFields).forEach(([k, v]) => {
+    // Add query fields
+    Object.entries(queryFields).forEach(([field, v]) => {
       if (typeof v === 'object') {
         // todo: Process nested object
+        console.log(`Field '${field}' is an object!`);
       } else {
-        const { selection, alias } = this.getQuerySelectionAndAlias(k);
+        usedRelalations.add(this.relationsFields[field]);
 
-        console.log(selection, alias);
+        const { selection, alias } = this.getQuerySelectionAndAlias(qb, field);
+
+        // console.log(selection, alias);
         if (firstSelect) {
-          // console.log('select', selection, selectionAliasName);
           qb.select(selection, alias);
           firstSelect = false;
         } else {
           qb.addSelect(selection, alias);
-          // console.log('addSelect', selection, selectionAliasName);
         }
       }
     });
 
-    // console.log(qb.getSql());
+    // Process relations
+    Object.entries(relations).forEach(([relation, descriptor]) => {
+      if (usedRelalations.has(relation)) {
+        const { table, on } = descriptor;
+        qb.leftJoin(table, relation, on);
+
+        usedRelalations.delete(relation);
+      }
+    });
   }
 
   protected applyLimitOffset(

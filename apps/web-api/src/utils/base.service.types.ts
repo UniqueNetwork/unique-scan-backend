@@ -55,3 +55,11 @@ export interface ISettingsSchema {
 }
 
 export type TParamValue = string | number | Array<string | number>;
+
+export interface IRelation {
+  table: string;
+  on: string;
+}
+export interface IRelations {
+  [relationsName: string]: IRelation;
+}

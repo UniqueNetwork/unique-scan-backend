@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { isEmpty } from 'lodash';
 import { BaseService } from '../utils/base.service';
-import { OperatorMethods } from '../utils/base.service.types';
+import { IRelations, OperatorMethods } from '../utils/base.service.types';
 import {
   IDataListResponse,
   IDateRange,
@@ -18,15 +18,21 @@ import { TokenService } from '../tokens/token.service';
 import { SentryWrapper } from '../utils/sentry.decorator';
 import { GraphQLResolveInfo } from 'graphql';
 
+const STATISTICS_RELATION_ALIAS = 'Statistics';
+
 const relationsFields = {
-  tokens_count: 'Statistics',
-  actions_count: 'Statistics',
-  holders_count: 'Statistics',
-  transfers_count: 'Statistics',
+  tokens_count: STATISTICS_RELATION_ALIAS,
+  actions_count: STATISTICS_RELATION_ALIAS,
+  holders_count: STATISTICS_RELATION_ALIAS,
+  transfers_count: STATISTICS_RELATION_ALIAS,
 };
 
 const customQueryFields = {
   type: 'mode',
+  tokens_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".tokens_count, 0::bigint)`,
+  actions_acount: `'COALESCE("${STATISTICS_RELATION_ALIAS}".actions_count, 0::bigint)`,
+  holders_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".holders_count, 0::bigint)`,
+  transfers_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".transfers_count, 0::bigint)`,
 };
 
 @Injectable()
@@ -55,7 +61,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   ): Promise<CollectionDTO> {
     const qb = this.repo.createQueryBuilder();
 
-    // todo: разобраться с отсутсвием info
+    // todo: разобраться с отсутсвием info - создавать полный объект и передавать его
     // this.applyArgs(qb, queryArgs);
 
     return qb.getRawOne();
@@ -127,31 +133,13 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
 
     console.log(queryFields);
 
-    this.applySelect(qb, queryFields);
+    const relations = {
+      [STATISTICS_RELATION_ALIAS]: {
+        table: 'collections_stats',
+        on: `"Collections".collection_id = "${STATISTICS_RELATION_ALIAS}".collection_id`,
+      },
+    } as IRelations;
 
-    // qb.addSelect('Collections.mode', 'type');
-
-    // qb.leftJoin(
-    //   'collections_stats',
-    //   'Statistics',
-    //   '"Collections".collection_id = "Statistics".collection_id',
-    // );
-
-    // qb.addSelect(
-    //   `COALESCE("Statistics".tokens_count, 0::bigint)`,
-    //   'tokens_count',
-    // );
-    // qb.addSelect(
-    //   `COALESCE("Statistics".holders_count, 0::bigint)`,
-    //   'holders_count',
-    // );
-    // qb.addSelect(
-    //   `COALESCE("Statistics".actions_count, 0::bigint)`,
-    //   'actions_count',
-    // );
-    // qb.addSelect(
-    //   `COALESCE("Statistics".transfers_count, 0::bigint)`,
-    //   'transfers_count',
-    // );
+    this.applySelect(qb, queryFields, relations);
   }
 }
