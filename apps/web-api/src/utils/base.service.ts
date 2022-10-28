@@ -53,7 +53,13 @@ export class BaseService<T, S> {
     const selection =
       this.customQueryFields[queryField] ||
       this.getConditionField(qb, queryField);
-    const alias = this.customQueryFields[queryField] ? queryField : undefined;
+
+    const alias =
+      this.customQueryFields[queryField] || this.aliasFields[queryField]
+        ? queryField
+        : undefined;
+
+    // console.log(queryField, selection, alias);
 
     return {
       selection,
@@ -79,7 +85,6 @@ export class BaseService<T, S> {
 
         const { selection, alias } = this.getQuerySelectionAndAlias(qb, field);
 
-        // console.log(selection, alias);
         if (firstSelect) {
           qb.select(selection, alias);
           firstSelect = false;

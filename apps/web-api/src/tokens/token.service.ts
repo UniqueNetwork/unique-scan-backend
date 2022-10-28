@@ -13,14 +13,22 @@ import {
 import { TokenDTO } from './token.dto';
 import { SentryWrapper } from '../utils/sentry.decorator';
 import { QueryArgs } from './token.resolver.types';
+import { GraphQLResolveInfo } from 'graphql';
+import { IRelations } from '../utils/base.service.types';
+
+const COLLECTION_RELATION_ALIAS = 'Collection';
+const STATISTICS_RELATION_ALIAS = 'Statistics';
 
 const relationsFields = {
-  token_prefix: 'Collection',
-  collection_name: 'Collection',
-  collection_owner: 'Collection',
-  collection_owner_normalized: 'Collection',
-  transfers_count: 'Statistics',
-  children_count: 'Statistics',
+  token_prefix: COLLECTION_RELATION_ALIAS,
+  collection_name: COLLECTION_RELATION_ALIAS,
+  collection_owner: COLLECTION_RELATION_ALIAS,
+  collection_owner_normalized: COLLECTION_RELATION_ALIAS,
+  collection_cover: COLLECTION_RELATION_ALIAS,
+  collection_description: COLLECTION_RELATION_ALIAS,
+
+  transfers_count: STATISTICS_RELATION_ALIAS,
+  children_count: STATISTICS_RELATION_ALIAS,
 };
 
 const aliasFields = {
@@ -30,19 +38,26 @@ const aliasFields = {
   collection_description: 'description',
 };
 
+const customQueryFields = {
+  // token_prefix: `split_part(Tokens.token_name, ' ', 1)`,
+  transfers_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".transfers_count, 0)`,
+  children_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".children_count, 0)`,
+};
+
 @Injectable()
 export class TokenService extends BaseService<Tokens, TokenDTO> {
   constructor(@InjectRepository(Tokens) private repo: Repository<Tokens>) {
-    super({ aliasFields, relationsFields });
+    super({ aliasFields, relationsFields, customQueryFields });
   }
 
   @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: QueryArgs,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
 
-    this.applyFilters(qb, queryArgs);
+    this.applyArgs(qb, queryArgs, queryInfo);
 
     return this.getDataAndCount(qb, queryArgs);
   }
@@ -50,19 +65,22 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   @SentryWrapper({ data: [], count: 0 })
   public async findBundles(
     queryArgs: QueryArgs,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
     qb.andWhere('parent_id is null');
     qb.andWhere(`type = :type`, { type: TokenType.NESTED });
 
-    this.applyFilters(qb, queryArgs);
+    this.applyArgs(qb, queryArgs, queryInfo);
+
     return this.getDataAndCount(qb, queryArgs);
   }
 
   public async findOne(queryArgs: QueryArgs): Promise<TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
-    this.applyFilters(qb, queryArgs);
+    // todo: Third argument
+    this.applyArgs(qb, queryArgs);
 
     return qb.getRawOne();
   }
@@ -73,6 +91,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   ): Promise<TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
+    // todo: REMOVE ME
     await this.selectTokenFields(qb);
 
     qb.where(
@@ -102,7 +121,8 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   public getByCollectionId(id: number, queryArgs: QueryArgs) {
     const qb = this.repo.createQueryBuilder();
 
-    this.applyFilters(qb, {
+    // todo: Third argument
+    this.applyArgs(qb, {
       ...queryArgs,
       where: {
         _and: [{ collection_id: { _eq: id } }, { ...queryArgs.where }],
@@ -138,7 +158,9 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       },
     };
 
+    // todo: REMOVE ME
     this.selectTokenFields(qb);
+
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
@@ -165,13 +187,15 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return qb.getRawMany();
   }
 
-  private applyFilters(
+  private applyArgs(
     qb: SelectQueryBuilder<Tokens>,
     queryArgs: QueryArgs,
+    queryInfo?: GraphQLResolveInfo,
   ): void {
-    this.select(qb);
+    this.select(qb, queryInfo);
 
     this.applyDistinctOn(qb, queryArgs);
+
     this.applyLimitOffset(qb, queryArgs);
 
     this.applyWhereCondition(qb, queryArgs);
@@ -218,6 +242,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     );
   }
 
+  // todo: REMOVE ME
   private selectTokenFields(qb: SelectQueryBuilder<Tokens>): void {
     qb.select('Tokens.collection_id', 'collection_id');
     qb.addSelect('Tokens.token_id', 'token_id');
@@ -233,32 +258,29 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.burned', 'burned');
     qb.addSelect('Tokens.token_name', 'token_name');
     qb.addSelect('Tokens.type', 'type');
-    qb.addSelect(`split_part(Tokens.token_name, ' ', 1)`, 'token_prefix');
+    qb.addSelect(`split_part(Tokens.token_name, ' ', 1)`, 'token_prefix'); // todo: Мы же берём ещё и из коллекции?
   }
 
-  private select(qb: SelectQueryBuilder<Tokens>): void {
-    this.selectTokenFields(qb);
+  private select(
+    qb: SelectQueryBuilder<Tokens>,
+    queryInfo?: GraphQLResolveInfo,
+  ): void {
+    const queryFields = this.getQueryFields(queryInfo);
 
-    qb.leftJoinAndSelect(
-      'collections',
-      'Collection',
-      '"Tokens".collection_id = "Collection".collection_id',
-    );
-    qb.addSelect('Collection.token_prefix', 'token_prefix');
-    qb.addSelect('Collection.name', 'collection_name');
-    qb.addSelect('Collection.owner', 'collection_owner');
-    qb.addSelect('Collection.owner_normalized', 'collection_owner_normalized');
-    qb.addSelect('Collection.description', 'collection_description');
-    qb.addSelect('"Collection".collection_cover', 'collection_cover');
-    qb.addSelect(
-      'COALESCE("Statistics".transfers_count, 0)',
-      'transfers_count',
-    );
-    qb.addSelect(`COALESCE("Statistics".children_count, 0)`, 'children_count');
-    qb.leftJoin(
-      'tokens_stats',
-      'Statistics',
-      '"Tokens".token_id  = "Statistics".token_id and "Tokens".collection_id  = "Statistics".collection_id',
-    );
+    // console.log(queryFields);
+
+    const relations = {
+      [COLLECTION_RELATION_ALIAS]: {
+        table: 'collections',
+        on: `"Tokens".collection_id = "${COLLECTION_RELATION_ALIAS}".collection_id`,
+      },
+      [STATISTICS_RELATION_ALIAS]: {
+        table: 'tokens_stats',
+        on: `"Tokens".token_id = "${STATISTICS_RELATION_ALIAS}".token_id 
+        AND "Tokens".collection_id  = "${STATISTICS_RELATION_ALIAS}".collection_id`,
+      },
+    } as IRelations;
+
+    this.applySelect(qb, queryFields, relations);
   }
 }

@@ -131,8 +131,6 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   ): void {
     const queryFields = this.getQueryFields(queryInfo);
 
-    console.log(queryFields);
-
     const relations = {
       [STATISTICS_RELATION_ALIAS]: {
         table: 'collections_stats',
