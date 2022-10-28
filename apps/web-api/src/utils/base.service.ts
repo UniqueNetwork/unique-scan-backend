@@ -19,13 +19,20 @@ export class BaseService<T, S> {
   private readonly DEFAULT_PAGE_SIZE = 10;
   protected readonly aliasFields: ISetting = {};
   protected readonly relationsFields: ISetting = {};
+  protected readonly customQueryFields: ISetting = {};
   private readonly relations: string[] = [];
 
   constructor(schemas: ISettingsSchema = {}) {
-    const { aliasFields = {}, relationsFields = {}, relations = [] } = schemas;
+    const {
+      aliasFields = {},
+      relationsFields = {},
+      customQueryFields = {},
+      relations = [],
+    } = schemas;
     this.aliasFields = aliasFields;
     this.relationsFields = relationsFields;
     this.relations = relations;
+    this.customQueryFields = customQueryFields;
   }
 
   protected getQueryFields(
@@ -35,26 +42,35 @@ export class BaseService<T, S> {
     return fieldsMap(info, options);
   }
 
+  private getQuerySelectionAndAlias(queryField: string): {
+    selection: string;
+    alias: string | undefined;
+  } {
+    const selection = this.customQueryFields[queryField] || queryField;
+    const alias = this.customQueryFields[queryField] ? queryField : undefined;
+
+    return {
+      selection,
+      alias,
+    };
+  }
+
   protected applySelect(qb: SelectQueryBuilder<T>, queryFields: S) {
     let firstSelect = true;
-    // console.log(qb.getSql());
 
     Object.entries(queryFields).forEach(([k, v]) => {
       if (typeof v === 'object') {
         // todo: Process nested object
       } else {
-        // todo: Get value from service map
-        const selection = k;
-        // eslint-disable-next-line prefer-const
-        let selectionAliasName = undefined;
+        const { selection, alias } = this.getQuerySelectionAndAlias(k);
 
-        // console.log(selection, selectionAliasName);
+        console.log(selection, alias);
         if (firstSelect) {
           // console.log('select', selection, selectionAliasName);
-          qb.select(selection, selectionAliasName);
+          qb.select(selection, alias);
           firstSelect = false;
         } else {
-          qb.addSelect(selection, selectionAliasName);
+          qb.addSelect(selection, alias);
           // console.log('addSelect', selection, selectionAliasName);
         }
       }

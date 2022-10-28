@@ -16,12 +16,17 @@ import { CollectionDTO } from './collection.dto';
 import { TokenDTO } from '../tokens/token.dto';
 import { TokenService } from '../tokens/token.service';
 import { SentryWrapper } from '../utils/sentry.decorator';
+import { GraphQLResolveInfo } from 'graphql';
 
 const relationsFields = {
   tokens_count: 'Statistics',
   actions_count: 'Statistics',
   holders_count: 'Statistics',
   transfers_count: 'Statistics',
+};
+
+const customQueryFields = {
+  mode: 'type',
 };
 
 @Injectable()
@@ -36,9 +41,11 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<CollectionDTO>,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<CollectionDTO>> {
     const qb = this.repo.createQueryBuilder();
-    this.applyFilters(qb, queryArgs);
+
+    this.applyArgs(qb, queryArgs, queryInfo);
 
     return this.getDataAndCount(qb, queryArgs);
   }
@@ -48,7 +55,8 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   ): Promise<CollectionDTO> {
     const qb = this.repo.createQueryBuilder();
 
-    this.applyFilters(qb, queryArgs);
+    // todo: разобраться с отсутсвием info
+    // this.applyArgs(qb, queryArgs);
 
     return qb.getRawOne();
   }
@@ -79,11 +87,13 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     return qb.getRawMany();
   }
 
-  private applyFilters(
+  private applyArgs(
     qb: SelectQueryBuilder<Collections>,
     queryArgs: IGQLQueryArgs<CollectionDTO>,
+    queryInfo: GraphQLResolveInfo,
   ): void {
-    this.select(qb);
+    this.select(qb, queryInfo);
+
     this.applyLimitOffset(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
     this.applyWhereCondition(
@@ -109,65 +119,37 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     }
   }
 
-  private select(qb: SelectQueryBuilder<Collections>): void {
-    qb.select('Collections.collection_id', 'collection_id');
-    qb.addSelect('Collections.owner', 'owner');
-    qb.addSelect('Collections.owner_normalized', 'owner_normalized');
-    qb.addSelect('Collections.name', 'name');
-    qb.addSelect('Collections.description', 'description');
-    qb.addSelect('Collections.offchain_schema', 'offchain_schema');
-    qb.addSelect('Collections.token_limit', 'token_limit');
-    qb.addSelect('Collections.token_prefix', 'token_prefix');
-    qb.addSelect('Collections.collection_cover', 'collection_cover');
-    qb.addSelect('Collections.mode', 'type');
-    qb.addSelect('Collections.mint_mode', 'mint_mode');
-    qb.addSelect('Collections.nesting_enabled', 'nesting_enabled');
-    qb.addSelect('Collections.attributes_schema', 'attributes_schema');
-    qb.addSelect(
-      'Collections.limits_account_ownership',
-      'limits_account_ownership',
-    );
-    qb.addSelect(
-      'Collections.limits_sponsore_data_size',
-      'limits_sponsore_data_size',
-    );
-    qb.addSelect(
-      'Collections.limits_sponsore_data_rate',
-      'limits_sponsore_data_rate',
-    );
-    qb.addSelect('Collections.owner_can_transfer', 'owner_can_transfer');
-    qb.addSelect('Collections.owner_can_destroy', 'owner_can_destroy');
-    qb.addSelect('Collections.schema_version', 'schema_version');
-    qb.addSelect('Collections.sponsorship', 'sponsorship');
-    qb.addSelect('Collections.const_chain_schema', 'const_chain_schema');
-    qb.addSelect('Collections.burned', 'burned');
-    qb.addSelect('Collections.properties', 'properties');
-    qb.addSelect('Collections.permissions', 'permissions');
-    qb.addSelect(
-      'Collections.token_property_permissions',
-      'token_property_permissions',
-    );
-    qb.addSelect(
-      `COALESCE("Statistics".tokens_count, 0::bigint)`,
-      'tokens_count',
-    );
-    qb.addSelect(
-      `COALESCE("Statistics".holders_count, 0::bigint)`,
-      'holders_count',
-    );
-    qb.addSelect(
-      `COALESCE("Statistics".actions_count, 0::bigint)`,
-      'actions_count',
-    );
-    qb.addSelect(
-      `COALESCE("Statistics".transfers_count, 0::bigint)`,
-      'transfers_count',
-    );
-    qb.addSelect('Collections.date_of_creation', 'date_of_creation');
-    qb.leftJoin(
-      'collections_stats',
-      'Statistics',
-      '"Collections".collection_id = "Statistics".collection_id',
-    );
+  private select(
+    qb: SelectQueryBuilder<Collections>,
+    queryInfo?: GraphQLResolveInfo,
+  ): void {
+    const queryFields = this.getQueryFields(queryInfo);
+
+    console.log(queryFields);
+
+    this.applySelect(qb, queryFields);
+
+    // qb.addSelect('Collections.mode', 'type');
+    // qb.addSelect(
+    //   `COALESCE("Statistics".tokens_count, 0::bigint)`,
+    //   'tokens_count',
+    // );
+    // qb.addSelect(
+    //   `COALESCE("Statistics".holders_count, 0::bigint)`,
+    //   'holders_count',
+    // );
+    // qb.addSelect(
+    //   `COALESCE("Statistics".actions_count, 0::bigint)`,
+    //   'actions_count',
+    // );
+    // qb.addSelect(
+    //   `COALESCE("Statistics".transfers_count, 0::bigint)`,
+    //   'transfers_count',
+    // );
+    // qb.leftJoin(
+    //   'collections_stats',
+    //   'Statistics',
+    //   '"Collections".collection_id = "Statistics".collection_id',
+    // );
   }
 }

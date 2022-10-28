@@ -1,4 +1,11 @@
-import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Info,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { forwardRef, Inject } from '@nestjs/common';
 import {
   DateRangeArgs,
@@ -25,8 +32,9 @@ export class CollectionResolver {
   @Query(() => CollectionDataResponse)
   public async collections(
     @Args() args: QueryArgs,
+    @Info() info,
   ): Promise<IDataListResponse<CollectionDTO>> {
-    return this.service.find(args);
+    return this.service.find(args, info);
   }
 
   @ResolveField()

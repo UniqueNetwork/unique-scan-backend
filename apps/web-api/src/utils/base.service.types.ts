@@ -50,6 +50,7 @@ export interface ISetting {
 export interface ISettingsSchema {
   aliasFields?: ISetting;
   relationsFields?: ISetting;
+  customQueryFields?: ISetting;
   relations?: string[];
 }
 
