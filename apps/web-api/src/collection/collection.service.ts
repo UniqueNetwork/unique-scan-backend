@@ -26,7 +26,7 @@ const relationsFields = {
 };
 
 const customQueryFields = {
-  mode: 'type',
+  type: 'mode',
 };
 
 @Injectable()
@@ -35,7 +35,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     @InjectRepository(Collections) private repo: Repository<Collections>,
     @Inject(forwardRef(() => TokenService)) private tokenService: TokenService,
   ) {
-    super({ relationsFields, relations: ['tokens'] });
+    super({ relationsFields, customQueryFields, relations: ['tokens'] });
   }
 
   @SentryWrapper({ data: [], count: 0 })
@@ -130,6 +130,13 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     this.applySelect(qb, queryFields);
 
     // qb.addSelect('Collections.mode', 'type');
+
+    // qb.leftJoin(
+    //   'collections_stats',
+    //   'Statistics',
+    //   '"Collections".collection_id = "Statistics".collection_id',
+    // );
+
     // qb.addSelect(
     //   `COALESCE("Statistics".tokens_count, 0::bigint)`,
     //   'tokens_count',
@@ -145,11 +152,6 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     // qb.addSelect(
     //   `COALESCE("Statistics".transfers_count, 0::bigint)`,
     //   'transfers_count',
-    // );
-    // qb.leftJoin(
-    //   'collections_stats',
-    //   'Statistics',
-    //   '"Collections".collection_id = "Statistics".collection_id',
     // );
   }
 }
