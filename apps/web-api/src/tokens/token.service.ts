@@ -139,7 +139,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     };
   }
 
-  // todo: FROM HERE Check this method
   public findNestingChildren(
     collection_id: number,
     token_id: number,
@@ -229,25 +228,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
         });
       }),
     );
-  }
-
-  // todo: REMOVE ME
-  private selectTokenFields(qb: SelectQueryBuilder<Tokens>): void {
-    qb.select('Tokens.collection_id', 'collection_id');
-    qb.addSelect('Tokens.token_id', 'token_id');
-    qb.addSelect('Tokens.image', 'image');
-    qb.addSelect('Tokens.attributes', 'attributes');
-    qb.addSelect('Tokens.properties', 'properties');
-    qb.addSelect('Tokens.owner', 'owner');
-    qb.addSelect('Tokens.date_of_creation', 'date_of_creation');
-    qb.addSelect('Tokens.bundle_created', 'bundle_created');
-    qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
-    qb.addSelect('Tokens.parent_id', 'parent_id');
-    qb.addSelect('Tokens.is_sold', 'is_sold');
-    qb.addSelect('Tokens.burned', 'burned');
-    qb.addSelect('Tokens.token_name', 'token_name');
-    qb.addSelect('Tokens.type', 'type');
-    qb.addSelect(`split_part(Tokens.token_name, ' ', 1)`, 'token_prefix'); // todo: Мы же берём ещё и из коллекции?
   }
 
   private select(

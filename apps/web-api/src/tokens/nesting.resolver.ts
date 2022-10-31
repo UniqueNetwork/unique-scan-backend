@@ -9,7 +9,6 @@ import {
 import { TokenService } from './token.service';
 import { NestingArgs, NestingToken, TokenEntity } from './token.resolver.types';
 
-// todo: FROM HERE
 @Resolver(() => NestingToken)
 export class NestingResolver {
   constructor(private service: TokenService) {}
