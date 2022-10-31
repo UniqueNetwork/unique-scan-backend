@@ -15,6 +15,7 @@ import {
 } from './base.service.types';
 import { FieldsListOptions, fieldsMap } from 'graphql-fields-list';
 import { GraphQLResolveInfo } from 'graphql';
+import { JOIN_TYPE } from '@common/constants';
 
 export class BaseService<T, S> {
   private readonly DEFAULT_PAGE_SIZE = 10;
@@ -94,8 +95,16 @@ export class BaseService<T, S> {
     // Process relations
     Object.entries(relations).forEach(([relation, descriptor]) => {
       if (usedRelalations.has(relation)) {
-        const { table, on } = descriptor;
-        qb.leftJoin(table, relation, on);
+        const { table, on, join = JOIN_TYPE.LEFT } = descriptor;
+
+        switch (join) {
+          case JOIN_TYPE.LEFT:
+            qb.leftJoin(table, relation, on);
+            break;
+          case JOIN_TYPE.INNER:
+            qb.innerJoin(table, relation, on);
+            break;
+        }
 
         usedRelalations.delete(relation);
       }

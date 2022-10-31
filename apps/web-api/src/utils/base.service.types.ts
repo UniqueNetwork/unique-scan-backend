@@ -1,3 +1,4 @@
+import { JOIN_TYPE } from '@common/constants';
 import { IOrderByOperators } from './gql-query-args';
 
 export const GQLToORMOperatorsDict = {
@@ -59,6 +60,7 @@ export type TParamValue = string | number | Array<string | number>;
 export interface IRelation {
   table: string;
   on: string;
+  join?: JOIN_TYPE;
 }
 export interface IRelations {
   [relationsName: string]: IRelation;
