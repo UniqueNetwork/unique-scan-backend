@@ -2,6 +2,7 @@ import {
   Args,
   ArgsType,
   Field,
+  Info,
   InputType,
   ObjectType,
   Query,
@@ -72,7 +73,8 @@ export class TransferResolver {
   @Query(() => TransferDataResponse)
   public async transfers(
     @Args() args: QueryArgs,
+    @Info() info,
   ): Promise<IDataListResponse<TransferDTO>> {
-    return this.service.find(args);
+    return this.service.find(args, info);
   }
 }
