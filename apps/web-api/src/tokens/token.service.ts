@@ -4,7 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
-  GQLOrderByParamsArgs,
   IDataListResponse,
   IDateRange,
   IGQLQueryArgs,
@@ -15,6 +14,7 @@ import { SentryWrapper } from '../utils/sentry.decorator';
 import { QueryArgs } from './token.resolver.types';
 import { GraphQLResolveInfo } from 'graphql';
 import { IRelations } from '../utils/base.service.types';
+import { FieldsListOptions } from 'graphql-fields-list';
 
 const COLLECTION_RELATION_ALIAS = 'Collection';
 const STATISTICS_RELATION_ALIAS = 'Statistics';
@@ -39,7 +39,6 @@ const aliasFields = {
 };
 
 const customQueryFields = {
-  // token_prefix: `split_part(Tokens.token_name, ' ', 1)`,
   transfers_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".transfers_count, 0)`,
   children_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".children_count, 0)`,
 };
@@ -77,20 +76,17 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return this.getDataAndCount(qb, queryArgs);
   }
 
-  // todo: FROM HERE Check this method
   public async getBundleRoot(
     collection_id: number,
     token_id: number,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<TokenDTO> {
     const qb = this.repo.createQueryBuilder();
-
-    // todo: REMOVE ME
-    await this.selectTokenFields(qb);
 
     qb.where(
       new Brackets((qb) => {
         qb.where('parent_id is null').andWhere(
-          `children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
+          `children @> '[{"token_id": ${token_id}, ".collection_id": ${collection_id}}]'::jsonb`,
         );
       }),
     );
@@ -98,15 +94,17 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.orWhere(
       new Brackets((qb) => {
         qb.where('parent_id is null')
-          .andWhere('token_id = :token_id', {
+          .andWhere('"Tokens".token_id = :token_id', {
             token_id,
           })
-          .andWhere('collection_id = :collection_id', {
+          .andWhere('"Tokens".collection_id = :collection_id', {
             collection_id,
           })
           .andWhere(`type = :type`, { type: TokenType.NESTED });
       }),
     );
+
+    this.select(qb, queryInfo, { skip: ['__*'] });
 
     return qb.getRawOne();
   }
@@ -142,25 +140,19 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   }
 
   // todo: FROM HERE Check this method
-  public findNestingChildren(collection_id: number, token_id: number) {
+  public findNestingChildren(
+    collection_id: number,
+    token_id: number,
+    queryInfo: GraphQLResolveInfo,
+  ) {
     const qb = this.repo.createQueryBuilder();
 
-    const queryArgs = {
-      where: {
-        parent_id: { _eq: `${collection_id}_${token_id}` },
-      },
-      limit: null,
-      order_by: {
-        token_id: GQLOrderByParamsArgs.asc,
-      },
-    };
+    const parentCredentials = `${collection_id}_${token_id}`;
+    qb.where('parent_id = :parentCredentials', { parentCredentials });
+    // qb.limit(null);
+    qb.orderBy('token_id', 'ASC');
 
-    // todo: REMOVE ME
-    this.selectTokenFields(qb);
-
-    this.applyLimitOffset(qb, queryArgs);
-    this.applyWhereCondition(qb, queryArgs);
-    this.applyOrderCondition(qb, queryArgs);
+    this.select(qb, queryInfo, { skip: ['__*'] });
 
     return qb.getRawMany();
   }
@@ -261,8 +253,9 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   private select(
     qb: SelectQueryBuilder<Tokens>,
     queryInfo?: GraphQLResolveInfo,
+    queryFieldsOptions?: FieldsListOptions,
   ): void {
-    const queryFields = this.getQueryFields(queryInfo);
+    const queryFields = this.getQueryFields(queryInfo, queryFieldsOptions);
 
     const relations = {
       [COLLECTION_RELATION_ALIAS]: {
