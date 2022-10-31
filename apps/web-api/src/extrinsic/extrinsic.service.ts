@@ -13,10 +13,15 @@ import {
 import { ExtrinsicDTO } from './extrinsic.dto';
 import { ExtrinsicsStatsEnumType } from './extrinsic.resolver';
 import { SentryWrapper } from '../utils/sentry.decorator';
+import { GraphQLResolveInfo } from 'graphql';
 
 const aliasFields = {
   from_owner: 'signer',
   from_owner_normalized: 'signer_normalized',
+};
+
+const customQueryFields = {
+  amount: `NULLIF(Extrinsic.amount, 'NaN')`,
 };
 
 @Injectable()
@@ -24,28 +29,17 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
   constructor(
     @InjectRepository(Extrinsic) private repo: Repository<Extrinsic>,
   ) {
-    super({ aliasFields });
+    super({ aliasFields, customQueryFields });
   }
 
   @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<ExtrinsicDTO>,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<ExtrinsicDTO>> {
     const qb = this.repo.createQueryBuilder();
 
-    qb.select('Extrinsic.block_index', 'block_index');
-    qb.addSelect('Extrinsic.block_number', 'block_number');
-    qb.addSelect('Extrinsic.signer', 'from_owner');
-    qb.addSelect('Extrinsic.signer_normalized', 'from_owner_normalized');
-    qb.addSelect('Extrinsic.to_owner', 'to_owner');
-    qb.addSelect('Extrinsic.to_owner_normalized', 'to_owner_normalized');
-    qb.addSelect('Extrinsic.hash', 'hash');
-    qb.addSelect('Extrinsic.success', 'success');
-    qb.addSelect('Extrinsic.timestamp', 'timestamp');
-    qb.addSelect('Extrinsic.method', 'method');
-    qb.addSelect('Extrinsic.section', 'section');
-    qb.addSelect(`NULLIF(Extrinsic.amount, 'NaN')`, 'amount');
-    qb.addSelect('Extrinsic.fee', 'fee');
+    this.applySelect(qb, this.getQueryFields(queryInfo));
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
@@ -73,14 +67,12 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
       qb.andWhere(`"timestamp" <= ${this.formatDate(fromDate)}`);
     }
 
-    // TODO: remove after start new crawler
-    const balances = String(EventSection.BALANCES).toLowerCase();
     if (type === ExtrinsicsStatsEnumType.COINS) {
-      qb.andWhere(`"section" = '${balances}'`);
-      qb.andWhere(`"method" = '${ExtrinsicMethod.TRANSFER}'`);
+      qb.andWhere('method = :method', { method: ExtrinsicMethod.TRANSFER });
+      qb.andWhere('section = :section', { section: EventSection.BALANCES });
     } else if (type === ExtrinsicsStatsEnumType.TOKENS) {
-      qb.andWhere(`"section" != '${balances}'`);
-      qb.andWhere(`"method" = '${ExtrinsicMethod.TRANSFER}'`);
+      qb.andWhere('method = :method', { method: ExtrinsicMethod.TRANSFER });
+      qb.andWhere('section != :section', { section: EventSection.BALANCES });
     }
 
     return qb.getRawMany();

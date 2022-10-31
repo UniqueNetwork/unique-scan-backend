@@ -13,6 +13,7 @@ const customQueryFields = {
   block_index: "CONCAT(block_number, '-', event_index)",
   data: 'data::text',
 };
+
 @Injectable()
 export class TransferService extends BaseService<Event, TransferDTO> {
   constructor(@InjectRepository(Event) private repo: Repository<Event>) {
