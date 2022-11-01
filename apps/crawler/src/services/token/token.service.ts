@@ -35,16 +35,16 @@ export class TokenService {
     if (!tokenDecoded) {
       return null;
     }
-    const [tokenProperties, collectionDecoded, isBundle] = await Promise.all([
+
+    const [tokenProperties, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.getCollection(collectionId, blockHash),
       this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
     ]);
 
     return {
       tokenDecoded,
-      tokenProperties,
-      collectionDecoded,
+      tokenProperties: tokenProperties,
+      collectionDecoded: tokenDecoded.collection,
       isBundle,
     };
   }
@@ -105,7 +105,7 @@ export class TokenService {
       owner_normalized: normalizeSubstrateAddress(owner),
       image,
       attributes,
-      properties: tokenProperties
+      properties: tokenProperties.properties
         ? sanitizePropertiesValues(tokenProperties.properties)
         : [],
       parent_id: parentId,
