@@ -27,8 +27,11 @@ const relationsFields = {
   transfers_count: STATISTICS_RELATION_ALIAS,
 };
 
-const customQueryFields = {
+const aliasFields = {
   type: 'mode',
+};
+
+const customQueryFields = {
   tokens_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".tokens_count, 0::bigint)`,
   actions_acount: `'COALESCE("${STATISTICS_RELATION_ALIAS}".actions_count, 0::bigint)`,
   holders_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".holders_count, 0::bigint)`,
@@ -41,7 +44,12 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     @InjectRepository(Collections) private repo: Repository<Collections>,
     @Inject(forwardRef(() => TokenService)) private tokenService: TokenService,
   ) {
-    super({ relationsFields, customQueryFields, relations: ['tokens'] });
+    super({
+      relationsFields,
+      aliasFields,
+      customQueryFields,
+      relations: ['tokens'],
+    });
   }
 
   @SentryWrapper({ data: [], count: 0 })

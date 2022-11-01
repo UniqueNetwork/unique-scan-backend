@@ -1,4 +1,4 @@
-import { Args, ObjectType, Query, Resolver } from '@nestjs/graphql';
+import { Args, Info, ObjectType, Query, Resolver } from '@nestjs/graphql';
 import { IDataListResponse, ListDataType } from '../utils/gql-query-args';
 import { EventService } from './event.service';
 import { TokenEventDTO } from './token-event.dto';
@@ -14,7 +14,8 @@ export class TokenEventResolver {
   @Query(() => TokenEventDataResponse)
   public async token_events(
     @Args() args: QueryArgs,
+    @Info() info,
   ): Promise<IDataListResponse<TokenEventDTO>> {
-    return this.service.findTokenEvents(args);
+    return this.service.findTokenEvents(args, info);
   }
 }

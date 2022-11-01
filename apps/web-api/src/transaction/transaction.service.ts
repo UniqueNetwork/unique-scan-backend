@@ -14,12 +14,6 @@ const EXTRINSIC_RELATION_ALIAS = 'Extrinsic';
 const COLLECTION_RELATION_ALIAS = 'Collection';
 const TOKEN_RELATION_ALIAS = 'Token';
 
-const aliasFields = {
-  owner: 'signer',
-  owner_normalized: 'signer_normalized',
-  collection_name: 'name',
-};
-
 const relationsFields = {
   owner: EXTRINSIC_RELATION_ALIAS,
   owner_normalized: EXTRINSIC_RELATION_ALIAS,
@@ -31,6 +25,12 @@ const relationsFields = {
 
   image: TOKEN_RELATION_ALIAS,
   token_name: TOKEN_RELATION_ALIAS,
+};
+
+const aliasFields = {
+  owner: 'signer',
+  owner_normalized: 'signer_normalized',
+  collection_name: 'name',
 };
 
 const customQueryFields = {
