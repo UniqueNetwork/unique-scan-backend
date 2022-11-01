@@ -43,7 +43,7 @@ export class TokenService {
 
     return {
       tokenDecoded,
-      tokenProperties: tokenProperties,
+      tokenProperties,
       collectionDecoded: tokenDecoded.collection,
       isBundle,
     };
