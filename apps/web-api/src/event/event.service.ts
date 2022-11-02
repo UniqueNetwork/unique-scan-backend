@@ -86,6 +86,7 @@ export class EventService extends BaseService<Event, EventDTO> {
     qb.addSelect('"Event".method', 'action');
     qb.addSelect('("Event".data::json->>0)::int', 'collection_id');
     qb.addSelect('("Event".data::json->>1)::int', 'token_id');
+    qb.addSelect('"Event".values', 'values');
 
     qb.leftJoin(
       'extrinsic',

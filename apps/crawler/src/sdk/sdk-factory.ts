@@ -1,7 +1,7 @@
-import { Sdk } from '@unique-nft/substrate-client';
+import { Client } from '@unique-nft/substrate-client';
 
-export async function sdkFactory(chainWsUrl: string): Promise<Sdk> {
-  const sdk = new Sdk({
+export async function sdkFactory(chainWsUrl: string) {
+  const sdk = await Client.create({
     chainWsUrl,
   });
 

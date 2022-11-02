@@ -1,6 +1,6 @@
 import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Sdk } from '@unique-nft/substrate-client';
+import { Client } from '@unique-nft/substrate-client';
 import {
   CollectionInfoWithSchema,
   PropertyKeyPermission,
@@ -13,7 +13,7 @@ import { SdkCache } from './sdk-cache.decorator';
 @Injectable()
 export class SdkService {
   constructor(
-    private sdk: Sdk,
+    private sdk: Client,
     private configService: ConfigService<Config>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
