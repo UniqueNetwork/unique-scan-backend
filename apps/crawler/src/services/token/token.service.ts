@@ -4,7 +4,7 @@ import {
   normalizeTimestamp,
   sanitizePropertiesValues,
 } from '@common/utils';
-import { Tokens, TokenType, ITokenChild } from '@entities/Tokens';
+import { Tokens, TokenType, ITokenEntities } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -82,7 +82,7 @@ export class TokenService {
       tokenType = TokenType.NESTED;
     }
 
-    const children: ITokenChild[] = needCheckNesting
+    const children: ITokenEntities[] = needCheckNesting
       ? await this.nestingService.handleNesting(
           tokenData,
           blockHash,

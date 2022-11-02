@@ -11,19 +11,19 @@ class TokenEventDataResponse extends ListDataType(TokenEventDTO) {}
 @Resolver(() => TokenEventDTO)
 export class TokenEventResolver {
   constructor(
-    private service: EventService,
-    private eventService: TokenEventService,
+    private eventService: EventService,
+    private tokenEventService: TokenEventService,
   ) {}
 
   @Query(() => TokenEventDataResponse)
   public async token_events(
     @Args() args: QueryArgs,
   ): Promise<IDataListResponse<TokenEventDTO>> {
-    const { count, data } = await this.service.findTokenEvents(args);
+    const { count, data } = await this.eventService.findTokenEvents(args);
 
     return {
       count,
-      data: await this.eventService.mapEventData(data),
+      data: await this.tokenEventService.mapEventData(data),
     };
   }
 }

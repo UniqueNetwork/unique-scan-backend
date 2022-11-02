@@ -1,4 +1,4 @@
-import { Tokens } from '@entities/Tokens';
+import { ITokenEntities, Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,12 +6,10 @@ import { nesting } from '@unique-nft/utils/address';
 import { EventMethod } from '@common/constants';
 import { TokenEventDTO } from './token-event.dto';
 
-interface IToken {
-  token_id: number;
-  collection_id: number;
-  token_name: string;
-  image: object;
-}
+type ITokenInfo = Pick<
+  Tokens,
+  'token_id' | 'collection_id' | 'token_name' | 'image'
+>;
 
 interface IEventTransferValues {
   to: {
@@ -24,18 +22,9 @@ interface IEventTransferValues {
     collectionId: number;
     tokenId: number;
   };
-  fromToken?: {
-    collectionId: number;
-    tokenId: number;
-  };
-  tokens?: IToken[];
+  tokens?: ITokenInfo[];
   tokenId: number;
   collectionId: number;
-}
-
-interface IFindTokensArgs {
-  collection_id: number;
-  token_id: number;
 }
 
 @Injectable()
@@ -72,7 +61,7 @@ export class TokenEventService {
     return events;
   }
 
-  private async findTokens(args: IFindTokensArgs[]): Promise<IToken[]> {
+  private async findTokens(args: ITokenEntities[]): Promise<ITokenInfo[]> {
     const qb = this.repo.createQueryBuilder();
     qb.select(['token_id', 'collection_id::int', 'token_name', 'image']);
     qb.orWhere(args);
