@@ -3,7 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { Cache } from 'cache-manager';
 import { Config } from '../config/config.module';
 
-export function SdkCache(key?: string) {
+export function SdkCache({
+  key,
+  blockHashIndex,
+}: {
+  key: string;
+  blockHashIndex?: number;
+}) {
   const cacheManagerInjection = Inject(CACHE_MANAGER);
   const configServiceInjection = Inject(ConfigService);
 
@@ -23,12 +29,17 @@ export function SdkCache(key?: string) {
 
       const cacheManager = this.cacheManager as Cache;
 
+      let blockHash = null;
+      if (blockHashIndex !== undefined) {
+        blockHash = args[blockHashIndex];
+      }
+
       const entryKey = `${key}[${args
         .map((res) => JSON.stringify(res))
         .join(',')}]`;
 
-      // Get data from cache only while rescan mode
-      if (configService.get('rescan')) {
+      // Get data from cache only while rescan mode or from the same block
+      if (configService.get('rescan') || blockHash) {
         const cachedValue = await cacheManager.get(entryKey);
 
         if (cachedValue !== undefined) {
