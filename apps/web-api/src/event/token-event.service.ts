@@ -64,7 +64,7 @@ export class TokenEventService {
   private async findTokens(args: ITokenEntities[]): Promise<ITokenInfo[]> {
     const qb = this.repo.createQueryBuilder();
     qb.select(['token_id', 'collection_id::int', 'token_name', 'image']);
-    qb.orWhere(args);
+    qb.where(args);
 
     return qb.getRawMany();
   }
