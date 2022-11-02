@@ -1,4 +1,4 @@
-import { Tokens, TokenType, ITokenChild } from '@entities/Tokens';
+import { Tokens, TokenType, ITokenEntities } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -37,7 +37,7 @@ export class TokenNestingService {
       collection_id,
       token_id,
     });
-    let children: ITokenChild[] = [];
+    let children: ITokenEntities[] = [];
     try {
       // token nested. Update children. Update parent.
       if (isBundle) {
@@ -91,7 +91,7 @@ export class TokenNestingService {
 
   private async unnestBundle(
     token: Tokens,
-    childrenToBeDeleted: ITokenChild[],
+    childrenToBeDeleted: ITokenEntities[],
   ) {
     const { parent_id, children } = token;
     if (parent_id && children.length) {
@@ -204,7 +204,7 @@ export class TokenNestingService {
     collection_id: number,
     token_id: number,
   ): Promise<
-    { collection_id: number; token_id: number; children: ITokenChild[] }[]
+    { collection_id: number; token_id: number; children: ITokenEntities[] }[]
   > {
     const query = `
       SELECT collection_id, token_id, children
@@ -219,7 +219,7 @@ export class TokenNestingService {
     parent: {
       collection_id: number;
       token_id: number;
-      children: ITokenChild[];
+      children: ITokenEntities[];
     },
     child_collection_id: number,
     child_token_id: number,

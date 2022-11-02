@@ -6,7 +6,7 @@ export enum TokenType {
   NESTED = 'NESTED',
 }
 
-export interface ITokenChild {
+export interface ITokenEntities {
   collection_id: number;
   token_id: number;
 }
@@ -70,7 +70,7 @@ export class Tokens {
     default: () => "'[]'",
     nullable: false,
   })
-  public children?: ITokenChild[];
+  public children?: ITokenEntities[];
 
   @Column('boolean', { name: 'burned', default: false })
   burned: boolean;
