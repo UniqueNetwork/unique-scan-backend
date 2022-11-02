@@ -44,7 +44,6 @@ export class TokenService {
     return {
       tokenDecoded,
       tokenProperties,
-      collectionDecoded: tokenDecoded.collection,
       isBundle,
     };
   }
@@ -55,8 +54,7 @@ export class TokenService {
     blockTimestamp?: number,
     needCheckNesting = false,
   ): Promise<Omit<Tokens, 'id'>> {
-    const { tokenDecoded, tokenProperties, collectionDecoded, isBundle } =
-      tokenData;
+    const { tokenDecoded, tokenProperties, isBundle } = tokenData;
 
     const {
       tokenId: token_id,
@@ -67,7 +65,7 @@ export class TokenService {
       owner,
     } = tokenDecoded;
 
-    const { owner: collectionOwner, tokenPrefix } = collectionDecoded;
+    const { owner: collectionOwner, tokenPrefix } = tokenDecoded.collection;
 
     const token = await this.tokensRepository.findOneBy({
       collection_id,
