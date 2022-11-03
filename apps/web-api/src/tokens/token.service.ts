@@ -104,7 +104,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       }),
     );
 
-    this.select(qb, queryInfo, { skip: ['__*'] });
+    this.select(qb, {}, queryInfo, { skip: ['__*'] });
 
     return qb.getRawOne();
   }
@@ -121,7 +121,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     const queryFields = this.getQueryFields(queryInfo, { skip: ['__*'] });
 
-    this.applySelect(qb, queryFields);
+    this.applySelect(qb, {}, queryFields);
 
     return qb.getRawMany();
   }
@@ -151,7 +151,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     // qb.limit(null);
     qb.orderBy('token_id', 'ASC');
 
-    this.select(qb, queryInfo, { skip: ['__*'] });
+    this.select(qb, {}, queryInfo, { skip: ['__*'] });
 
     return qb.getRawMany();
   }
@@ -178,9 +178,9 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   private applyArgs(
     qb: SelectQueryBuilder<Tokens>,
     queryArgs: QueryArgs,
-    queryInfo?: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo,
   ): void {
-    this.select(qb, queryInfo);
+    this.select(qb, queryArgs, queryInfo);
 
     this.applyDistinctOn(qb, queryArgs);
 
@@ -232,7 +232,8 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
   private select(
     qb: SelectQueryBuilder<Tokens>,
-    queryInfo?: GraphQLResolveInfo,
+    queryArgs: QueryArgs,
+    queryInfo: GraphQLResolveInfo,
     queryFieldsOptions?: FieldsListOptions,
   ): void {
     const queryFields = this.getQueryFields(queryInfo, queryFieldsOptions);
@@ -249,6 +250,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       },
     } as IRelations;
 
-    this.applySelect(qb, queryFields, relations);
+    this.applySelect(qb, queryArgs, queryFields, relations);
   }
 }

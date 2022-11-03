@@ -68,7 +68,7 @@ export class EventService extends BaseService<Event, EventDTO> {
   ): Promise<IDataListResponse<EventDTO>> {
     const qb = this.repo.createQueryBuilder();
 
-    this.applySelect(qb, this.getQueryFields(queryInfo));
+    this.applySelect(qb, queryArgs, this.getQueryFields(queryInfo));
 
     qb.where({
       phase: Not('Initialization'),
@@ -100,7 +100,7 @@ export class EventService extends BaseService<Event, EventDTO> {
       },
     } as IRelations;
 
-    this.applySelect(qb, queryFields, relations);
+    this.applySelect(qb, queryArgs, queryFields, relations);
 
     qb.where({
       phase: Not('Initialization'),

@@ -21,7 +21,7 @@ export class BlockService extends BaseService<Block, BlockDto> {
   ): Promise<IDataListResponse<Block>> {
     const qb = this.repo.createQueryBuilder();
 
-    this.applySelect(qb, this.getQueryFields(queryInfo));
+    this.applySelect(qb, queryArgs, this.getQueryFields(queryInfo));
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);

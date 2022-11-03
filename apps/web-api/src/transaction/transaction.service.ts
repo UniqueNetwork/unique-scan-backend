@@ -79,7 +79,7 @@ export class TransactionService extends BaseService<Event, TransactionDTO> {
       },
     } as IRelations;
 
-    this.applySelect(qb, queryFields, relations);
+    this.applySelect(qb, queryArgs, queryFields, relations);
 
     qb.andWhere({
       section: EventSection.COMMON,

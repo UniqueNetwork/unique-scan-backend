@@ -73,7 +73,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
 
     const queryFields = this.getQueryFields(queryInfo, { skip: ['__*'] });
 
-    this.applySelect(qb, queryFields);
+    this.applySelect(qb, {}, queryFields);
 
     return qb.getRawOne();
   }
@@ -103,7 +103,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     queryArgs: IGQLQueryArgs<CollectionDTO>,
     queryInfo: GraphQLResolveInfo,
   ): void {
-    this.select(qb, queryInfo);
+    this.select(qb, queryArgs, queryInfo);
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
@@ -132,7 +132,8 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
 
   private select(
     qb: SelectQueryBuilder<Collections>,
-    queryInfo?: GraphQLResolveInfo,
+    queryArgs: IGQLQueryArgs<CollectionDTO>,
+    queryInfo: GraphQLResolveInfo,
   ): void {
     const queryFields = this.getQueryFields(queryInfo);
 
@@ -143,6 +144,6 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
       },
     } as IRelations;
 
-    this.applySelect(qb, queryFields, relations);
+    this.applySelect(qb, queryArgs, queryFields, relations);
   }
 }

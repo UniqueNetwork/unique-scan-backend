@@ -16,6 +16,7 @@ import {
 import { FieldsListOptions, fieldsMap } from 'graphql-fields-list';
 import { GraphQLResolveInfo } from 'graphql';
 import { JOIN_TYPE } from '@common/constants';
+import { getObjectKeysDeep } from '@common/utils';
 
 export class BaseService<T, S> {
   private readonly DEFAULT_PAGE_SIZE = 10;
@@ -60,8 +61,6 @@ export class BaseService<T, S> {
         ? queryField
         : undefined;
 
-    // console.log(queryField, selection, alias);
-
     return {
       selection,
       alias,
@@ -70,19 +69,26 @@ export class BaseService<T, S> {
 
   protected applySelect(
     qb: SelectQueryBuilder<T>,
+    queryArgs: IGQLQueryArgs<S>,
     queryFields: S,
     relations: IRelations = {},
   ) {
     let firstSelect = true;
     const usedRelalations = new Set();
 
+    // Add relation tables if it's fields are used in arguments
+    const queryArgsKeys = new Set(getObjectKeysDeep(queryArgs));
+    for (const field of queryArgsKeys) {
+      usedRelalations.add(this.relationsFields[field]);
+    }
+
     // Add query fields
     Object.entries(queryFields).forEach(([field, v]) => {
       if (typeof v !== 'object') {
+        // Add relation table if it's field is used
         usedRelalations.add(this.relationsFields[field]);
 
         const { selection, alias } = this.getQuerySelectionAndAlias(qb, field);
-
         if (firstSelect) {
           qb.select(selection, alias);
           firstSelect = false;
@@ -92,7 +98,7 @@ export class BaseService<T, S> {
       }
     });
 
-    // Process relations
+    // Add relations that are really used
     Object.entries(relations).forEach(([relation, descriptor]) => {
       if (usedRelalations.has(relation)) {
         const { table, on, join = JOIN_TYPE.LEFT } = descriptor;

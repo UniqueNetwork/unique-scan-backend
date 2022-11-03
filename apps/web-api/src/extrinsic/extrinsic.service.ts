@@ -39,7 +39,7 @@ export class ExtrinsicService extends BaseService<Extrinsic, ExtrinsicDTO> {
   ): Promise<IDataListResponse<ExtrinsicDTO>> {
     const qb = this.repo.createQueryBuilder();
 
-    this.applySelect(qb, this.getQueryFields(queryInfo));
+    this.applySelect(qb, queryArgs, this.getQueryFields(queryInfo));
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);

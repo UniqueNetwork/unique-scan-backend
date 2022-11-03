@@ -29,7 +29,7 @@ export class TransferService extends BaseService<Event, TransferDTO> {
 
     qb.where({ method: EventMethod.TRANSFER });
 
-    this.applySelect(qb, this.getQueryFields(queryInfo));
+    this.applySelect(qb, queryArgs, this.getQueryFields(queryInfo));
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
