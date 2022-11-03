@@ -108,7 +108,7 @@ export class EventService extends BaseService<Event, EventDTO> {
       method: In([
         EventMethod.ITEM_CREATED,
         EventMethod.TRANSFER,
-        EventMethod.COLLECTION_DESTROYED,
+        EventMethod.ITEM_DESTROYED,
       ]),
     });
 
