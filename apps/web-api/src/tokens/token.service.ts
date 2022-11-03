@@ -86,7 +86,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.where(
       new Brackets((qb) => {
         qb.where('parent_id is null').andWhere(
-          `children @> '[{"token_id": ${token_id}, ".collection_id": ${collection_id}}]'::jsonb`,
+          `children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
         );
       }),
     );
