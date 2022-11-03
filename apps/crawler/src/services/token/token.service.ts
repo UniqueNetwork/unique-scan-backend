@@ -26,19 +26,29 @@ export class TokenService {
     tokenId: number,
     blockHash: string,
   ): Promise<TokenData | null> {
-    const tokenDecoded = await this.sdkService.getToken(
-      collectionId,
-      tokenId,
-      blockHash,
-    );
+    let checkAt = false; // for burned tokens
+    let tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+
+    if (!tokenDecoded) {
+      tokenDecoded = await this.sdkService.getToken(
+        collectionId,
+        tokenId,
+        blockHash,
+      );
+      checkAt = true;
+    }
 
     if (!tokenDecoded) {
       return null;
     }
+
     const [tokenProperties, collectionDecoded, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.getCollection(collectionId, blockHash),
-      this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
+      this.sdkService.getCollection(
+        collectionId,
+        checkAt ? blockHash : undefined,
+      ),
+      this.sdkService.isTokenBundle(collectionId, tokenId),
     ]);
 
     return {
