@@ -234,6 +234,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.token_name', 'token_name');
     qb.addSelect('Tokens.type', 'type');
     qb.addSelect(`split_part(Tokens.token_name, ' ', 1)`, 'token_prefix');
+    qb.addSelect(`jsonb_array_length(Tokens.children)`, 'children_count');
   }
 
   private select(qb: SelectQueryBuilder<Tokens>): void {
