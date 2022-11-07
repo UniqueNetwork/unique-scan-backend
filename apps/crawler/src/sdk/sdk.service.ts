@@ -55,6 +55,7 @@ export class SdkService {
     return this.sdk.tokens.get({ collectionId, tokenId, at });
   }
 
+  @SdkCache('isTokenBundle')
   isTokenBundle(collectionId: number, tokenId: number, at?: string) {
     return this.sdk.tokens.isBundle({ collectionId, tokenId, at });
   }
