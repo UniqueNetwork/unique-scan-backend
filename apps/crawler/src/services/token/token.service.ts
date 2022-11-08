@@ -40,6 +40,11 @@ export class TokenService {
       return null;
     }
 
+    // TODO: delete after rft support
+    if (tokenDecoded.owner === '') {
+      return null;
+    }
+
     const [tokenProperties, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
       this.sdkService.isTokenBundle(collectionId, tokenId),
