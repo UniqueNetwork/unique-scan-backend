@@ -139,3 +139,15 @@ export const EVENT_ARGS_ACCOUNT_KEYS = [
 ];
 export const EVENT_ARGS_AMOUNT_KEY_DEFAULT = 'amount';
 export const EVENT_ARGS_AMOUNT_KEYS = [EVENT_ARGS_AMOUNT_KEY_DEFAULT, 'value'];
+
+export const TOKEN_UPDATE_EVENTS = [
+  // Insert
+  EventName.ITEM_CREATED,
+
+  // Update
+  EventName.TRANSFER,
+  EventName.TOKEN_PROPERTY_SET,
+  EventName.TOKEN_PROPERTY_DELETED,
+];
+
+export const TOKEN_BURN_EVENTS = [EventName.ITEM_DESTROYED];

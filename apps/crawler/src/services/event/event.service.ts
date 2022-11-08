@@ -16,11 +16,15 @@ import {
 import { EventArgumentsService } from './event.arguments.service';
 import { EventArgs } from './event.types';
 import { AccountRecord } from '../account/account.types';
+import { TokenService } from '../token/token.service';
 
 @Injectable()
 export class EventService {
   constructor(
     private eventArgumentsService: EventArgumentsService,
+
+    private tokenService: TokenService,
+    // todo: CollectionsService
 
     @InjectRepository(Event)
     private eventsRepository: Repository<Event>,
@@ -91,7 +95,7 @@ export class EventService {
     );
   }
 
-  async upsert({
+  async process({
     blockItems,
     blockCommonData,
   }: {
@@ -109,6 +113,11 @@ export class EventService {
       'block_number',
       'event_index',
     ]);
+
+    await this.tokenService.batchProcess({
+      eventItems,
+      blockCommonData,
+    });
 
     return eventsData;
   }

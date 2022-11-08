@@ -1,4 +1,9 @@
-import { EventName, SubscriberAction } from '@common/constants';
+import {
+  EventName,
+  SubscriberAction,
+  TOKEN_BURN_EVENTS,
+  TOKEN_UPDATE_EVENTS,
+} from '@common/constants';
 import {
   normalizeSubstrateAddress,
   normalizeTimestamp,
@@ -9,6 +14,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
+import {
+  IBlockCommonData,
+  IEvent,
+} from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
 import { TokenData } from './token.types';
 
@@ -118,6 +127,25 @@ export class TokenService {
       children,
       bundle_created: tokenType === TokenType.NFT ? null : undefined,
     };
+  }
+
+  async batchProcess({
+    eventItems,
+    blockCommonData,
+  }: {
+    eventItems: IEvent[];
+    blockCommonData: IBlockCommonData;
+  }) {
+    for (const item of eventItems) {
+      const { name } = item;
+      if (TOKEN_UPDATE_EVENTS.includes(name)) {
+        // console.log('update', item);
+        // this.update({
+        // })
+      } else if (TOKEN_BURN_EVENTS.includes(name)) {
+        // console.log('burn', item);
+      }
+    }
   }
 
   async update({

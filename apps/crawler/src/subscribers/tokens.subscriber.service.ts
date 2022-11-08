@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { EventName, SubscriberAction } from '@common/constants';
+import {
+  SubscriberAction,
+  TOKEN_BURN_EVENTS,
+  TOKEN_UPDATE_EVENTS,
+} from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
@@ -20,24 +24,18 @@ export class TokensSubscriberService implements ISubscriberService {
   }
 
   subscribe(processorService: ProcessorService) {
-    [
-      // Insert
-      EventName.ITEM_CREATED,
-
-      // Update
-      EventName.TRANSFER,
-      EventName.TOKEN_PROPERTY_SET,
-      EventName.TOKEN_PROPERTY_DELETED,
-    ].forEach((eventName) =>
+    TOKEN_UPDATE_EVENTS.forEach((eventName) =>
       processorService.processor.addEventHandler(
         eventName,
         this.upsertHandler.bind(this),
       ),
     );
 
-    processorService.processor.addEventHandler(
-      EventName.ITEM_DESTROYED,
-      this.destroyHandler.bind(this),
+    TOKEN_BURN_EVENTS.forEach((eventName) =>
+      processorService.processor.addEventHandler(
+        eventName,
+        this.destroyHandler.bind(this),
+      ),
     );
   }
 

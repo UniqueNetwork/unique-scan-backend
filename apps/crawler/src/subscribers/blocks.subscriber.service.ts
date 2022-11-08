@@ -93,7 +93,7 @@ export class BlocksSubscriberService implements ISubscriberService {
       } as IBlockCommonData;
 
       // Process events first to get event.values
-      const eventsData = await this.eventService.upsert({
+      const eventsData = await this.eventService.process({
         blockCommonData,
         blockItems,
       });
