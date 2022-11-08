@@ -14,6 +14,7 @@ import {
   CollectionProperty,
   UniqueCollectionSchemaDecoded,
   PropertyKeyPermission,
+  CollectionMode,
 } from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
 import { SdkService } from '../sdk/sdk.service';
@@ -60,6 +61,11 @@ export class CollectionService {
     }
 
     if (!collectionDecoded) {
+      return null;
+    }
+
+    // TODO: delete after rft support
+    if (collectionDecoded.mode === CollectionMode.ReFungible) {
       return null;
     }
 
