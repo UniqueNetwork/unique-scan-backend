@@ -36,6 +36,7 @@ export interface IBlockCommonData {
   blockNumber: number;
   blockTimestamp: number;
   ss58Prefix: Prefix;
+  blockHash?: string;
 }
 
 export interface IItemCounts {
@@ -73,7 +74,11 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: BlockHandlerContext<Store>): Promise<void> {
     const { block, items } = ctx;
-    const { height: blockNumber, timestamp: blockTimestamp } = block;
+    const {
+      height: blockNumber,
+      timestamp: blockTimestamp,
+      hash: blockHash,
+    } = block;
     const blockItems = items as unknown as IBlockItem[];
 
     const log = {
@@ -90,6 +95,7 @@ export class BlocksSubscriberService implements ISubscriberService {
         blockNumber,
         blockTimestamp,
         ss58Prefix,
+        blockHash,
       } as IBlockCommonData;
 
       // Process events first to get event.values

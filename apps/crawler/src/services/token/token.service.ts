@@ -9,6 +9,7 @@ import {
   normalizeTimestamp,
   sanitizePropertiesValues,
 } from '@common/utils';
+import { Event } from '@entities/Event';
 import { Tokens, TokenType, ITokenEntities } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,6 +21,17 @@ import {
 } from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
 import { TokenData } from './token.types';
+
+// todo: performance
+import { PerformanceObserver, performance } from 'node:perf_hooks';
+const obs = new PerformanceObserver((items) => {
+  for (const i of items.getEntries()) {
+    const { name, duration } = i;
+    console.log(`${name}: ${duration}`);
+  }
+  // console.log(items.getEntries()[0].duration);
+  // performance.clearMarks();
+});
 
 @Injectable()
 export class TokenService {
@@ -130,22 +142,64 @@ export class TokenService {
   }
 
   async batchProcess({
-    eventItems,
+    events,
     blockCommonData,
   }: {
-    eventItems: IEvent[];
+    events: Event[];
     blockCommonData: IBlockCommonData;
   }) {
-    for (const item of eventItems) {
-      const { name } = item;
-      if (TOKEN_UPDATE_EVENTS.includes(name)) {
-        // console.log('update', item);
-        // this.update({
-        // })
-      } else if (TOKEN_BURN_EVENTS.includes(name)) {
-        // console.log('burn', item);
+    obs.observe({ type: 'measure' });
+    performance.mark('start');
+
+    console.log('Total events', events.length);
+
+    let count = 0;
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      // const mark = `event-${count}`;
+      // performance.mark(mark);
+
+      const { section, method } = event;
+      const eventName = `${section}.${method}`;
+
+      const action = TOKEN_UPDATE_EVENTS.includes(eventName)
+        ? SubscriberAction.UPSERT
+        : TOKEN_BURN_EVENTS.includes(eventName)
+        ? SubscriberAction.DELETE
+        : null;
+
+      if (action) {
+        count++;
+
+        const { values } = event;
+        const { collectionId, tokenId } = values as unknown as {
+          collectionId: number;
+          tokenId: number;
+        };
+        const { blockHash, blockTimestamp } = blockCommonData;
+
+        if (action === SubscriberAction.UPSERT) {
+          await this.update({
+            collectionId,
+            tokenId,
+            eventName,
+            blockTimestamp,
+            blockHash,
+          });
+        } else {
+          // todo: Изучить что там с burn и at
+          await this.burn(collectionId, tokenId);
+        }
       }
+      // performance.measure(mark, mark);
     }
+
+    console.log('Total count', count);
+    performance.measure('Start to End', 'start');
+
+    // performance.clearMarks();
+    // performance.clearMeasures();
+    // obs.disconnect();
   }
 
   async update({

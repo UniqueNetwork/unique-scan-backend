@@ -115,7 +115,7 @@ export class EventService {
     ]);
 
     await this.tokenService.batchProcess({
-      eventItems,
+      events: eventsData,
       blockCommonData,
     });
 
