@@ -15,7 +15,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
-import { IBlockCommonData } from '../../subscribers/blocks.subscriber.service';
+import {
+  IBlockCommonData,
+  TokensBatchProcessingResult,
+} from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
 import { TokenData } from './token.types';
 import { chunk } from 'lodash';
@@ -151,7 +154,7 @@ export class TokenService {
   }: {
     events: Event[];
     blockCommonData: IBlockCommonData;
-  }) {
+  }): Promise<TokensBatchProcessingResult> {
     obs.observe({ type: 'measure' });
     performance.mark('start');
 
@@ -162,11 +165,10 @@ export class TokenService {
       this.configService.get('scanTokensBatchSize'),
     );
 
-    let count = 0;
-    const tokensCount = new Set();
-    const eventsCount = new Set();
+    let i = 0;
+    const rejected = [];
     for (const chunk of eventChunks) {
-      count += chunk.length;
+      console.log('chunk no', i++);
       const result = await Promise.allSettled(
         chunk.map((event) => {
           const { section, method, values } = event;
@@ -178,8 +180,6 @@ export class TokenService {
           const { blockHash, blockTimestamp } = blockCommonData;
           const eventName = `${section}.${method}`;
 
-          tokensCount.add(`${collectionId}-${tokenId}`);
-          eventsCount.add(`${collectionId}-${tokenId}-${eventName}`);
           if (TOKEN_UPDATE_EVENTS.includes(eventName)) {
             return this.update({
               collectionId,
@@ -194,13 +194,20 @@ export class TokenService {
           }
         }),
       );
+
+      // todo: Process rejected tokens again
+      rejected.concat(result.filter(({ status }) => status == 'rejected'));
     }
 
     performance.measure('Total time', 'start');
 
     performance.clearMarks();
     performance.clearMeasures();
-    // obs.disconnect();
+
+    return {
+      totalTokenEvents: tokenEvents.length,
+      rejected,
+    };
   }
 
   async update({

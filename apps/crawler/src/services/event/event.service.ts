@@ -9,6 +9,7 @@ import {
 import { Event } from '@entities/Event';
 import { normalizeTimestamp } from '@common/utils';
 import {
+  EventsProcessingResult,
   IBlockCommonData,
   IBlockItem,
   IEvent,
@@ -101,25 +102,25 @@ export class EventService {
   }: {
     blockItems: IBlockItem[];
     blockCommonData: IBlockCommonData;
-  }): Promise<Event[]> {
+  }): Promise<EventsProcessingResult> {
     const eventItems = this.extractEventItems(blockItems);
 
-    const eventsData = await this.prepareDataForDb({
+    const events = await this.prepareDataForDb({
       blockCommonData,
       eventItems,
     });
 
-    await this.eventsRepository.upsert(eventsData, [
-      'block_number',
-      'event_index',
-    ]);
+    await this.eventsRepository.upsert(events, ['block_number', 'event_index']);
 
-    await this.tokenService.batchProcess({
-      events: eventsData,
+    const tokensProcessingResult = await this.tokenService.batchProcess({
+      events,
       blockCommonData,
     });
 
-    return eventsData;
+    return {
+      events,
+      tokensProcessingResult,
+    };
   }
 
   async processEventWithAccounts(

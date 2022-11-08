@@ -11,6 +11,7 @@ import { ProcessorService } from './processor/processor.service';
 import { BlockService } from '../services/block.service';
 import { ExtrinsicService } from '../services/extrinsic.service';
 import { EventService } from '../services/event/event.service';
+import { Event } from '@entities/Event';
 
 export interface IEvent {
   name: string;
@@ -44,6 +45,16 @@ export interface IItemCounts {
   totalExtrinsics: number;
   numTransfers: number;
   newAccounts: number;
+}
+
+export interface EventsProcessingResult {
+  events: Event[];
+  tokensProcessingResult: TokensBatchProcessingResult;
+}
+
+export interface TokensBatchProcessingResult {
+  totalTokenEvents: number;
+  rejected: object[];
 }
 
 @Injectable()
@@ -99,10 +110,11 @@ export class BlocksSubscriberService implements ISubscriberService {
       } as IBlockCommonData;
 
       // Process events first to get event.values
-      const eventsData = await this.eventService.process({
-        blockCommonData,
-        blockItems,
-      });
+      const { events, tokensProcessingResult } =
+        await this.eventService.process({
+          blockCommonData,
+          blockItems,
+        });
 
       const [itemCounts] = await Promise.all([
         this.blockService.upsert({
@@ -112,13 +124,15 @@ export class BlocksSubscriberService implements ISubscriberService {
         this.extrinsicService.upsert({
           blockCommonData,
           blockItems,
-          eventsData,
+          events,
         }),
       ]);
 
       this.logger.verbose({
         ...log,
         ...itemCounts,
+        totalTokenEvents: tokensProcessingResult.totalTokenEvents,
+        rejectedTokens: tokensProcessingResult.rejected,
       });
     } catch (error) {
       this.logger.error({ ...log, error: error.message || error });
