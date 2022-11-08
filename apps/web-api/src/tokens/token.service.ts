@@ -226,7 +226,11 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.addSelect('Tokens.properties', 'properties');
     qb.addSelect('Tokens.owner', 'owner');
     qb.addSelect('Tokens.date_of_creation', 'date_of_creation');
-    qb.addSelect('Tokens.bundle_created', 'bundle_created');
+    // TODO: return after rft support
+    qb.addSelect(
+      'COALESCE("Tokens".bundle_created, "Tokens".date_of_creation)',
+      'bundle_created',
+    );
     qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
     qb.addSelect('Tokens.parent_id', 'parent_id');
     qb.addSelect('Tokens.is_sold', 'is_sold');
