@@ -26,6 +26,8 @@ export type Config = {
 
   scanRangeTo?: number;
 
+  scanTokensBatchSize?: number;
+
   rescan: boolean;
 
   prometheusPort: number;
@@ -53,6 +55,8 @@ const loadConfig = (): Config => ({
   scanRangeFrom: +process.env.SCAN_RANGE_FROM || 0,
 
   scanRangeTo: +process.env.SCAN_RANGE_TO || undefined,
+
+  scanTokensBatchSize: +process.env.SCAN_TOKENS_BATCH_SIZE || 50,
 
   rescan: process.env.SCAN_FORCE_RESCAN === 'true',
 

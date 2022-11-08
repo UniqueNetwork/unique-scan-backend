@@ -15,22 +15,20 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
-import {
-  IBlockCommonData,
-  IEvent,
-} from '../../subscribers/blocks.subscriber.service';
+import { IBlockCommonData } from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
 import { TokenData } from './token.types';
+import { chunk } from 'lodash';
 
 // todo: performance
 import { PerformanceObserver, performance } from 'node:perf_hooks';
+import { ConfigService } from '@nestjs/config';
+import { Config } from '../../config/config.module';
 const obs = new PerformanceObserver((items) => {
   for (const i of items.getEntries()) {
     const { name, duration } = i;
     console.log(`${name}: ${duration}`);
   }
-  // console.log(items.getEntries()[0].duration);
-  // performance.clearMarks();
 });
 
 @Injectable()
@@ -38,6 +36,7 @@ export class TokenService {
   constructor(
     private sdkService: SdkService,
     private nestingService: TokenNestingService,
+    private configService: ConfigService<Config>,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -156,54 +155,51 @@ export class TokenService {
     obs.observe({ type: 'measure' });
     performance.mark('start');
 
-    console.log('Total events', events.length);
+    const tokenEvents = this.extractTokenEvents(events);
+
+    const eventChunks = chunk(
+      this.extractTokenEvents(tokenEvents),
+      this.configService.get('scanTokensBatchSize'),
+    );
 
     let count = 0;
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      // const mark = `event-${count}`;
-      // performance.mark(mark);
+    const tokensCount = new Set();
+    const eventsCount = new Set();
+    for (const chunk of eventChunks) {
+      count += chunk.length;
+      const result = await Promise.allSettled(
+        chunk.map((event) => {
+          const { section, method, values } = event;
+          const { collectionId, tokenId } = values as unknown as {
+            collectionId: number;
+            tokenId: number;
+          };
 
-      const { section, method } = event;
-      const eventName = `${section}.${method}`;
+          const { blockHash, blockTimestamp } = blockCommonData;
+          const eventName = `${section}.${method}`;
 
-      const action = TOKEN_UPDATE_EVENTS.includes(eventName)
-        ? SubscriberAction.UPSERT
-        : TOKEN_BURN_EVENTS.includes(eventName)
-        ? SubscriberAction.DELETE
-        : null;
-
-      if (action) {
-        count++;
-
-        const { values } = event;
-        const { collectionId, tokenId } = values as unknown as {
-          collectionId: number;
-          tokenId: number;
-        };
-        const { blockHash, blockTimestamp } = blockCommonData;
-
-        if (action === SubscriberAction.UPSERT) {
-          await this.update({
-            collectionId,
-            tokenId,
-            eventName,
-            blockTimestamp,
-            blockHash,
-          });
-        } else {
-          // todo: Изучить что там с burn и at
-          await this.burn(collectionId, tokenId);
-        }
-      }
-      // performance.measure(mark, mark);
+          tokensCount.add(`${collectionId}-${tokenId}`);
+          eventsCount.add(`${collectionId}-${tokenId}-${eventName}`);
+          if (TOKEN_UPDATE_EVENTS.includes(eventName)) {
+            return this.update({
+              collectionId,
+              tokenId,
+              eventName,
+              blockTimestamp,
+              blockHash,
+            });
+          } else {
+            // todo: Изучить что там с burn и at
+            return this.burn(collectionId, tokenId);
+          }
+        }),
+      );
     }
 
-    console.log('Total count', count);
-    performance.measure('Start to End', 'start');
+    performance.measure('Total time', 'start');
 
-    // performance.clearMarks();
-    // performance.clearMeasures();
+    performance.clearMarks();
+    performance.clearMeasures();
     // obs.disconnect();
   }
 
@@ -266,5 +262,15 @@ export class TokenService {
         burned: true,
       },
     );
+  }
+
+  private extractTokenEvents(events: Event[]) {
+    return events.filter(({ section, method }) => {
+      const eventName = `${section}.${method}`;
+      return (
+        TOKEN_UPDATE_EVENTS.includes(eventName) ||
+        TOKEN_BURN_EVENTS.includes(eventName)
+      );
+    });
   }
 }
