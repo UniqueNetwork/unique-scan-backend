@@ -56,7 +56,7 @@ const loadConfig = (): Config => ({
 
   scanRangeTo: +process.env.SCAN_RANGE_TO || undefined,
 
-  scanTokensBatchSize: +process.env.SCAN_TOKENS_BATCH_SIZE || 50,
+  scanTokensBatchSize: +process.env.SCAN_TOKENS_BATCH_SIZE || 100,
 
   rescan: process.env.SCAN_FORCE_RESCAN === 'true',
 
