@@ -12,6 +12,7 @@ import { BlockService } from '../services/block.service';
 import { ExtrinsicService } from '../services/extrinsic.service';
 import { EventService } from '../services/event/event.service';
 import { Event } from '@entities/Event';
+import { Severity } from '@sentry/node';
 
 export interface IEvent {
   name: string;
@@ -137,11 +138,13 @@ export class BlocksSubscriberService implements ISubscriberService {
 
       if (tokensProcessingResult.rejected.length) {
         const { rejected } = tokensProcessingResult;
-        this.sentry
-          .instance()
-          .captureMessage('Some tokens were rejected', (scope) => {
-            return { ...scope, rejected };
-          });
+
+        const sentry = this.sentry.instance();
+        sentry.setContext('block-subscriber', {
+          level: Severity.Warning,
+          extra: { rejected },
+        });
+        sentry.captureMessage('Some tokens were rejected');
       }
     } catch (error) {
       this.logger.error({ ...log, error: error.message || error });
