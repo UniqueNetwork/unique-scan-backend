@@ -23,17 +23,8 @@ import { TokenNestingService } from './nesting.service';
 import { TokenData } from './token.types';
 import { chunk } from 'lodash';
 
-// todo: performance
-import { PerformanceObserver, performance } from 'node:perf_hooks';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
-const obs = new PerformanceObserver((items) => {
-  for (const i of items.getEntries()) {
-    const { name, duration } = i;
-    console.log(`${name}: ${duration}`);
-  }
-});
-
 @Injectable()
 export class TokenService {
   constructor(
@@ -155,9 +146,6 @@ export class TokenService {
     events: Event[];
     blockCommonData: IBlockCommonData;
   }): Promise<TokensBatchProcessingResult> {
-    obs.observe({ type: 'measure' });
-    performance.mark('start');
-
     const tokenEvents = this.extractTokenEvents(events);
 
     const eventChunks = chunk(
@@ -165,10 +153,8 @@ export class TokenService {
       this.configService.get('scanTokensBatchSize'),
     );
 
-    let i = 0;
-    const rejected = [];
+    let rejected = [];
     for (const chunk of eventChunks) {
-      console.log('chunk no', i++);
       const result = await Promise.allSettled(
         chunk.map((event) => {
           const { section, method, values } = event;
@@ -195,14 +181,12 @@ export class TokenService {
         }),
       );
 
-      // todo: Process rejected tokens again
-      rejected.concat(result.filter(({ status }) => status == 'rejected'));
+      // todo: Process rejected tokens again or maybe process sdk disconnect
+      rejected = [
+        ...rejected,
+        ...result.filter(({ status }) => status === 'rejected'),
+      ];
     }
-
-    performance.measure('Total time', 'start');
-
-    performance.clearMarks();
-    performance.clearMeasures();
 
     return {
       totalTokenEvents: tokenEvents.length,

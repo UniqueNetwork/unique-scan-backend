@@ -132,8 +132,17 @@ export class BlocksSubscriberService implements ISubscriberService {
         ...log,
         ...itemCounts,
         totalTokenEvents: tokensProcessingResult.totalTokenEvents,
-        rejectedTokens: tokensProcessingResult.rejected,
+        totalRejectedTokens: tokensProcessingResult.rejected.length,
       });
+
+      if (tokensProcessingResult.rejected.length) {
+        const { rejected } = tokensProcessingResult;
+        this.sentry
+          .instance()
+          .captureMessage('Some tokens were rejected', (scope) => {
+            return { ...scope, rejected };
+          });
+      }
     } catch (error) {
       this.logger.error({ ...log, error: error.message || error });
       this.sentry.instance().captureException({ ...log, error });
