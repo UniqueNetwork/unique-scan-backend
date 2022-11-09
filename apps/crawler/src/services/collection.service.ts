@@ -14,6 +14,7 @@ import {
   CollectionProperty,
   UniqueCollectionSchemaDecoded,
   PropertyKeyPermission,
+  CollectionMode,
 } from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
 import { SdkService } from '../sdk/sdk.service';
@@ -51,18 +52,32 @@ export class CollectionService {
     collectionId: number,
     at: string,
   ): Promise<CollectionData | null> {
-    const collectionDecoded = await this.sdkService.getCollection(
-      collectionId,
-      at,
-    );
+    let collectionDecoded = await this.sdkService.getCollection(collectionId);
+    let checkAt = false; // for burned collections
+
+    if (!collectionDecoded) {
+      collectionDecoded = await this.sdkService.getCollection(collectionId, at);
+      checkAt = true;
+    }
 
     if (!collectionDecoded) {
       return null;
     }
 
+    // TODO: delete after rft support
+    if (collectionDecoded.mode === CollectionMode.ReFungible) {
+      return null;
+    }
+
     const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
-      this.sdkService.getCollectionLimits(collectionId, at),
-      this.sdkService.getTokenPropertyPermissions(collectionId, at),
+      this.sdkService.getCollectionLimits(
+        collectionId,
+        checkAt ? at : undefined,
+      ),
+      this.sdkService.getTokenPropertyPermissions(
+        collectionId,
+        checkAt ? at : undefined,
+      ),
     ]);
 
     return {

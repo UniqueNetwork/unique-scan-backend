@@ -26,25 +26,33 @@ export class TokenService {
     tokenId: number,
     blockHash: string,
   ): Promise<TokenData | null> {
-    const tokenDecoded = await this.sdkService.getToken(
-      collectionId,
-      tokenId,
-      blockHash,
-    );
+    let tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+
+    if (!tokenDecoded) {
+      tokenDecoded = await this.sdkService.getToken(
+        collectionId,
+        tokenId,
+        blockHash,
+      );
+    }
 
     if (!tokenDecoded) {
       return null;
     }
-    const [tokenProperties, collectionDecoded, isBundle] = await Promise.all([
+
+    // TODO: delete after rft support
+    if (tokenDecoded.owner === '') {
+      return null;
+    }
+
+    const [tokenProperties, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.getCollection(collectionId, blockHash),
-      this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
+      this.sdkService.isTokenBundle(collectionId, tokenId),
     ]);
 
     return {
       tokenDecoded,
       tokenProperties,
-      collectionDecoded,
       isBundle,
     };
   }
@@ -55,8 +63,7 @@ export class TokenService {
     blockTimestamp?: number,
     needCheckNesting = false,
   ): Promise<Omit<Tokens, 'id'>> {
-    const { tokenDecoded, tokenProperties, collectionDecoded, isBundle } =
-      tokenData;
+    const { tokenDecoded, tokenProperties, isBundle } = tokenData;
 
     const {
       tokenId: token_id,
@@ -67,7 +74,7 @@ export class TokenService {
       owner,
     } = tokenDecoded;
 
-    const { owner: collectionOwner, tokenPrefix } = collectionDecoded;
+    const { owner: collectionOwner, tokenPrefix } = tokenDecoded.collection;
 
     const token = await this.tokensRepository.findOneBy({
       collection_id,
@@ -105,7 +112,7 @@ export class TokenService {
       owner_normalized: normalizeSubstrateAddress(owner),
       image,
       attributes,
-      properties: tokenProperties
+      properties: tokenProperties.properties
         ? sanitizePropertiesValues(tokenProperties.properties)
         : [],
       parent_id: parentId,

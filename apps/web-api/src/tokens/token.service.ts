@@ -40,7 +40,9 @@ const aliasFields = {
 
 const customQueryFields = {
   transfers_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".transfers_count, 0)`,
-  children_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".children_count, 0)`,
+  children_count: `jsonb_array_length(children)`,
+  bundle_created:
+    'COALESCE("Tokens".bundle_created, "Tokens".date_of_creation)',
 };
 
 @Injectable()
