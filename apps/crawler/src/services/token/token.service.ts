@@ -175,7 +175,6 @@ export class TokenService {
               blockHash,
             });
           } else {
-            // todo: Изучить что там с burn и at
             return this.burn(collectionId, tokenId);
           }
         }),
