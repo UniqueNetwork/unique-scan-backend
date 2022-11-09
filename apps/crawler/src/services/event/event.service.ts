@@ -25,7 +25,6 @@ export class EventService {
     private eventArgumentsService: EventArgumentsService,
 
     private tokenService: TokenService,
-    // todo: CollectionsService
 
     @InjectRepository(Event)
     private eventsRepository: Repository<Event>,
