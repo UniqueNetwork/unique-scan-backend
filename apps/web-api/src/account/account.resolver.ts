@@ -2,6 +2,7 @@ import {
   Args,
   ArgsType,
   Field,
+  Info,
   InputType,
   ObjectType,
   Query,
@@ -89,8 +90,9 @@ export class AccountResolver {
   @Query(() => AccountDataResponse)
   public async accounts(
     @Args() args: QueryArgs,
+    @Info() info,
   ): Promise<IDataListResponse<AccountDTO>> {
-    return this.service.find(args);
+    return this.service.find(args, info);
   }
 
   @Query(() => StatisticDataResponse)

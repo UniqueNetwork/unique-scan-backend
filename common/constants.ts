@@ -139,3 +139,8 @@ export const EVENT_ARGS_ACCOUNT_KEYS = [
 ];
 export const EVENT_ARGS_AMOUNT_KEY_DEFAULT = 'amount';
 export const EVENT_ARGS_AMOUNT_KEYS = [EVENT_ARGS_AMOUNT_KEY_DEFAULT, 'value'];
+
+export enum JOIN_TYPE {
+  INNER = 'inner',
+  LEFT = 'left',
+}

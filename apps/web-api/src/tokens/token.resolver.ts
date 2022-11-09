@@ -1,4 +1,11 @@
-import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Info,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { forwardRef, Inject } from '@nestjs/common';
 import {
   DateRangeArgs,
@@ -24,15 +31,17 @@ export class TokenResolver {
   @Query(() => TokenDataResponse)
   public tokens(
     @Args() args: QueryArgs,
+    @Info() info,
   ): Promise<IDataListResponse<TokenEntity>> {
-    return this.service.find(args);
+    return this.service.find(args, info);
   }
 
   @Query(() => TokenDataResponse)
   public tokenBundles(
     @Args() args: QueryArgs,
+    @Info() info,
   ): Promise<IDataListResponse<TokenEntity>> {
-    return this.service.findBundles(args);
+    return this.service.findBundles(args, info);
   }
 
   @Query(() => StatisticDataResponse)
@@ -44,7 +53,7 @@ export class TokenResolver {
   }
 
   @ResolveField()
-  async collection(@Parent() { collection_id }: TokenEntity) {
-    return this.collectionService.getCollectionById(collection_id);
+  async collection(@Parent() { collection_id }: TokenEntity, @Info() info) {
+    return this.collectionService.getCollectionById(collection_id, info);
   }
 }
