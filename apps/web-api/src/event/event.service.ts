@@ -7,6 +7,16 @@ import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { EventDTO } from './event.dto';
 import { EventMethod, EventSection } from '@common/constants';
 import { TokenEventDTO } from './token-event.dto';
+import { GraphQLResolveInfo } from 'graphql';
+import { IRelations } from '../utils/base.service.types';
+
+const EXTRINSIC_RELATION_ALIAS = 'Extrinsic';
+
+const relationsFields = {
+  author: EXTRINSIC_RELATION_ALIAS,
+  result: EXTRINSIC_RELATION_ALIAS,
+  fee: EXTRINSIC_RELATION_ALIAS,
+};
 
 const aliasFields = {
   action: 'method',
@@ -14,15 +24,27 @@ const aliasFields = {
   result: 'success',
 };
 
-const relationsFields = {
-  author: 'Extrinsic',
-  result: 'Extrinsic',
-  fee: 'Extrinsic',
+const customQueryFields = {
+  amount: `
+    sum(CASE
+      WHEN "Event".method = 'Transfer' THEN "Event".amount::double precision
+      ELSE 0
+    END)
+  `,
+  fee: `
+    sum(CASE
+      WHEN "Event".method = 'Deposit' THEN "Event".amount::double precision::double precision
+      ELSE 0
+    END)
+  `,
+  collection_id: '("Event".data::json->>0)::int',
+  token_id: '("Event".data::json->>1)::int',
 };
+
 @Injectable()
 export class EventService extends BaseService<Event, EventDTO> {
   constructor(@InjectRepository(Event) private repo: Repository<Event>) {
-    super({ aliasFields, relationsFields });
+    super({ aliasFields, relationsFields, customQueryFields });
   }
 
   protected getConditionField(
@@ -42,27 +64,12 @@ export class EventService extends BaseService<Event, EventDTO> {
 
   public async find(
     queryArgs: IGQLQueryArgs<EventDTO>,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<EventDTO>> {
     const qb = this.repo.createQueryBuilder();
-    qb.select(['block_index', 'block_number']);
-    qb.addSelect(
-      `
-        sum(CASE
-          WHEN "Event".method = 'Transfer' THEN "Event".amount::double precision
-          ELSE 0
-        END)
-        `,
-      'amount',
-    );
-    qb.addSelect(
-      `
-        sum(CASE
-          WHEN "Event".method = 'Deposit' THEN "Event".amount::double precision::double precision
-          ELSE 0
-        END)
-        `,
-      'fee',
-    );
+
+    this.applySelect(qb, queryArgs, this.getQueryFields(queryInfo));
+
     qb.where({
       phase: Not('Initialization'),
       section: EventSection.BALANCES,
@@ -80,23 +87,20 @@ export class EventService extends BaseService<Event, EventDTO> {
 
   public async findTokenEvents(
     queryArgs: IGQLQueryArgs<Partial<TokenEventDTO>>,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<TokenEventDTO>> {
     const qb = this.repo.createQueryBuilder();
-    qb.select(['"Event".timestamp']);
-    qb.addSelect('"Event".method', 'action');
-    qb.addSelect('("Event".data::json->>0)::int', 'collection_id');
-    qb.addSelect('("Event".data::json->>1)::int', 'token_id');
-    qb.addSelect('"Event".values', 'values');
 
-    qb.leftJoin(
-      'extrinsic',
-      'Extrinsic',
-      '"Extrinsic".block_index = "Event".block_index',
-    );
+    const queryFields = this.getQueryFields(queryInfo);
 
-    qb.addSelect('"Extrinsic".signer', 'author');
-    qb.addSelect('"Extrinsic".fee', 'fee');
-    qb.addSelect('"Extrinsic".success', 'result');
+    const relations = {
+      [EXTRINSIC_RELATION_ALIAS]: {
+        table: 'extrinsic',
+        on: `"${EXTRINSIC_RELATION_ALIAS}".block_index = "Event".block_index`,
+      },
+    } as IRelations;
+
+    this.applySelect(qb, queryArgs, queryFields, relations);
 
     qb.where({
       phase: Not('Initialization'),

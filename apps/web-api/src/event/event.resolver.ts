@@ -2,6 +2,7 @@ import {
   Args,
   ArgsType,
   Field,
+  Info,
   InputType,
   ObjectType,
   Query,
@@ -78,7 +79,8 @@ export class EventResolver {
   @Query(() => EventDataResponse)
   public async events(
     @Args() args: QueryArgs,
+    @Info() info,
   ): Promise<IDataListResponse<EventDTO>> {
-    return this.service.find(args);
+    return this.service.find(args, info);
   }
 }

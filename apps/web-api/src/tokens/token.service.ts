@@ -4,7 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
 import {
-  GQLOrderByParamsArgs,
   IDataListResponse,
   IDateRange,
   IGQLQueryArgs,
@@ -13,14 +12,23 @@ import {
 import { TokenDTO } from './token.dto';
 import { SentryWrapper } from '../utils/sentry.decorator';
 import { QueryArgs } from './token.resolver.types';
+import { GraphQLResolveInfo } from 'graphql';
+import { IRelations } from '../utils/base.service.types';
+import { FieldsListOptions } from 'graphql-fields-list';
+
+const COLLECTION_RELATION_ALIAS = 'Collection';
+const STATISTICS_RELATION_ALIAS = 'Statistics';
 
 const relationsFields = {
-  token_prefix: 'Collection',
-  collection_name: 'Collection',
-  collection_owner: 'Collection',
-  collection_owner_normalized: 'Collection',
-  transfers_count: 'Statistics',
-  children_count: 'Statistics',
+  token_prefix: COLLECTION_RELATION_ALIAS,
+  collection_name: COLLECTION_RELATION_ALIAS,
+  collection_owner: COLLECTION_RELATION_ALIAS,
+  collection_owner_normalized: COLLECTION_RELATION_ALIAS,
+  collection_cover: COLLECTION_RELATION_ALIAS,
+  collection_description: COLLECTION_RELATION_ALIAS,
+
+  transfers_count: STATISTICS_RELATION_ALIAS,
+  children_count: STATISTICS_RELATION_ALIAS,
 };
 
 const aliasFields = {
@@ -30,19 +38,27 @@ const aliasFields = {
   collection_description: 'description',
 };
 
+const customQueryFields = {
+  transfers_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".transfers_count, 0)`,
+  children_count: `jsonb_array_length(children)`,
+  bundle_created:
+    'COALESCE("Tokens".bundle_created, "Tokens".date_of_creation)',
+};
+
 @Injectable()
 export class TokenService extends BaseService<Tokens, TokenDTO> {
   constructor(@InjectRepository(Tokens) private repo: Repository<Tokens>) {
-    super({ aliasFields, relationsFields });
+    super({ aliasFields, relationsFields, customQueryFields });
   }
 
   @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: QueryArgs,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
 
-    this.applyFilters(qb, queryArgs);
+    this.applyArgs(qb, queryArgs, queryInfo);
 
     return this.getDataAndCount(qb, queryArgs);
   }
@@ -50,30 +66,24 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   @SentryWrapper({ data: [], count: 0 })
   public async findBundles(
     queryArgs: QueryArgs,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
+
     qb.andWhere('parent_id is null');
     qb.andWhere(`type = :type`, { type: TokenType.NESTED });
 
-    this.applyFilters(qb, queryArgs);
+    this.applyArgs(qb, queryArgs, queryInfo);
+
     return this.getDataAndCount(qb, queryArgs);
-  }
-
-  public async findOne(queryArgs: QueryArgs): Promise<TokenDTO> {
-    const qb = this.repo.createQueryBuilder();
-
-    this.applyFilters(qb, queryArgs);
-
-    return qb.getRawOne();
   }
 
   public async getBundleRoot(
     collection_id: number,
     token_id: number,
+    queryInfo: GraphQLResolveInfo,
   ): Promise<TokenDTO> {
     const qb = this.repo.createQueryBuilder();
-
-    await this.selectTokenFields(qb);
 
     qb.where(
       new Brackets((qb) => {
@@ -86,28 +96,34 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.orWhere(
       new Brackets((qb) => {
         qb.where('parent_id is null')
-          .andWhere('token_id = :token_id', {
+          .andWhere('"Tokens".token_id = :token_id', {
             token_id,
           })
-          .andWhere('collection_id = :collection_id', {
+          .andWhere('"Tokens".collection_id = :collection_id', {
             collection_id,
           })
           .andWhere(`type = :type`, { type: TokenType.NESTED });
       }),
     );
 
+    this.select(qb, {}, queryInfo, { skip: ['__*'] });
+
     return qb.getRawOne();
   }
 
-  public getByCollectionId(id: number, queryArgs: QueryArgs) {
+  public getByCollectionId(
+    id: number,
+    queryArgs: QueryArgs,
+    queryInfo: GraphQLResolveInfo,
+  ) {
     const qb = this.repo.createQueryBuilder();
 
-    this.applyFilters(qb, {
-      ...queryArgs,
-      where: {
-        _and: [{ collection_id: { _eq: id } }, { ...queryArgs.where }],
-      },
-    });
+    qb.where('collection_id = :id', { id });
+    this.applyWhereCondition(qb, queryArgs);
+
+    const queryFields = this.getQueryFields(queryInfo, { skip: ['__*'] });
+
+    this.applySelect(qb, {}, queryFields);
 
     return qb.getRawMany();
   }
@@ -125,23 +141,19 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     };
   }
 
-  public findNestingChildren(collection_id: number, token_id: number) {
+  public findNestingChildren(
+    collection_id: number,
+    token_id: number,
+    queryInfo: GraphQLResolveInfo,
+  ) {
     const qb = this.repo.createQueryBuilder();
 
-    const queryArgs = {
-      where: {
-        parent_id: { _eq: `${collection_id}_${token_id}` },
-      },
-      limit: null,
-      order_by: {
-        token_id: GQLOrderByParamsArgs.asc,
-      },
-    };
+    const parentCredentials = `${collection_id}_${token_id}`;
+    qb.where('parent_id = :parentCredentials', { parentCredentials });
+    // qb.limit(null);
+    qb.orderBy('token_id', 'ASC');
 
-    this.selectTokenFields(qb);
-    this.applyLimitOffset(qb, queryArgs);
-    this.applyWhereCondition(qb, queryArgs);
-    this.applyOrderCondition(qb, queryArgs);
+    this.select(qb, {}, queryInfo, { skip: ['__*'] });
 
     return qb.getRawMany();
   }
@@ -165,13 +177,15 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     return qb.getRawMany();
   }
 
-  private applyFilters(
+  private applyArgs(
     qb: SelectQueryBuilder<Tokens>,
     queryArgs: QueryArgs,
+    queryInfo: GraphQLResolveInfo,
   ): void {
-    this.select(qb);
+    this.select(qb, queryArgs, queryInfo);
 
     this.applyDistinctOn(qb, queryArgs);
+
     this.applyLimitOffset(qb, queryArgs);
 
     this.applyWhereCondition(qb, queryArgs);
@@ -218,52 +232,26 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     );
   }
 
-  private selectTokenFields(qb: SelectQueryBuilder<Tokens>): void {
-    qb.select('Tokens.collection_id', 'collection_id');
-    qb.addSelect('Tokens.token_id', 'token_id');
-    qb.addSelect('Tokens.image', 'image');
-    qb.addSelect('Tokens.attributes', 'attributes');
-    qb.addSelect('Tokens.properties', 'properties');
-    qb.addSelect('Tokens.owner', 'owner');
-    qb.addSelect('Tokens.date_of_creation', 'date_of_creation');
-    // TODO: return after rft support
-    qb.addSelect(
-      'COALESCE("Tokens".bundle_created, "Tokens".date_of_creation)',
-      'bundle_created',
-    );
-    qb.addSelect('Tokens.owner_normalized', 'owner_normalized');
-    qb.addSelect('Tokens.parent_id', 'parent_id');
-    qb.addSelect('Tokens.is_sold', 'is_sold');
-    qb.addSelect('Tokens.burned', 'burned');
-    qb.addSelect('Tokens.token_name', 'token_name');
-    qb.addSelect('Tokens.type', 'type');
-    qb.addSelect(`split_part(Tokens.token_name, ' ', 1)`, 'token_prefix');
-    qb.addSelect(`jsonb_array_length(Tokens.children)`, 'children_count');
-  }
+  private select(
+    qb: SelectQueryBuilder<Tokens>,
+    queryArgs: QueryArgs,
+    queryInfo: GraphQLResolveInfo,
+    queryFieldsOptions?: FieldsListOptions,
+  ): void {
+    const queryFields = this.getQueryFields(queryInfo, queryFieldsOptions);
 
-  private select(qb: SelectQueryBuilder<Tokens>): void {
-    this.selectTokenFields(qb);
+    const relations = {
+      [COLLECTION_RELATION_ALIAS]: {
+        table: 'collections',
+        on: `"Tokens".collection_id = "${COLLECTION_RELATION_ALIAS}".collection_id`,
+      },
+      [STATISTICS_RELATION_ALIAS]: {
+        table: 'tokens_stats',
+        on: `"Tokens".token_id = "${STATISTICS_RELATION_ALIAS}".token_id 
+        AND "Tokens".collection_id  = "${STATISTICS_RELATION_ALIAS}".collection_id`,
+      },
+    } as IRelations;
 
-    qb.leftJoinAndSelect(
-      'collections',
-      'Collection',
-      '"Tokens".collection_id = "Collection".collection_id',
-    );
-    qb.addSelect('Collection.token_prefix', 'token_prefix');
-    qb.addSelect('Collection.name', 'collection_name');
-    qb.addSelect('Collection.owner', 'collection_owner');
-    qb.addSelect('Collection.owner_normalized', 'collection_owner_normalized');
-    qb.addSelect('Collection.description', 'collection_description');
-    qb.addSelect('"Collection".collection_cover', 'collection_cover');
-    qb.addSelect(
-      'COALESCE("Statistics".transfers_count, 0)',
-      'transfers_count',
-    );
-    qb.addSelect(`COALESCE("Statistics".children_count, 0)`, 'children_count');
-    qb.leftJoin(
-      'tokens_stats',
-      'Statistics',
-      '"Tokens".token_id  = "Statistics".token_id and "Tokens".collection_id  = "Statistics".collection_id',
-    );
+    this.applySelect(qb, queryArgs, queryFields, relations);
   }
 }

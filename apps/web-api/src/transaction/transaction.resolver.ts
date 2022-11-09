@@ -1,4 +1,4 @@
-import { Args, Query, Resolver } from '@nestjs/graphql';
+import { Args, Info, Query, Resolver } from '@nestjs/graphql';
 import { IDataListResponse } from '../utils/gql-query-args';
 import { TransactionDTO } from './transaction.dto';
 import {
@@ -14,7 +14,8 @@ export class TransactionResolver {
   @Query(() => TransactionsDataResponse)
   public async tokenTransactions(
     @Args() args: QueryArgs,
+    @Info() info,
   ): Promise<IDataListResponse<TransactionDTO>> {
-    return this.service.findTokenTransactions(args);
+    return this.service.findTokenTransactions(args, info);
   }
 }

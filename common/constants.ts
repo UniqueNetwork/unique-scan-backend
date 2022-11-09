@@ -151,3 +151,8 @@ export const TOKEN_UPDATE_EVENTS = [
 ];
 
 export const TOKEN_BURN_EVENTS = [EventName.ITEM_DESTROYED];
+
+export enum JOIN_TYPE {
+  INNER = 'inner',
+  LEFT = 'left',
+}
