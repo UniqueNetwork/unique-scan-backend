@@ -48,8 +48,8 @@ const relationsFields = {
 };
 
 const customQueryFields = {
-  collection_id: '("Event".data::json->>0)::int',
-  token_id: '("Event".data::json->>1)::int',
+  collection_id: `"Event"."values"->>'collectionId'`,
+  token_id: `"Event"."values"->>'tokenId'`,
 };
 
 @Injectable()
@@ -66,11 +66,11 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
     field: string,
   ): string {
     if (field === 'collection_id') {
-      return `("${qb.alias}".data::json->>0)::int`;
+      return `"${qb.alias}"."values"->>'collectionId'`;
     }
 
     if (field === 'token_id') {
-      return `("${qb.alias}".data::json->>1)::int`;
+      return `"${qb.alias}"."values"->>'tokenId'`;
     }
 
     return super.getConditionField(qb, field);
