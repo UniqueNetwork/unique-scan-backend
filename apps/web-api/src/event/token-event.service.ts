@@ -108,7 +108,14 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
 
   private async findTokens(args: ITokenEntities[]): Promise<ITokenInfo[]> {
     const qb = this.tokenRepo.createQueryBuilder();
-    qb.select(['token_id', 'collection_id::int', 'token_name', 'image']);
+    qb.select([
+      'token_id',
+      'collection_id::int',
+      'token_name',
+      'image',
+      'type',
+    ]);
+    qb.addSelect(`SUBSTRING(token_name from '([^\\s]+)')`, 'token_prefix');
     qb.where(args);
 
     return qb.getRawMany();
