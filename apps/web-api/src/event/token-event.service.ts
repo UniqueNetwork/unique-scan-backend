@@ -139,7 +139,11 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
 
     this.applySelect(qb, queryArgs, queryFields, relations);
 
-    qb.where({
+    this.applyLimitOffset(qb, queryArgs);
+    this.applyWhereCondition(qb, queryArgs);
+    this.applyOrderCondition(qb, queryArgs);
+
+    qb.andWhere({
       phase: Not('Initialization'),
       section: EventSection.COMMON,
       method: In([
@@ -148,10 +152,6 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
         EventMethod.ITEM_DESTROYED,
       ]),
     });
-
-    this.applyLimitOffset(qb, queryArgs);
-    this.applyWhereCondition(qb, queryArgs);
-    this.applyOrderCondition(qb, queryArgs);
 
     return this.getDataAndCount(qb, queryArgs);
   }
