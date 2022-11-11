@@ -79,27 +79,40 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
   public async mapEventData(events: TokenEventDTO[]) {
     for (const event of events) {
       // nesting token to another token
-      if (event.action === EventMethod.TRANSFER) {
-        const values = event.values as unknown as IEventTransferValues;
-        const toToken = this.nestingAddressToIds(values.to.value);
+      const values = event.values as unknown as IEventTransferValues;
 
-        if (toToken) {
-          const tokens = await this.findTokens([
+      switch (event.action) {
+        case EventMethod.TRANSFER:
+          const toToken = this.nestingAddressToIds(values.to.value);
+
+          if (toToken) {
+            const tokens = await this.findTokens([
+              {
+                collection_id: values.collectionId,
+                token_id: values.tokenId,
+              },
+              {
+                collection_id: toToken.collectionId,
+                token_id: toToken.tokenId,
+              },
+            ]);
+
+            values.toToken = toToken;
+            values.tokens = tokens;
+          }
+
+          event.values = values;
+          break;
+
+        case EventMethod.ITEM_CREATED:
+        case EventMethod.ITEM_DESTROYED:
+          values.tokens = await this.findTokens([
             {
               collection_id: values.collectionId,
               token_id: values.tokenId,
             },
-            {
-              collection_id: toToken.collectionId,
-              token_id: toToken.tokenId,
-            },
           ]);
-
-          values.toToken = toToken;
-          values.tokens = tokens;
-        }
-
-        event.values = values;
+          break;
       }
     }
 
