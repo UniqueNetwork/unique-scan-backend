@@ -189,10 +189,7 @@ export class TokenNestingService {
     }
   }
 
-  private async removeTokenFromParents(
-    collection_id: number,
-    token_id: number,
-  ) {
+  public async removeTokenFromParents(collection_id: number, token_id: number) {
     const parents = await this.getParentsByChildren(collection_id, token_id);
 
     for (const parent of parents) {

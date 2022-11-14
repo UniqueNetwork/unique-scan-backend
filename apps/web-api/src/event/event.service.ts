@@ -6,23 +6,7 @@ import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { EventDTO } from './event.dto';
 import { EventMethod, EventSection } from '@common/constants';
-import { TokenEventDTO } from './token-event.dto';
 import { GraphQLResolveInfo } from 'graphql';
-import { IRelations } from '../utils/base.service.types';
-
-const EXTRINSIC_RELATION_ALIAS = 'Extrinsic';
-
-const relationsFields = {
-  author: EXTRINSIC_RELATION_ALIAS,
-  result: EXTRINSIC_RELATION_ALIAS,
-  fee: EXTRINSIC_RELATION_ALIAS,
-};
-
-const aliasFields = {
-  action: 'method',
-  author: 'signer',
-  result: 'success',
-};
 
 const customQueryFields = {
   amount: `
@@ -44,7 +28,7 @@ const customQueryFields = {
 @Injectable()
 export class EventService extends BaseService<Event, EventDTO> {
   constructor(@InjectRepository(Event) private repo: Repository<Event>) {
-    super({ aliasFields, relationsFields, customQueryFields });
+    super({ customQueryFields });
   }
 
   protected getConditionField(
@@ -77,40 +61,6 @@ export class EventService extends BaseService<Event, EventDTO> {
     });
     qb.groupBy('"Event".block_number');
     qb.addGroupBy('"Event".block_index');
-
-    this.applyLimitOffset(qb, queryArgs);
-    this.applyWhereCondition(qb, queryArgs);
-    this.applyOrderCondition(qb, queryArgs);
-
-    return this.getDataAndCount(qb, queryArgs);
-  }
-
-  public async findTokenEvents(
-    queryArgs: IGQLQueryArgs<Partial<TokenEventDTO>>,
-    queryInfo: GraphQLResolveInfo,
-  ): Promise<IDataListResponse<TokenEventDTO>> {
-    const qb = this.repo.createQueryBuilder();
-
-    const queryFields = this.getQueryFields(queryInfo);
-
-    const relations = {
-      [EXTRINSIC_RELATION_ALIAS]: {
-        table: 'extrinsic',
-        on: `"${EXTRINSIC_RELATION_ALIAS}".block_index = "Event".block_index`,
-      },
-    } as IRelations;
-
-    this.applySelect(qb, queryArgs, queryFields, relations);
-
-    qb.where({
-      phase: Not('Initialization'),
-      section: EventSection.COMMON,
-      method: In([
-        EventMethod.ITEM_CREATED,
-        EventMethod.TRANSFER,
-        EventMethod.ITEM_DESTROYED,
-      ]),
-    });
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);

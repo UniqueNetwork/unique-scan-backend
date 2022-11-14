@@ -315,7 +315,7 @@ export class BaseService<T, S> {
               this.applyConditionTree(
                 qb as SelectQueryBuilder<T>,
                 queryArray,
-                operator,
+                Operator.AND,
                 filterCb,
               ),
             ),

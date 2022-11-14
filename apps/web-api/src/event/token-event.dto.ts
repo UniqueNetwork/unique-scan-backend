@@ -1,4 +1,5 @@
 import { EventMethod } from '@common/constants';
+import { TokenType } from '@entities/Tokens';
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSONObject } from 'graphql-type-json';
 
@@ -30,4 +31,10 @@ export class TokenEventDTO {
 
   @Field(() => GraphQLJSONObject, { nullable: true })
   values?: object;
+
+  @Field(() => TokenType, { nullable: true })
+  type?: TokenType;
+
+  @Field(() => String, { nullable: true })
+  token_name?: string;
 }
