@@ -91,22 +91,28 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
       switch (event.action) {
         case EventMethod.TRANSFER:
           const toToken = this.nestingAddressToIds(values.to.value);
+          const tokensToFind: {
+            collection_id: number;
+            token_id: number;
+          }[] = [];
+
+          if (values.collectionId && values.tokenId) {
+            tokensToFind.push({
+              token_id: values.tokenId,
+              collection_id: values.collectionId,
+            });
+          }
 
           if (toToken) {
-            const tokens = await this.findTokens([
-              {
-                collection_id: values.collectionId,
-                token_id: values.tokenId,
-              },
-              {
-                collection_id: toToken.collectionId,
-                token_id: toToken.tokenId,
-              },
-            ]);
+            tokensToFind.push({
+              collection_id: toToken.collectionId,
+              token_id: toToken.tokenId,
+            });
 
             values.toToken = toToken;
-            values.tokens = tokens;
           }
+
+          values.tokens = await this.findTokens(tokensToFind);
 
           event.values = values;
           break;
