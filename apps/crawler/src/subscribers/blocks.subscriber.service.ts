@@ -133,9 +133,13 @@ export class BlocksSubscriberService implements ISubscriberService {
       this.logger.verbose({
         ...log,
         ...itemCounts,
+
+        // Collections service results
         totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
         totalRejectedCollections:
           collectionsResult?.rejected.length ?? undefined,
+
+        // Tokens service results
         totalTokenEvents: tokensResult?.totalEvents ?? undefined,
         totalRejectedTokens: tokensResult?.rejected.length ?? undefined,
       });
