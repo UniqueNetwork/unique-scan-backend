@@ -26,6 +26,8 @@ export type Config = {
 
   scanRangeTo?: number;
 
+  scanCollectionsBatchSize?: number;
+
   scanTokensBatchSize?: number;
 
   rescan: boolean;
@@ -55,6 +57,8 @@ const loadConfig = (): Config => ({
   scanRangeFrom: +process.env.SCAN_RANGE_FROM || 0,
 
   scanRangeTo: +process.env.SCAN_RANGE_TO || undefined,
+
+  scanCollectionsBatchSize: +process.env.SCAN_COLLECTIONS_BATCH_SIZE || 50,
 
   scanTokensBatchSize: +process.env.SCAN_TOKENS_BATCH_SIZE || 100,
 

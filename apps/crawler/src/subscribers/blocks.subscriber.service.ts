@@ -50,11 +50,12 @@ export interface IItemCounts {
 
 export interface EventsProcessingResult {
   events: Event[];
-  tokensProcessingResult: TokensBatchProcessingResult;
+  collectionsResult: BatchProcessingResult | null;
+  tokensResult: BatchProcessingResult | null;
 }
 
-export interface TokensBatchProcessingResult {
-  totalTokenEvents: number;
+export interface BatchProcessingResult {
+  totalEvents: number;
   rejected: object[];
 }
 
@@ -111,7 +112,7 @@ export class BlocksSubscriberService implements ISubscriberService {
       } as IBlockCommonData;
 
       // Process events first to get event.values
-      const { events, tokensProcessingResult } =
+      const { events, collectionsResult, tokensResult } =
         await this.eventService.process({
           blockCommonData,
           blockItems,
@@ -132,19 +133,23 @@ export class BlocksSubscriberService implements ISubscriberService {
       this.logger.verbose({
         ...log,
         ...itemCounts,
-        totalTokenEvents: tokensProcessingResult.totalTokenEvents,
-        totalRejectedTokens: tokensProcessingResult.rejected.length,
+        totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
+        totalRejectedCollections:
+          collectionsResult?.rejected.length ?? undefined,
+        totalTokenEvents: tokensResult?.totalEvents ?? undefined,
+        totalRejectedTokens: tokensResult?.rejected.length ?? undefined,
       });
 
-      if (tokensProcessingResult.rejected.length) {
-        const { rejected } = tokensProcessingResult;
+      if (collectionsResult?.rejected.length || tokensResult?.rejected.length) {
+        const { rejected: rejectedCollections } = collectionsResult;
+        const { rejected: rejectedTokens } = tokensResult;
 
         const sentry = this.sentry.instance();
         sentry.setContext('block-subscriber', {
           level: Severity.Warning,
-          extra: { rejected },
+          extra: { rejectedCollections, rejectedTokens },
         });
-        sentry.captureMessage('Some tokens were rejected');
+        sentry.captureMessage('Some collections or tokens were rejected');
       }
     } catch (error) {
       this.logger.error({ ...log, error: error.message || error });

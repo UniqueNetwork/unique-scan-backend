@@ -5,6 +5,7 @@ import {
   EventMethod,
   EventSection,
   EVENT_ARGS_ACCOUNT_KEYS,
+  SubscriberName,
 } from '@common/constants';
 import { Event } from '@entities/Event';
 import { normalizeTimestamp } from '@common/utils';
@@ -18,6 +19,9 @@ import { EventArgumentsService } from './event.arguments.service';
 import { EventArgs } from './event.types';
 import { AccountRecord } from '../account/account.types';
 import { TokenService } from '../token/token.service';
+import { CollectionService } from '../collection.service';
+import { ConfigService } from '@nestjs/config';
+import { Config } from '../../config/config.module';
 
 @Injectable()
 export class EventService {
@@ -25,6 +29,10 @@ export class EventService {
     private eventArgumentsService: EventArgumentsService,
 
     private tokenService: TokenService,
+
+    private collectionService: CollectionService,
+
+    private configService: ConfigService<Config>,
 
     @InjectRepository(Event)
     private eventsRepository: Repository<Event>,
@@ -111,14 +119,28 @@ export class EventService {
 
     await this.eventsRepository.upsert(events, ['block_number', 'event_index']);
 
-    const tokensProcessingResult = await this.tokenService.batchProcess({
-      events,
-      blockCommonData,
-    });
+    const subscribersConfig = this.configService.get('subscribers');
+
+    let collectionsResult = null;
+    if (subscribersConfig[SubscriberName.COLLECTIONS]) {
+      collectionsResult = await this.collectionService.batchProcess({
+        events,
+        blockCommonData,
+      });
+    }
+
+    let tokensResult = null;
+    if (subscribersConfig[SubscriberName.TOKENS]) {
+      tokensResult = await this.tokenService.batchProcess({
+        events,
+        blockCommonData,
+      });
+    }
 
     return {
       events,
-      tokensProcessingResult,
+      collectionsResult,
+      tokensResult,
     };
   }
 
