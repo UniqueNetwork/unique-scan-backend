@@ -54,14 +54,6 @@ export class EventService extends BaseService<Event, EventDTO> {
 
     this.applySelect(qb, queryArgs, this.getQueryFields(queryInfo));
 
-    qb.where({
-      phase: Not('Initialization'),
-      section: EventSection.BALANCES,
-      method: In([EventMethod.TRANSFER, EventMethod.DEPOSIT]),
-    });
-    qb.groupBy('"Event".block_number');
-    qb.addGroupBy('"Event".block_index');
-
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
