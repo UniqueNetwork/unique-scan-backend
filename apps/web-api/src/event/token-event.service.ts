@@ -81,6 +81,10 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
       // nesting token to another token
       const values = event.values as unknown as IEventTransferValues;
 
+      if (!values) {
+        break;
+      }
+
       switch (event.action) {
         case EventMethod.TRANSFER:
           const toToken = this.nestingAddressToIds(values.to.value);
