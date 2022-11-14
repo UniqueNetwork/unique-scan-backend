@@ -56,6 +56,12 @@ class TokenEventOrderByParams
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   fee?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  type?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  token_name?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
