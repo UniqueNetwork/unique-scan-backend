@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository, SelectQueryBuilder } from 'typeorm';
 import { nesting } from '@unique-nft/utils/address';
-import { EventMethod, EventSection } from '@common/constants';
+import { EventMethod, EventSection, JOIN_TYPE } from '@common/constants';
 import { TokenEventDTO } from './token-event.dto';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { GraphQLResolveInfo } from 'graphql';
@@ -34,6 +34,7 @@ interface IEventTransferValues {
 }
 
 const EXTRINSIC_RELATION_ALIAS = 'Extrinsic';
+const TOKEN_RELATION_ALIAS = 'Tokens';
 
 const aliasFields = {
   action: 'method',
@@ -45,6 +46,8 @@ const relationsFields = {
   author: EXTRINSIC_RELATION_ALIAS,
   result: EXTRINSIC_RELATION_ALIAS,
   fee: EXTRINSIC_RELATION_ALIAS,
+  type: TOKEN_RELATION_ALIAS,
+  token_name: TOKEN_RELATION_ALIAS,
 };
 
 const customQueryFields = {
@@ -158,6 +161,13 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
       [EXTRINSIC_RELATION_ALIAS]: {
         table: 'extrinsic',
         on: `"${EXTRINSIC_RELATION_ALIAS}".block_index = "Event".block_index`,
+        join: JOIN_TYPE.INNER,
+      },
+      [TOKEN_RELATION_ALIAS]: {
+        table: 'tokens',
+        on: `
+          "${TOKEN_RELATION_ALIAS}".token_id = ("${qb.alias}"."values"->>'tokenId')::int and
+          "${TOKEN_RELATION_ALIAS}".collection_id = ("${qb.alias}"."values"->>'collectionId')::int`,
       },
     } as IRelations;
 
