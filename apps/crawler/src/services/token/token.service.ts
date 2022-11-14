@@ -27,7 +27,6 @@ export class TokenService {
     blockHash: string,
   ): Promise<TokenData | null> {
     let tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
-
     if (!tokenDecoded) {
       tokenDecoded = await this.sdkService.getToken(
         collectionId,
@@ -175,6 +174,8 @@ export class TokenService {
   }
 
   async burn(collectionId: number, tokenId: number) {
+    await this.nestingService.removeTokenFromParents(collectionId, tokenId);
+
     return this.tokensRepository.update(
       {
         collection_id: collectionId,
