@@ -50,11 +50,11 @@ export interface IItemCounts {
 
 export interface EventsProcessingResult {
   events: Event[];
-  collectionsResult: BatchProcessingResult | null;
-  tokensResult: BatchProcessingResult | null;
+  collectionsResult: ItemsBatchProcessingResult | null;
+  tokensResult: ItemsBatchProcessingResult | null;
 }
 
-export interface BatchProcessingResult {
+export interface ItemsBatchProcessingResult {
   totalEvents: number;
   rejected: object[];
 }

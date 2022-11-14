@@ -25,7 +25,7 @@ import {
 import { Repository } from 'typeorm';
 import { SdkService } from '../sdk/sdk.service';
 import {
-  BatchProcessingResult,
+  ItemsBatchProcessingResult,
   IBlockCommonData,
 } from '../subscribers/blocks.subscriber.service';
 import { ConfigService } from '@nestjs/config';
@@ -284,7 +284,7 @@ export class CollectionService {
   }: {
     events: Event[];
     blockCommonData: IBlockCommonData;
-  }): Promise<BatchProcessingResult> {
+  }): Promise<ItemsBatchProcessingResult> {
     const collectionEvents = this.extractCollectionEvents(events);
 
     const eventChunks = chunk(

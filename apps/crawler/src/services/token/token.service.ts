@@ -16,7 +16,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
 import {
-  BatchProcessingResult,
+  ItemsBatchProcessingResult,
   IBlockCommonData,
 } from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
@@ -144,7 +144,7 @@ export class TokenService {
   }: {
     events: Event[];
     blockCommonData: IBlockCommonData;
-  }): Promise<BatchProcessingResult> {
+  }): Promise<ItemsBatchProcessingResult> {
     const tokenEvents = this.extractTokenEvents(events);
 
     const eventChunks = chunk(
