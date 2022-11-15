@@ -150,7 +150,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     const parentCredentials = `${collection_id}_${token_id}`;
     qb.where('parent_id = :parentCredentials', { parentCredentials });
-    qb.andWhere('burned = false');
+    qb.andWhere('Tokens.burned = false');
     // qb.limit(null);
     qb.orderBy('token_id', 'ASC');
 
