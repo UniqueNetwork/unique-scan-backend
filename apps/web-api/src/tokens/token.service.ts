@@ -150,6 +150,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     const parentCredentials = `${collection_id}_${token_id}`;
     qb.where('parent_id = :parentCredentials', { parentCredentials });
+    qb.andWhere('burned = false');
     // qb.limit(null);
     qb.orderBy('token_id', 'ASC');
 
@@ -247,7 +248,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       },
       [STATISTICS_RELATION_ALIAS]: {
         table: 'tokens_stats',
-        on: `"Tokens".token_id = "${STATISTICS_RELATION_ALIAS}".token_id 
+        on: `"Tokens".token_id = "${STATISTICS_RELATION_ALIAS}".token_id
         AND "Tokens".collection_id  = "${STATISTICS_RELATION_ALIAS}".collection_id`,
       },
     } as IRelations;
