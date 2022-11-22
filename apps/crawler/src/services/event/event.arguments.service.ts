@@ -12,6 +12,7 @@ import { EventValues, EventArgs } from './event.types';
 import { AccountService } from '../account/account.service';
 import { getAmount } from '@common/utils';
 import { AccountRecord } from '../account/account.types';
+import { nesting } from '@unique-nft/utils/address';
 
 type EventArgsValueNormalizer = (
   rawValue: string | number | object,
@@ -120,7 +121,14 @@ export class EventArgumentsService {
       this.normalizeOtherArgs(rawArgs, argsDescriptor),
     ]);
 
-    const result = { ...accountsValues, ...amountValues, ...otherValues };
+    const nestedTo = this.normalizeNestedTokenAddr(eventName, rawArgs);
+
+    const result: EventValues = {
+      ...accountsValues,
+      ...amountValues,
+      ...otherValues,
+      ...nestedTo,
+    };
 
     return Object.keys(result).length ? result : null;
   }
@@ -144,6 +152,27 @@ export class EventArgumentsService {
     }
 
     return result;
+  }
+
+  private normalizeNestedTokenAddr(
+    eventName: string,
+    rawArgs: EventArgs,
+  ): EventValues {
+    const result = {} as EventValues;
+
+    if (
+      eventName != EventName.TRANSFER ||
+      !Array.isArray(rawArgs) ||
+      !rawArgs[3]
+    ) {
+      return result;
+    }
+
+    try {
+      result.nestedTo = nesting.addressToIds(rawArgs[3].value);
+    } finally {
+      return result;
+    }
   }
 
   private async normalizeAccountArgs(
