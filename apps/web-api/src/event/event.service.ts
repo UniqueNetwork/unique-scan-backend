@@ -1,12 +1,11 @@
 import { Event } from '@entities/Event';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
+import { GraphQLResolveInfo } from 'graphql';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { EventDTO } from './event.dto';
-import { EventMethod, EventSection } from '@common/constants';
-import { GraphQLResolveInfo } from 'graphql';
 
 const customQueryFields = {
   amount: `

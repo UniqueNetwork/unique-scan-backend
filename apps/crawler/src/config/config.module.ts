@@ -31,6 +31,8 @@ export type Config = {
   prometheusPort: number;
 
   batchSize: number;
+
+  rpcProviderUrl: string;
 };
 
 const loadConfig = (): Config => ({
@@ -59,6 +61,9 @@ const loadConfig = (): Config => ({
   prometheusPort: +process.env.PROMETHEUS_PORT || 9090,
 
   batchSize: +process.env.BATCH_SIZE || 10,
+
+  rpcProviderUrl:
+    process.env.RPC_PROVIDER_URL || 'https://rpc-opal.unique.network',
 });
 
 export const GlobalConfigModule = ConfigModule.forRoot({
