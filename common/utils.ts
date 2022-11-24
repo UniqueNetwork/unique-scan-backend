@@ -39,3 +39,19 @@ export function sanitizePropertiesValues(
     value: sanitizeUnicodeString(value),
   }));
 }
+
+export function getObjectKeysDeep(args, result = []) {
+  if (Array.isArray(args)) {
+    for (let i = 0; i < args.length; i++) {
+      getObjectKeysDeep(args[i], result);
+    }
+  } else {
+    for (const key in args) {
+      result.push(key);
+      if (typeof args[key] == 'object' || Array.isArray(args[key])) {
+        getObjectKeysDeep(args[key], result);
+      }
+    }
+  }
+  return result;
+}

@@ -2,6 +2,7 @@ import {
   Args,
   ArgsType,
   Field,
+  Info,
   InputType,
   ObjectType,
   Query,
@@ -134,8 +135,9 @@ export class ExtrinsicResolver {
   @Query(() => ExtrinsicDataResponse)
   public async extrinsics(
     @Args() args: QueryArgs,
+    @Info() info,
   ): Promise<IDataListResponse<ExtrinsicDTO>> {
-    return this.service.find(args);
+    return this.service.find(args, info);
   }
 
   @Query(() => StatisticDataResponse)
