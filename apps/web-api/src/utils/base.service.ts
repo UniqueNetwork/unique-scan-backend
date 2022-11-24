@@ -15,8 +15,8 @@ import {
 
 export class BaseService<T, S> {
   private readonly DEFAULT_PAGE_SIZE = 10;
-  private readonly aliasFields: ISetting = {};
-  private readonly relationsFields: ISetting = {};
+  protected readonly aliasFields: ISetting = {};
+  protected readonly relationsFields: ISetting = {};
   private readonly relations: string[] = [];
 
   constructor(schemas: ISettingsSchema = {}) {
@@ -244,7 +244,6 @@ export class BaseService<T, S> {
     const paramName = `${field}_${Date.now()}_${random(1, 1000)}`;
     const operation = this.getOrmWhereOperator(op);
     let query = '';
-
     switch (op) {
       case '_in':
         query = `${fieldWithAlias} ${operation} (:...${paramName})`;
@@ -254,6 +253,9 @@ export class BaseService<T, S> {
       case '_eq':
       case '_neq':
         query = `${fieldWithAlias} ${operation} :${paramName}`;
+        break;
+      case '_is_null':
+        query = `${fieldWithAlias} ${value ? 'is null' : 'is not null'}`;
         break;
       default:
         throw new Error(`Unknown filter operation: ${op}`);
@@ -273,7 +275,10 @@ export class BaseService<T, S> {
     return GQLToORMOperationsMap[gqlWhereOperator];
   }
 
-  private getConditionField(qb: SelectQueryBuilder<T>, field: string): string {
+  protected getConditionField(
+    qb: SelectQueryBuilder<T>,
+    field: string,
+  ): string {
     return `"${this.relationsFields[field] ?? qb.alias}"."${
       this.aliasFields[field] ?? field
     }"`;

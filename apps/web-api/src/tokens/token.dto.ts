@@ -1,4 +1,4 @@
-import { Tokens } from '@entities/Tokens';
+import { Tokens, TokenType } from '@entities/Tokens';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSONObject, GraphQLJSON } from 'graphql-type-json';
 
@@ -12,8 +12,8 @@ export enum TokenDistinctFieldsEnum {
   token_name = 'token_name',
 }
 
-@ObjectType('token')
-export class TokenDTO implements Partial<Tokens> {
+@ObjectType('simple-token')
+export class SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => Int)
   token_id?: number;
 
@@ -38,6 +38,33 @@ export class TokenDTO implements Partial<Tokens> {
   @Field(() => String)
   token_prefix?: string;
 
+  @Field(() => String, { nullable: true })
+  token_name?: string;
+
+  @Field(() => Int, { nullable: true })
+  date_of_creation?: number;
+
+  @Field(() => String, { nullable: true })
+  parent_id?: string;
+
+  @Field(() => Boolean)
+  is_sold?: boolean;
+
+  @Field(() => Boolean)
+  burned?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  children_count?: number;
+
+  @Field(() => Int, { nullable: true })
+  bundle_created?: number;
+
+  @Field(() => TokenType, { nullable: true })
+  type?: TokenType;
+}
+
+@ObjectType('token')
+export class TokenDTO extends SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => String)
   collection_name?: string;
 
@@ -53,18 +80,6 @@ export class TokenDTO implements Partial<Tokens> {
   @Field(() => String, { nullable: true })
   collection_owner_normalized?: string;
 
-  @Field(() => String, { nullable: true })
-  token_name?: string;
-
-  @Field(() => Int, { nullable: true })
-  date_of_creation?: number;
-
-  @Field(() => String, { nullable: true })
-  parent_id?: string;
-
   @Field(() => Int, { nullable: true })
   transfers_count?: number;
-
-  @Field(() => Boolean)
-  is_sold?: boolean;
 }

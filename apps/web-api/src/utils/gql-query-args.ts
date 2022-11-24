@@ -10,11 +10,12 @@ import {
 import { Type } from '@nestjs/common';
 
 export interface IWhereOperators {
-  _eq?: number | string;
-  _neq?: number | string;
+  _eq?: number | string | boolean;
+  _neq?: number | string | boolean;
   _like?: number | string;
   _ilike?: number | string;
   _in?: number[] | string[];
+  _is_null?: boolean;
 }
 
 type TWhereOperations<T> = {
@@ -58,6 +59,11 @@ registerEnumType(GQLOrderByParamsArgs, {
   name: 'GQLOrderByParamsArgs',
 });
 
+export interface IGQLPaginationArgs {
+  limit?: number;
+  offset?: number;
+}
+
 export interface IGQLQueryArgs<T> {
   limit?: number;
   offset?: number;
@@ -67,7 +73,19 @@ export interface IGQLQueryArgs<T> {
 }
 
 @InputType()
-export class GQLWhereOpsInt implements IWhereOperators {
+export class GQLWhereOpsIntEq implements IWhereOperators {
+  @Field(() => Float)
+  _eq: number;
+}
+
+@InputType()
+export class GQLWhereNullOps implements IWhereOperators {
+  @Field(() => Boolean, { nullable: true })
+  _is_null?: boolean;
+}
+
+@InputType()
+export class GQLWhereOpsInt extends GQLWhereNullOps implements IWhereOperators {
   @Field(() => Float, { nullable: true })
   _eq?: number;
 
@@ -85,7 +103,10 @@ export class GQLWhereOpsInt implements IWhereOperators {
 }
 
 @InputType()
-export class GQLWhereOpsString implements IWhereOperators {
+export class GQLWhereOpsString
+  extends GQLWhereNullOps
+  implements IWhereOperators
+{
   @Field(() => String, { nullable: true })
   _eq?: string;
 
@@ -100,6 +121,15 @@ export class GQLWhereOpsString implements IWhereOperators {
 
   @Field(() => [String], { nullable: true })
   _in?: string[];
+}
+
+@InputType()
+export class GQLWhereOpsBoolean implements IWhereOperators {
+  @Field(() => Boolean, { nullable: true })
+  _eq?: boolean;
+
+  @Field(() => String, { nullable: true })
+  _neq?: boolean;
 }
 
 @ArgsType()

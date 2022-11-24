@@ -30,6 +30,7 @@ export class HolderService extends BaseService<Tokens, HolderDTO> {
     this.applyWhereCondition(qb, queryArgs);
     this.applyOrderCondition(qb, queryArgs);
     this.applyLimitOffset(qb, queryArgs);
+    qb.andWhere('burned = false');
     const { count } = await this.getHandleCount(qb);
     const data = await qb.getRawMany();
 

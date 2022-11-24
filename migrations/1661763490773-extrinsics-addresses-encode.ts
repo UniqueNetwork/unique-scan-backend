@@ -1,6 +1,6 @@
 import { normalizeSubstrateAddress } from '../common/utils';
 import { MigrationInterface, QueryResult, QueryRunner } from 'typeorm';
-import { Sdk } from '@unique-nft/substrate-client';
+import { Client } from '@unique-nft/substrate-client';
 
 interface IExtrinsic {
   block_number: string;
@@ -17,7 +17,7 @@ function getStringOrNull(str) {
 
 async function getChainPrefix(): Promise<number> {
   const chainWsUrl = process.env.CHAIN_WS_URL;
-  const sdk = new Sdk({
+  const sdk = await Client.create({
     chainWsUrl,
   });
 

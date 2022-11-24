@@ -28,9 +28,11 @@ export class TokenResolver {
     return this.service.find(args);
   }
 
-  @ResolveField()
-  async collection(@Parent() { collection_id }: TokenEntity) {
-    return this.collectionService.getCollectionById(collection_id);
+  @Query(() => TokenDataResponse)
+  public tokenBundles(
+    @Args() args: QueryArgs,
+  ): Promise<IDataListResponse<TokenEntity>> {
+    return this.service.findBundles(args);
   }
 
   @Query(() => StatisticDataResponse)
@@ -39,5 +41,10 @@ export class TokenResolver {
   ): Promise<StatisticDataResponse> {
     const data = await this.service.statistic(args);
     return { data };
+  }
+
+  @ResolveField()
+  async collection(@Parent() { collection_id }: TokenEntity) {
+    return this.collectionService.getCollectionById(collection_id);
   }
 }

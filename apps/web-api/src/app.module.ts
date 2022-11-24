@@ -18,6 +18,7 @@ import { StatisticsModule } from './statistics/statistics.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { ContractModule } from './contract/contract.module';
+import { AttributesModule } from './attributes/attributes.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { ContractModule } from './contract/contract.module';
     BlockModule,
     StatisticsModule,
     TransactionModule,
+    AttributesModule,
   ],
   providers: [
     {

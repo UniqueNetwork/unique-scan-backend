@@ -27,6 +27,9 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   collection_id?: GQLWhereOpsInt;
 
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  tokens_count?: GQLWhereOpsInt;
+
   @Field(() => GQLWhereOpsString, { nullable: true })
   owner?: GQLWhereOpsString;
 
@@ -47,6 +50,9 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   nesting_enabled?: IWhereOperators;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  burned?: IWhereOperators;
 
   @Field(() => TokenWhereParams, { nullable: true })
   tokens?: TokenWhereParams;

@@ -6,6 +6,7 @@ export const GQLToORMOperatorsDict = {
   _like: 'LIKE',
   _ilike: 'ILIKE',
   _in: 'IN',
+  _is_null: 'is null',
 };
 
 type TOrderBy = 'ASC' | 'DESC';
