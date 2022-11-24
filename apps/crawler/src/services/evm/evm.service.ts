@@ -5,8 +5,9 @@ import { Event } from '@entities/Event';
 import { ethers } from 'ethers';
 import { ConfigService } from '@nestjs/config';
 import { EvmTransaction } from '@entities/EvmTransaction';
-import { Config } from '../../config/config.module';
 import { SentryService } from '@ntegral/nestjs-sentry';
+import { normalizeTimestamp } from '@common/utils';
+import { Config } from '../../config/config.module';
 
 @Injectable()
 export class EvmService {
@@ -25,7 +26,7 @@ export class EvmService {
     this.sentry.setContext(EvmService.name);
   }
 
-  public async parseEvents(events: Event[]) {
+  public async parseEvents(events: Event[], timestamp: number) {
     try {
       const transactions: ethers.providers.TransactionReceipt[] = [];
 
@@ -38,13 +39,13 @@ export class EvmService {
             await this.provider.getTransaction(hash)
           ).wait();
 
-          transactions.push(transaction);
+          transactions.push({ ...transaction });
         }
       }
 
       if (transactions.length) {
         await this.transactionRepository.upsert(
-          transactions.map(this.convertForDb),
+          this.convertForDb(transactions, timestamp),
           ['block_hash', 'transaction_hash'],
         );
       }
@@ -53,41 +54,49 @@ export class EvmService {
     }
   }
 
-  private convertForDb(transaction: ethers.providers.TransactionReceipt) {
-    const {
-      to,
-      from,
-      byzantium,
-      transactionHash,
-      confirmations,
-      cumulativeGasUsed,
-      status,
-      type,
-      blockNumber,
-      gasUsed,
-      effectiveGasPrice,
-      blockHash,
-      logsBloom,
-      transactionIndex,
-      contractAddress,
-    } = transaction;
+  private convertForDb(
+    transactions: ethers.providers.TransactionReceipt[],
+    timestamp: number,
+  ) {
+    const utcTimestamp = String(normalizeTimestamp(timestamp));
 
-    return {
-      to,
-      from,
-      contract_address: contractAddress,
-      transaction_index: transactionIndex,
-      gas_used: gasUsed.toNumber(),
-      logs_bloom: logsBloom,
-      block_hash: blockHash,
-      transaction_hash: transactionHash,
-      block_number: blockNumber,
-      confirmations,
-      cumulative_gas_used: cumulativeGasUsed.toNumber(),
-      effective_gas_price: effectiveGasPrice.toNumber(),
-      status,
-      type,
-      byzantium,
-    };
+    return transactions.map((transaction) => {
+      const {
+        to,
+        from,
+        byzantium,
+        transactionHash,
+        confirmations,
+        cumulativeGasUsed,
+        status,
+        type,
+        blockNumber,
+        gasUsed,
+        effectiveGasPrice,
+        blockHash,
+        logsBloom,
+        transactionIndex,
+        contractAddress,
+      } = transaction;
+
+      return {
+        to,
+        from,
+        contract_address: contractAddress,
+        transaction_index: transactionIndex,
+        gas_used: gasUsed.toNumber(),
+        logs_bloom: logsBloom,
+        block_hash: blockHash,
+        transaction_hash: transactionHash,
+        block_number: blockNumber,
+        confirmations,
+        cumulative_gas_used: cumulativeGasUsed.toNumber(),
+        effective_gas_price: effectiveGasPrice.toNumber(),
+        status,
+        type,
+        byzantium,
+        timestamp: utcTimestamp,
+      };
+    });
   }
 }

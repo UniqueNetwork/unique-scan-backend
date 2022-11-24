@@ -47,4 +47,7 @@ export class EvmTransactionDTO implements Partial<EvmTransaction> {
 
   @Field(() => Boolean)
   byzantium?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  timestamp?: string;
 }

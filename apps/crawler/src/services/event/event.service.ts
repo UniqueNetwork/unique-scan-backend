@@ -112,7 +112,10 @@ export class EventService {
         section === EventSection.ETHEREUM && method === EventMethod.EXECUTED,
     );
 
-    await this.evmService.parseEvents(ethereumEvents);
+    await this.evmService.parseEvents(
+      ethereumEvents,
+      blockCommonData.blockTimestamp,
+    );
 
     await this.eventsRepository.upsert(eventsData, [
       'block_number',

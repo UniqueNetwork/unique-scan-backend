@@ -50,6 +50,9 @@ class EvmTransactionWhereParams implements TWhereParams<EvmTransactionDTO> {
 class EvmTransactionOrderByParams implements TOrderByParams<EvmTransactionDTO> {
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   block_number?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  timestamp?: GQLOrderByParamsArgs;
 }
 
 @ObjectType()

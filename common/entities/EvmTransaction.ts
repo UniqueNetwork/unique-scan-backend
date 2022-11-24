@@ -49,4 +49,7 @@ export class EvmTransaction {
 
   @Column('boolean', { name: 'byzantium' })
   byzantium: boolean;
+
+  @Column('bigint', { name: 'timestamp', nullable: true })
+  timestamp: string | null;
 }
