@@ -45,6 +45,9 @@ class CollectionEventOrderByParams
   action?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  timestamp?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
   fee?: GQLOrderByParamsArgs;
 }
 
