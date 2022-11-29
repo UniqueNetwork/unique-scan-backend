@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GraphQLResolveInfo } from 'graphql';
 import { In, Not, Repository, SelectQueryBuilder } from 'typeorm';
+import { Event } from '@entities/Event';
 import { BaseService } from '../utils/base.service';
 import { IRelations } from '../utils/base.service.types';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
@@ -71,12 +72,7 @@ export class CollectionEventService extends BaseService<Event, EventDTO> {
       method: In([
         EventMethod.COLLECTION_CREATED,
         EventMethod.COLLECTION_DESTROYED,
-        EventMethod.COLLECTION_SPONSOR_SET,
-        EventMethod.COLLECTION_SPONSOR_REMOVED,
-        EventMethod.SPONSORSHIP_CONFIRMED,
-        EventMethod.COLLECTION_LIMIT_SET,
-        EventMethod.COLLECTION_ADMIN_ADDED,
-        EventMethod.COLLECTION_ADMIN_REMOVED,
+        EventMethod.COLLECTION_OWNER_CHANGED,
       ]),
     });
 
