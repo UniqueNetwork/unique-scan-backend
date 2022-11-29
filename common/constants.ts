@@ -4,6 +4,7 @@ export enum EventSection {
   SYSTEM = 'System',
   TREASURY = 'Treasury',
   UNIQUE = 'Unique',
+  ETHEREUM = 'Ethereum',
 }
 
 export enum EventMethod {
@@ -47,6 +48,8 @@ export enum EventMethod {
   TRANSFER = 'Transfer',
   UNRESERVED = 'Unreserved',
   WITHDRAW = 'Withdraw',
+
+  EXECUTED = 'Executed',
 }
 
 export const EventName = {

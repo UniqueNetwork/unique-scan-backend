@@ -16,11 +16,13 @@ import {
 import { EventArgumentsService } from './event.arguments.service';
 import { EventArgs } from './event.types';
 import { AccountRecord } from '../account/account.types';
+import { EvmService } from '../evm/evm.service';
 
 @Injectable()
 export class EventService {
   constructor(
     private eventArgumentsService: EventArgumentsService,
+    private evmService: EvmService,
 
     @InjectRepository(Event)
     private eventsRepository: Repository<Event>,
@@ -29,7 +31,7 @@ export class EventService {
   private extractEventItems(blockItems: IBlockItem[]): IEvent[] {
     return blockItems
       .map((item) => {
-        if (item.kind == 'event') {
+        if (item.kind === 'event') {
           return item.event as IEvent;
         }
         return null;
@@ -104,6 +106,16 @@ export class EventService {
       blockCommonData,
       eventItems,
     });
+
+    const ethereumEvents = eventsData.filter(
+      ({ section, method }) =>
+        section === EventSection.ETHEREUM && method === EventMethod.EXECUTED,
+    );
+
+    await this.evmService.parseEvents(
+      ethereumEvents,
+      blockCommonData.blockTimestamp,
+    );
 
     await this.eventsRepository.upsert(eventsData, [
       'block_number',

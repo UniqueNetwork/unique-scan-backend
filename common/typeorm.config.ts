@@ -11,6 +11,7 @@ import { System } from './entities/System';
 import { Tokens } from './entities/Tokens';
 import { Total } from './entities/Total';
 import { TokensStats } from './entities/TokensStats';
+import { EvmTransaction } from './entities/EvmTransaction';
 import { DataSourceOptions } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -40,6 +41,7 @@ const typeormConfig: DataSourceOptions = {
     TokensStats,
     Tokens,
     Total,
+    EvmTransaction,
   ],
   synchronize: false,
   migrationsRun: false,
