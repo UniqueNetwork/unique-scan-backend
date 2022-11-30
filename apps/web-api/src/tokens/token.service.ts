@@ -213,10 +213,12 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
           if (typeof rawValueParsed === 'object') {
             // Text field in format {_: "value"}
-            qb.orWhere(`attributes->'${key}'->'rawValue'='${rawValue}'::jsonb`);
+            qb.andWhere(
+              `attributes->'${key}'->'rawValue'='${rawValue}'::jsonb`,
+            );
           } else {
             // Select and multiselect field
-            qb.orWhere(
+            qb.andWhere(
               new Brackets((qb) => {
                 qb.where(
                   `attributes->'${key}'->>'rawValue'='${String(rawValue)}'`,
