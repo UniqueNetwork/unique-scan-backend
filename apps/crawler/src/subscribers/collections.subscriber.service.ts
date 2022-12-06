@@ -25,11 +25,18 @@ export class CollectionsSubscriberService implements ISubscriberService {
       EventName.COLLECTION_PROPERTY_SET,
       EventName.COLLECTION_PROPERTY_DELETED,
       EventName.PROPERTY_PERMISSION_SET,
+
       EventName.COLLECTION_SPONSOR_REMOVED,
       EventName.COLLECTION_OWNED_CHANGED,
       EventName.SPONSORSHIP_CONFIRMED,
       EventName.COLLECTION_LIMIT_SET,
       EventName.COLLECTION_SPONSOR_SET,
+
+      EventName.OLD_COLLECTION_SPONSOR_REMOVED,
+      EventName.OLD_COLLECTION_OWNED_CHANGED,
+      EventName.OLD_SPONSORSHIP_CONFIRMED,
+      EventName.OLD_COLLECTION_LIMIT_SET,
+      EventName.OLD_COLLECTION_SPONSOR_SET,
     ].forEach((eventName) =>
       processorService.processor.addEventHandler(
         eventName,

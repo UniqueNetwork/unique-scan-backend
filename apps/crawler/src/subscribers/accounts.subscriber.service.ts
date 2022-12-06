@@ -45,6 +45,15 @@ export class AccountsSubscriberService implements ISubscriberService {
       EventName.NEW_ACCOUNT,
 
       // Unique
+      EventName.OLD_ALLOW_LIST_ADDRESS_ADDED,
+      EventName.OLD_ALLOW_LIST_ADDRESS_REMOVED,
+      EventName.OLD_COLLECTION_ADMIN_ADDED,
+      EventName.OLD_COLLECTION_ADMIN_REMOVED,
+      EventName.OLD_COLLECTION_OWNED_CHANGED,
+      EventName.OLD_COLLECTION_SPONSOR_SET,
+      EventName.OLD_COLLECTION_SPONSOR_REMOVED,
+      EventName.OLD_SPONSORSHIP_CONFIRMED,
+
       EventName.ALLOW_LIST_ADDRESS_ADDED,
       EventName.ALLOW_LIST_ADDRESS_REMOVED,
       EventName.COLLECTION_ADMIN_ADDED,

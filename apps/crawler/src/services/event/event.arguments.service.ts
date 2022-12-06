@@ -69,15 +69,25 @@ const EVENT_ARGS_DESCRIPTORS = {
   [EventName.BALANCES_WITHDRAW]: { accounts: { '0': 'who' } },
 
   // Unique
+  [EventName.OLD_ALLOW_LIST_ADDRESS_ADDED]: { collectionId: 0, accounts: 1 },
   [EventName.ALLOW_LIST_ADDRESS_ADDED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_ALLOW_LIST_ADDRESS_REMOVED]: { collectionId: 0, accounts: 1 },
   [EventName.ALLOW_LIST_ADDRESS_REMOVED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_ADMIN_ADDED]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_ADMIN_ADDED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_ADMIN_REMOVED]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_ADMIN_REMOVED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_OWNED_CHANGED]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_OWNED_CHANGED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_LIMIT_SET]: { collectionId: 0 },
   [EventName.COLLECTION_LIMIT_SET]: { collectionId: 0 },
+  [EventName.OLD_COLLECTION_PERMISSION_SET]: { collectionId: 0 },
   [EventName.COLLECTION_PERMISSION_SET]: { collectionId: 0 },
+  [EventName.OLD_COLLECTION_SPONSOR_SET]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_SPONSOR_SET]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_SPONSOR_REMOVED]: { collectionId: 0 },
   [EventName.COLLECTION_SPONSOR_REMOVED]: { collectionId: 0 },
+  [EventName.OLD_SPONSORSHIP_CONFIRMED]: { collectionId: 0, accounts: 1 },
   [EventName.SPONSORSHIP_CONFIRMED]: { collectionId: 0, accounts: 1 },
 
   // Treasury
