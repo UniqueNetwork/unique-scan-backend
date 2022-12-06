@@ -16,7 +16,8 @@ export enum EventMethod {
   COLLECTION_SPONSOR_SET = 'CollectionSponsorSet',
   COLLECTION_SPONSOR_REMOVED = 'CollectionSponsorRemoved',
   SPONSORSHIP_CONFIRMED = 'SponsorshipConfirmed',
-  COLLECTION_OWNER_CHANGED = 'CollectionOwnedChanged',
+  OLD_COLLECTION_OWNER_CHANGED = 'CollectionOwnedChanged',
+  COLLECTION_OWNER_CHANGED = 'CollectionOwnerChanged',
   COLLECTION_PERMISSION_SET = 'CollectionPermissionSet',
 
   // Common
@@ -88,7 +89,7 @@ export const EventName = {
   OLD_COLLECTION_SPONSOR_REMOVED: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_SPONSOR_REMOVED}`,
   OLD_COLLECTION_ADMIN_ADDED: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_ADMIN_ADDED}`,
   OLD_COLLECTION_ADMIN_REMOVED: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_ADMIN_REMOVED}`,
-  OLD_COLLECTION_OWNED_CHANGED: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_OWNER_CHANGED}`,
+  OLD_COLLECTION_OWNED_CHANGED: `${EventSection.UNIQUE}.${EventMethod.OLD_COLLECTION_OWNER_CHANGED}`,
   OLD_COLLECTION_LIMIT_SET: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_LIMIT_SET}`,
   OLD_COLLECTION_SPONSOR_SET: `${EventSection.UNIQUE}.${EventMethod.COLLECTION_SPONSOR_SET}`,
   OLD_SPONSORSHIP_CONFIRMED: `${EventSection.UNIQUE}.${EventMethod.SPONSORSHIP_CONFIRMED}`,
