@@ -150,6 +150,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     const parentCredentials = `${collection_id}_${token_id}`;
     qb.where('parent_id = :parentCredentials', { parentCredentials });
+    qb.andWhere('Tokens.burned = false');
     // qb.limit(null);
     qb.orderBy('token_id', 'ASC');
 
@@ -212,10 +213,12 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
           if (typeof rawValueParsed === 'object') {
             // Text field in format {_: "value"}
-            qb.orWhere(`attributes->'${key}'->'rawValue'='${rawValue}'::jsonb`);
+            qb.andWhere(
+              `attributes->'${key}'->'rawValue'='${rawValue}'::jsonb`,
+            );
           } else {
             // Select and multiselect field
-            qb.orWhere(
+            qb.andWhere(
               new Brackets((qb) => {
                 qb.where(
                   `attributes->'${key}'->>'rawValue'='${String(rawValue)}'`,
@@ -247,7 +250,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       },
       [STATISTICS_RELATION_ALIAS]: {
         table: 'tokens_stats',
-        on: `"Tokens".token_id = "${STATISTICS_RELATION_ALIAS}".token_id 
+        on: `"Tokens".token_id = "${STATISTICS_RELATION_ALIAS}".token_id
         AND "Tokens".collection_id  = "${STATISTICS_RELATION_ALIAS}".collection_id`,
       },
     } as IRelations;

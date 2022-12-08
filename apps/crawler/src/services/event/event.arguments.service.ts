@@ -12,6 +12,7 @@ import { EventValues, EventArgs } from './event.types';
 import { AccountService } from '../account/account.service';
 import { getAmount } from '@common/utils';
 import { AccountRecord } from '../account/account.types';
+import { nesting } from '@unique-nft/utils/address';
 
 type EventArgsValueNormalizer = (
   rawValue: string | number | object,
@@ -68,15 +69,25 @@ const EVENT_ARGS_DESCRIPTORS = {
   [EventName.BALANCES_WITHDRAW]: { accounts: { '0': 'who' } },
 
   // Unique
+  [EventName.OLD_ALLOW_LIST_ADDRESS_ADDED]: { collectionId: 0, accounts: 1 },
   [EventName.ALLOW_LIST_ADDRESS_ADDED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_ALLOW_LIST_ADDRESS_REMOVED]: { collectionId: 0, accounts: 1 },
   [EventName.ALLOW_LIST_ADDRESS_REMOVED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_ADMIN_ADDED]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_ADMIN_ADDED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_ADMIN_REMOVED]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_ADMIN_REMOVED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_OWNED_CHANGED]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_OWNED_CHANGED]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_LIMIT_SET]: { collectionId: 0 },
   [EventName.COLLECTION_LIMIT_SET]: { collectionId: 0 },
+  [EventName.OLD_COLLECTION_PERMISSION_SET]: { collectionId: 0 },
   [EventName.COLLECTION_PERMISSION_SET]: { collectionId: 0 },
+  [EventName.OLD_COLLECTION_SPONSOR_SET]: { collectionId: 0, accounts: 1 },
   [EventName.COLLECTION_SPONSOR_SET]: { collectionId: 0, accounts: 1 },
+  [EventName.OLD_COLLECTION_SPONSOR_REMOVED]: { collectionId: 0 },
   [EventName.COLLECTION_SPONSOR_REMOVED]: { collectionId: 0 },
+  [EventName.OLD_SPONSORSHIP_CONFIRMED]: { collectionId: 0, accounts: 1 },
   [EventName.SPONSORSHIP_CONFIRMED]: { collectionId: 0, accounts: 1 },
 
   // Treasury
@@ -120,7 +131,14 @@ export class EventArgumentsService {
       this.normalizeOtherArgs(rawArgs, argsDescriptor),
     ]);
 
-    const result = { ...accountsValues, ...amountValues, ...otherValues };
+    const nestedTo = this.normalizeNestedTokenAddr(eventName, rawArgs);
+
+    const result: EventValues = {
+      ...accountsValues,
+      ...amountValues,
+      ...otherValues,
+      ...nestedTo,
+    };
 
     return Object.keys(result).length ? result : null;
   }
@@ -144,6 +162,27 @@ export class EventArgumentsService {
     }
 
     return result;
+  }
+
+  private normalizeNestedTokenAddr(
+    eventName: string,
+    rawArgs: EventArgs,
+  ): EventValues {
+    const result = {} as EventValues;
+
+    if (
+      eventName != EventName.TRANSFER ||
+      !Array.isArray(rawArgs) ||
+      !rawArgs[3]
+    ) {
+      return result;
+    }
+
+    try {
+      result.nestedTo = nesting.addressToIds(rawArgs[3].value);
+    } finally {
+      return result;
+    }
   }
 
   private async normalizeAccountArgs(

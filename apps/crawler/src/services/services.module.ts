@@ -2,11 +2,12 @@ import { Block } from '@entities/Block';
 import { Collections } from '@entities/Collections';
 import { Tokens } from '@entities/Tokens';
 import { Event } from '@entities/Event';
+import { EvmTransaction } from '@entities/EvmTransaction';
+import { Extrinsic } from '@entities/Extrinsic';
+import { Account } from '@entities/Account';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Extrinsic } from '@entities/Extrinsic';
-import { Account } from '@entities/Account';
 import { CollectionService } from './collection.service';
 import { AccountService } from './account/account.service';
 import { TokenService } from './token/token.service';
@@ -16,6 +17,7 @@ import { ExtrinsicService } from './extrinsic.service';
 import { EventArgumentsService } from './event/event.arguments.service';
 import { SdkModule } from '../sdk/sdk.module';
 import { TokenNestingService } from './token/nesting.service';
+import { EvmService } from './evm/evm.service';
 
 @Module({
   imports: [
@@ -26,6 +28,7 @@ import { TokenNestingService } from './token/nesting.service';
       Event,
       Extrinsic,
       Tokens,
+      EvmTransaction,
     ]),
     ConfigModule,
     SdkModule,
@@ -39,6 +42,7 @@ import { TokenNestingService } from './token/nesting.service';
     ExtrinsicService,
     TokenService,
     TokenNestingService,
+    EvmService,
   ],
   exports: [
     AccountService,
@@ -48,6 +52,7 @@ import { TokenNestingService } from './token/nesting.service';
     ExtrinsicService,
     TokenService,
     TokenNestingService,
+    EvmService,
   ],
 })
 export class ServicesModule {}

@@ -13,4 +13,8 @@ export type EventValues = {
   collectionId?: number;
   tokenId?: number;
   amount?: string;
+  nestedTo?: {
+    collectionId?: number;
+    tokenId?: number;
+  };
 } & { [key in AccountKey]: string };

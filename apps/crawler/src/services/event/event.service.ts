@@ -18,6 +18,7 @@ import {
 import { EventArgumentsService } from './event.arguments.service';
 import { EventArgs } from './event.types';
 import { AccountRecord } from '../account/account.types';
+import { EvmService } from '../evm/evm.service';
 import { TokenService } from '../token/token.service';
 import { CollectionService } from '../collection.service';
 import { ConfigService } from '@nestjs/config';
@@ -27,6 +28,7 @@ import { Config } from '../../config/config.module';
 export class EventService {
   constructor(
     private eventArgumentsService: EventArgumentsService,
+    private evmService: EvmService,
 
     private tokenService: TokenService,
 
@@ -41,7 +43,7 @@ export class EventService {
   private extractEventItems(blockItems: IBlockItem[]): IEvent[] {
     return blockItems
       .map((item) => {
-        if (item.kind == 'event') {
+        if (item.kind === 'event') {
           return item.event as IEvent;
         }
         return null;
@@ -116,6 +118,16 @@ export class EventService {
       blockCommonData,
       eventItems,
     });
+
+    const ethereumEvents = events.filter(
+      ({ section, method }) =>
+        section === EventSection.ETHEREUM && method === EventMethod.EXECUTED,
+    );
+
+    await this.evmService.parseEvents(
+      ethereumEvents,
+      blockCommonData.blockTimestamp,
+    );
 
     await this.eventsRepository.upsert(events, ['block_number', 'event_index']);
 

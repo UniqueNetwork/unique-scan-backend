@@ -20,11 +20,6 @@ export class TokenEventResolver {
     @Args() args: QueryArgs,
     @Info() info,
   ): Promise<IDataListResponse<TokenEventDTO>> {
-    const { count, data } = await this.tokenEventService.find(args, info);
-
-    return {
-      count,
-      data: await this.tokenEventService.mapEventData(data),
-    };
+    return this.tokenEventService.find(args, info);
   }
 }

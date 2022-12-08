@@ -53,6 +53,26 @@ const relationsFields = {
 const customQueryFields = {
   collection_id: `"Event"."values"->>'collectionId'`,
   token_id: `"Event"."values"->>'tokenId'`,
+  tokens: `
+  array(
+    select json_build_object(
+      'token_name', t."token_name",
+      'token_prefix', SUBSTRING(t.token_name from '([^\\s]+)'),
+      'type', t."type",
+      'collection_id', t.collection_id,
+      'token_id', t.token_id,
+      'image', t.image
+      )
+        from
+      ${TOKEN_RELATION_ALIAS} t
+      where
+        (t.token_id = ("Event"."values"->>'tokenId')::int and
+        t.collection_id = ("Event"."values"->>'collectionId')::int)
+      or
+        (t.token_id = ("Event"."values"->'nestedTo'->>'tokenId')::int and
+        t.collection_id = ("Event"."values"->'nestedTo'->>'collectionId')::int)
+  )
+  `,
 };
 
 @Injectable()

@@ -1,12 +1,11 @@
 import { Event } from '@entities/Event';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
+import { GraphQLResolveInfo } from 'graphql';
 import { BaseService } from '../utils/base.service';
 import { IDataListResponse, IGQLQueryArgs } from '../utils/gql-query-args';
 import { EventDTO } from './event.dto';
-import { EventMethod, EventSection } from '@common/constants';
-import { GraphQLResolveInfo } from 'graphql';
 
 const customQueryFields = {
   amount: `
@@ -53,14 +52,6 @@ export class EventService extends BaseService<Event, EventDTO> {
     const qb = this.repo.createQueryBuilder();
 
     this.applySelect(qb, queryArgs, this.getQueryFields(queryInfo));
-
-    qb.where({
-      phase: Not('Initialization'),
-      section: EventSection.BALANCES,
-      method: In([EventMethod.TRANSFER, EventMethod.DEPOSIT]),
-    });
-    qb.groupBy('"Event".block_number');
-    qb.addGroupBy('"Event".block_index');
 
     this.applyLimitOffset(qb, queryArgs);
     this.applyWhereCondition(qb, queryArgs);
