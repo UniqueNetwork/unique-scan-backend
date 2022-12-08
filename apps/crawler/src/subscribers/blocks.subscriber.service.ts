@@ -11,6 +11,8 @@ import { ProcessorService } from './processor/processor.service';
 import { BlockService } from '../services/block.service';
 import { ExtrinsicService } from '../services/extrinsic.service';
 import { EventService } from '../services/event/event.service';
+import { Event } from '@entities/Event';
+import { Severity } from '@sentry/node';
 
 export interface IEvent {
   name: string;
@@ -36,6 +38,7 @@ export interface IBlockCommonData {
   blockNumber: number;
   blockTimestamp: number;
   ss58Prefix: Prefix;
+  blockHash?: string;
 }
 
 export interface IItemCounts {
@@ -43,6 +46,17 @@ export interface IItemCounts {
   totalExtrinsics: number;
   numTransfers: number;
   newAccounts: number;
+}
+
+export interface EventsProcessingResult {
+  events: Event[];
+  collectionsResult: ItemsBatchProcessingResult | null;
+  tokensResult: ItemsBatchProcessingResult | null;
+}
+
+export interface ItemsBatchProcessingResult {
+  totalEvents: number;
+  rejected: object[];
 }
 
 @Injectable()
@@ -73,7 +87,11 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   private async upsertHandler(ctx: BlockHandlerContext<Store>): Promise<void> {
     const { block, items } = ctx;
-    const { height: blockNumber, timestamp: blockTimestamp } = block;
+    const {
+      height: blockNumber,
+      timestamp: blockTimestamp,
+      hash: blockHash,
+    } = block;
     const blockItems = items as unknown as IBlockItem[];
 
     const log = {
@@ -90,13 +108,15 @@ export class BlocksSubscriberService implements ISubscriberService {
         blockNumber,
         blockTimestamp,
         ss58Prefix,
+        blockHash,
       } as IBlockCommonData;
 
       // Process events first to get event.values
-      const eventsData = await this.eventService.upsert({
-        blockCommonData,
-        blockItems,
-      });
+      const { events, collectionsResult, tokensResult } =
+        await this.eventService.process({
+          blockCommonData,
+          blockItems,
+        });
 
       const [itemCounts] = await Promise.all([
         this.blockService.upsert({
@@ -106,14 +126,35 @@ export class BlocksSubscriberService implements ISubscriberService {
         this.extrinsicService.upsert({
           blockCommonData,
           blockItems,
-          eventsData,
+          events,
         }),
       ]);
 
       this.logger.verbose({
         ...log,
         ...itemCounts,
+
+        // Collections service results
+        totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
+        totalRejectedCollections:
+          collectionsResult?.rejected.length ?? undefined,
+
+        // Tokens service results
+        totalTokenEvents: tokensResult?.totalEvents ?? undefined,
+        totalRejectedTokens: tokensResult?.rejected.length ?? undefined,
       });
+
+      if (collectionsResult?.rejected.length || tokensResult?.rejected.length) {
+        const { rejected: rejectedCollections } = collectionsResult;
+        const { rejected: rejectedTokens } = tokensResult;
+
+        const sentry = this.sentry.instance();
+        sentry.setContext('block-subscriber', {
+          level: Severity.Warning,
+          extra: { rejectedCollections, rejectedTokens },
+        });
+        sentry.captureMessage('Some collections or tokens were rejected');
+      }
     } catch (error) {
       this.logger.error({ ...log, error: error.message || error });
       this.sentry.instance().captureException({ ...log, error });

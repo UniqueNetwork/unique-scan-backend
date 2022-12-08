@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { CollectionsSubscriberService } from './collections.subscriber.service';
-import { TokensSubscriberService } from './tokens.subscriber.service';
 import { BlocksSubscriberService } from './blocks.subscriber.service';
 import { AccountsSubscriberService } from './accounts.subscriber.service';
 import { ServicesModule } from '../services/services.module';
@@ -16,8 +14,6 @@ import { SubscribersService } from './subscribers.service';
     ProcessorConfigService,
     AccountsSubscriberService,
     BlocksSubscriberService,
-    CollectionsSubscriberService,
-    TokensSubscriberService,
     SubscribersService,
   ],
   exports: [SubscribersService],

@@ -98,11 +98,11 @@ export class ExtrinsicService {
   private prepareDataForDb({
     blockCommonData,
     extrinsicItems,
-    eventsData,
+    events,
   }: {
     extrinsicItems: IExtrinsicExtended[];
     blockCommonData: IBlockCommonData;
-    eventsData: Event[];
+    events: Event[];
   }): Extrinsic[] {
     return extrinsicItems.map((extrinsic) => {
       const { name } = extrinsic;
@@ -141,7 +141,7 @@ export class ExtrinsicService {
 
       const blockIndex = `${blockNumber}-${indexInBlock}`;
 
-      const amountValues = this.getAmountValues(blockIndex, eventsData);
+      const amountValues = this.getAmountValues(blockIndex, events);
 
       const { amount, fee } = amountValues;
 
@@ -168,18 +168,18 @@ export class ExtrinsicService {
   async upsert({
     blockItems,
     blockCommonData,
-    eventsData,
+    events,
   }: {
     blockItems: IBlockItem[];
     blockCommonData: IBlockCommonData;
-    eventsData: Event[];
+    events: Event[];
   }) {
     const extrinsicItems = this.extractExtrinsicItems(blockItems);
 
     const extrinsicsData = this.prepareDataForDb({
       blockCommonData,
       extrinsicItems,
-      eventsData,
+      events,
     });
 
     return this.extrinsicsRepository.upsert(extrinsicsData, [

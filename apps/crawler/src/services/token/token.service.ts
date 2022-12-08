@@ -1,22 +1,36 @@
-import { EventName, SubscriberAction } from '@common/constants';
+import {
+  EventName,
+  SubscriberAction,
+  TOKEN_BURN_EVENTS,
+  TOKEN_UPDATE_EVENTS,
+} from '@common/constants';
 import {
   normalizeSubstrateAddress,
   normalizeTimestamp,
   sanitizePropertiesValues,
 } from '@common/utils';
+import { Event } from '@entities/Event';
 import { Tokens, TokenType, ITokenEntities } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
+import {
+  ItemsBatchProcessingResult,
+  IBlockCommonData,
+} from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
 import { TokenData } from './token.types';
+import { chunk } from 'lodash';
 
+import { ConfigService } from '@nestjs/config';
+import { Config } from '../../config/config.module';
 @Injectable()
 export class TokenService {
   constructor(
     private sdkService: SdkService,
     private nestingService: TokenNestingService,
+    private configService: ConfigService<Config>,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -124,6 +138,60 @@ export class TokenService {
     };
   }
 
+  async batchProcess({
+    events,
+    blockCommonData,
+  }: {
+    events: Event[];
+    blockCommonData: IBlockCommonData;
+  }): Promise<ItemsBatchProcessingResult> {
+    const tokenEvents = this.extractTokenEvents(events);
+
+    const eventChunks = chunk(
+      tokenEvents,
+      this.configService.get('scanTokensBatchSize'),
+    );
+
+    let rejected = [];
+    for (const chunk of eventChunks) {
+      const result = await Promise.allSettled(
+        chunk.map((event) => {
+          const { section, method, values } = event;
+          const { collectionId, tokenId } = values as unknown as {
+            collectionId: number;
+            tokenId: number;
+          };
+
+          const { blockHash, blockTimestamp } = blockCommonData;
+          const eventName = `${section}.${method}`;
+
+          if (TOKEN_UPDATE_EVENTS.includes(eventName)) {
+            return this.update({
+              collectionId,
+              tokenId,
+              eventName,
+              blockTimestamp,
+              blockHash,
+            });
+          } else {
+            return this.burn(collectionId, tokenId);
+          }
+        }),
+      );
+
+      // todo: Process rejected tokens again or maybe process sdk disconnect
+      rejected = [
+        ...rejected,
+        ...result.filter(({ status }) => status === 'rejected'),
+      ];
+    }
+
+    return {
+      totalEvents: tokenEvents.length,
+      rejected,
+    };
+  }
+
   async update({
     collectionId,
     tokenId,
@@ -185,5 +253,15 @@ export class TokenService {
         burned: true,
       },
     );
+  }
+
+  private extractTokenEvents(events: Event[]) {
+    return events.filter(({ section, method }) => {
+      const eventName = `${section}.${method}`;
+      return (
+        TOKEN_UPDATE_EVENTS.includes(eventName) ||
+        TOKEN_BURN_EVENTS.includes(eventName)
+      );
+    });
   }
 }
