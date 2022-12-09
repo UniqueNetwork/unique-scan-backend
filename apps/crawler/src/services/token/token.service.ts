@@ -22,14 +22,17 @@ import {
 import { TokenNestingService } from './nesting.service';
 import { TokenData } from './token.types';
 import { chunk } from 'lodash';
+import { CollectionMode } from '@unique-nft/substrate-client/tokens';
 
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
+import { CollectionService } from '../collection.service';
 @Injectable()
 export class TokenService {
   constructor(
     private sdkService: SdkService,
     private nestingService: TokenNestingService,
+    private collectionService: CollectionService,
     private configService: ConfigService<Config>,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
@@ -54,7 +57,10 @@ export class TokenService {
     }
 
     // TODO: delete after rft support
-    if (tokenDecoded.owner === '') {
+    if (
+      tokenDecoded.owner === '' ||
+      tokenDecoded.collection.mode === CollectionMode.ReFungible
+    ) {
       return null;
     }
 
