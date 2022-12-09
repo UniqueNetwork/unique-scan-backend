@@ -3,18 +3,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseService } from '../utils/base.service';
-import {
-  IDataListResponse,
-  IDateRange,
-  IGQLQueryArgs,
-  IStatsResponse,
-} from '../utils/gql-query-args';
+import { IDataListResponse, IDateRange, IGQLQueryArgs, IStatsResponse } from '../utils/gql-query-args';
 import { TokenDTO } from './token.dto';
 import { SentryWrapper } from '../utils/sentry.decorator';
 import { QueryArgs } from './token.resolver.types';
 import { GraphQLResolveInfo } from 'graphql';
 import { IRelations } from '../utils/base.service.types';
 import { FieldsListOptions } from 'graphql-fields-list';
+import { JOIN_TYPE } from '@common/constants';
 
 const COLLECTION_RELATION_ALIAS = 'Collection';
 const STATISTICS_RELATION_ALIAS = 'Statistics';
@@ -247,6 +243,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       [COLLECTION_RELATION_ALIAS]: {
         table: 'collections',
         on: `"Tokens".collection_id = "${COLLECTION_RELATION_ALIAS}".collection_id`,
+        join: JOIN_TYPE.INNER,
       },
       [STATISTICS_RELATION_ALIAS]: {
         table: 'tokens_stats',
