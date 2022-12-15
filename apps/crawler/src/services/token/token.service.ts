@@ -27,6 +27,7 @@ import { CollectionMode } from '@unique-nft/substrate-client/tokens';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
+import { logger } from 'ethers';
 @Injectable()
 export class TokenService {
   constructor(
@@ -57,12 +58,12 @@ export class TokenService {
     }
 
     // TODO: delete after rft support
-    if (
-      tokenDecoded.owner === '' ||
-      tokenDecoded.collection.mode === CollectionMode.ReFungible
-    ) {
-      return null;
-    }
+    // if (
+    //   tokenDecoded.owner === '' ||
+    //   tokenDecoded.collection.mode === CollectionMode.ReFungible
+    // ) {
+    //   return null;
+    // }
 
     const [tokenProperties, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
@@ -79,11 +80,11 @@ export class TokenService {
   async prepareDataForDb(
     tokenData: TokenData,
     blockHash: string,
+    totalPieces: number,
     blockTimestamp?: number,
     needCheckNesting = false,
   ): Promise<Omit<Tokens, 'id'>> {
     const { tokenDecoded, tokenProperties, isBundle } = tokenData;
-
     const {
       tokenId: token_id,
       collectionId: collection_id,
@@ -100,7 +101,8 @@ export class TokenService {
       token_id,
     });
 
-    let tokenType = TokenType.NFT;
+    let tokenType =
+      tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
     let parentId = null;
     if (nestingParentToken) {
       const { collectionId, tokenId } = nestingParentToken;
@@ -121,7 +123,8 @@ export class TokenService {
     }
 
     if (!children.length && !parentId) {
-      tokenType = TokenType.NFT;
+      tokenType =
+        tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
     }
 
     return {
@@ -141,6 +144,7 @@ export class TokenService {
       type: tokenType,
       children,
       bundle_created: tokenType === TokenType.NFT ? null : undefined,
+      total_pieces: totalPieces,
     };
   }
 
@@ -157,8 +161,8 @@ export class TokenService {
       tokenEvents,
       this.configService.get('scanTokensBatchSize'),
     );
-
     let rejected = [];
+    let data = [];
     for (const chunk of eventChunks) {
       const result = await Promise.allSettled(
         chunk.map((event) => {
@@ -170,6 +174,9 @@ export class TokenService {
 
           const { blockHash, blockTimestamp } = blockCommonData;
           const eventName = `${section}.${method}`;
+          if (eventName === 'Common.ItemCreated') {
+            data = JSON.parse(event.data);
+          }
 
           if (TOKEN_UPDATE_EVENTS.includes(eventName)) {
             return this.update({
@@ -178,6 +185,7 @@ export class TokenService {
               eventName,
               blockTimestamp,
               blockHash,
+              data,
             });
           } else {
             return this.burn(collectionId, tokenId);
@@ -204,22 +212,26 @@ export class TokenService {
     eventName,
     blockTimestamp,
     blockHash,
+    data,
   }: {
     collectionId: number;
     tokenId: number;
     eventName: string;
     blockTimestamp: number;
     blockHash: string;
+    data: any;
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
-
     let result;
+    logger.info('Token data', tokenData, data);
+    const numberOfParts = parseInt(data[3]);
 
     if (tokenData) {
       const needCheckNesting = eventName === EventName.TRANSFER;
       const preparedData = await this.prepareDataForDb(
         tokenData,
         blockHash,
+        numberOfParts,
         blockTimestamp,
         needCheckNesting,
       );

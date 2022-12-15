@@ -2,6 +2,7 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum TokenType {
   NFT = 'NFT',
+  RFT = 'RFT',
   FRACTIONAL = 'FRACTIONAL',
   NESTED = 'NESTED',
 }
@@ -77,4 +78,7 @@ export class Tokens {
 
   @Column('bigint', { name: 'bundle_created', nullable: true })
   bundle_created?: number;
+
+  @Column('bigint', { name: 'total_pieces' })
+  total_pieces: number;
 }
