@@ -1,15 +1,10 @@
 import BigNumber from 'bignumber.js';
-import {
-  encodeAddress,
-  decodeAddress,
-  isEthereumAddress,
-} from '@polkadot/util-crypto';
-import { Prefix } from '@polkadot/util-crypto/types';
+import { Address } from '@unique-nft/utils';
 
-export function normalizeSubstrateAddress(address, ss58Format?: Prefix) {
-  return isEthereumAddress(address)
+export function normalizeSubstrateAddress(address, ss58Format?: number) {
+  return Address.is.ethereumAddress(address)
     ? address
-    : encodeAddress(decodeAddress(address), ss58Format);
+    : Address.normalize.substrateAddress(address, ss58Format);
 }
 
 export function normalizeTimestamp(timestamp: number) {
