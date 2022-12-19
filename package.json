@@ -41,7 +41,7 @@
     "environment:dev:ps": "docker-compose --env-file .env ps"
   },
   "dependencies": {
-    "@ashkuc/harvester": "^0.0.6",
+    "@ashkuc/harvester": "^0.0.10",
     "@nestjs/apollo": "^10.1.7",
     "@nestjs/common": "^9.2.1",
     "@nestjs/config": "^2.1.0",
