@@ -2,7 +2,7 @@ import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import { Account } from '@entities/Account';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { isEthereumAddress } from '@polkadot/util-crypto';
+import { Address as AddressUtils } from '@unique-nft/utils';
 import { Address } from '@unique-nft/substrate-client/types';
 import { AllBalances } from '@unique-nft/substrate-client/balance';
 import { Repository } from 'typeorm';
@@ -70,7 +70,9 @@ export class AccountService {
   ): BalancesExtended {
     return {
       ...balances,
-      etheriumAddress: isEthereumAddress(address) ? address : null,
+      etheriumAddress: AddressUtils.is.ethereumAddress(address)
+        ? address
+        : null,
     };
   }
 
