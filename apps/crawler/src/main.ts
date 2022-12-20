@@ -14,6 +14,8 @@ async function bootstrap() {
 
   Logger.overrideLogger(logLevels);
 
+  await app.init();
+
   try {
     const crawlerService = app.get(CrawlerService);
 

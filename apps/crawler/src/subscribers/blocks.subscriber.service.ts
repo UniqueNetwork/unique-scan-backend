@@ -5,14 +5,12 @@ import {
   SubstrateExtrinsic,
 } from '@subsquid/substrate-processor';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
-import { Prefix } from '@polkadot/util-crypto/types';
 import { ISubscriberService } from './subscribers.service';
 import { ProcessorService } from './processor/processor.service';
 import { BlockService } from '../services/block.service';
 import { ExtrinsicService } from '../services/extrinsic.service';
 import { EventService } from '../services/event/event.service';
 import { Event } from '@entities/Event';
-import { Severity } from '@sentry/node';
 
 export interface IEvent {
   name: string;
@@ -37,7 +35,7 @@ export type IBlockItem =
 export interface IBlockCommonData {
   blockNumber: number;
   blockTimestamp: number;
-  ss58Prefix: Prefix;
+  ss58Prefix: number;
   blockHash?: string;
 }
 
@@ -102,7 +100,7 @@ export class BlocksSubscriberService implements ISubscriberService {
       const ss58Prefix = ctx._chain?.getConstant(
         'System',
         'SS58Prefix',
-      ) as Prefix;
+      ) as number;
 
       const blockCommonData = {
         blockNumber,
@@ -150,7 +148,7 @@ export class BlocksSubscriberService implements ISubscriberService {
 
         const sentry = this.sentry.instance();
         sentry.setContext('block-subscriber', {
-          level: Severity.Warning,
+          level: 'warning',
           extra: { rejectedCollections, rejectedTokens },
         });
         sentry.captureMessage('Some collections or tokens were rejected');
