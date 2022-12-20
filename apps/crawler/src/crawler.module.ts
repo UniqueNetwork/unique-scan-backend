@@ -3,12 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import typeormConfig from '@common/typeorm.config';
+import { HarvesterModule, HarvesterModuleOptions } from '@unique-nft/harvester';
 import { CrawlerService } from './crawler.service';
 import { SubscribersModule } from './subscribers/subscribers.module';
 import { Config, GlobalConfigModule } from './config/config.module';
 import { CacheProviderModule } from './cache/cache-provider.module';
-
-import { HarvesterModule, HarvesterModuleOptions } from '@ashkuc/harvester';
 
 @Module({
   imports: [
