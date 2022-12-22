@@ -10,24 +10,24 @@ import {
   sanitizePropertiesValues,
 } from '@common/utils';
 import { Event } from '@entities/Event';
-import { Tokens, TokenType, ITokenEntities } from '@entities/Tokens';
+import { ITokenEntities, Tokens, TokenType } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
 import {
-  ItemsBatchProcessingResult,
   IBlockCommonData,
+  ItemsBatchProcessingResult,
 } from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
 import { TokenData } from './token.types';
 import { chunk } from 'lodash';
-import { CollectionMode } from '@unique-nft/substrate-client/tokens';
 
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
-import { logger } from 'ethers';
+import { TokensOwners } from '@entities/TokensOwners';
+
 @Injectable()
 export class TokenService {
   constructor(
@@ -35,6 +35,8 @@ export class TokenService {
     private nestingService: TokenNestingService,
     private collectionService: CollectionService,
     private configService: ConfigService<Config>,
+    @InjectRepository(TokensOwners)
+    private tokensOwnersRepository: Repository<TokensOwners>,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -100,6 +102,8 @@ export class TokenService {
       collection_id,
       token_id,
     });
+
+    //const tokenBalance = await this.sdkService.getRFTBalances();
 
     let tokenType =
       tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
@@ -223,15 +227,33 @@ export class TokenService {
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
     let result;
-    logger.info('Token data', tokenData, data);
-    const numberOfParts = parseInt(data[3]);
 
     if (tokenData) {
       const needCheckNesting = eventName === EventName.TRANSFER;
+
+      const pieces = await this.sdkService.getTotalPieces(
+        tokenId,
+        collectionId,
+      );
+
+      if (data.length != 0) {
+        const tokenOwner = {
+          owner: tokenData.tokenDecoded.owner,
+          owner_normalized: normalizeSubstrateAddress(
+            tokenData.tokenDecoded.owner,
+          ),
+          collection_id: collectionId,
+          token_id: tokenId,
+          block_hash: blockHash,
+          date_created: String(normalizeTimestamp(blockTimestamp)),
+          amount: pieces.amount,
+        };
+        await this.tokensOwnersRepository.save(tokenOwner);
+      }
       const preparedData = await this.prepareDataForDb(
         tokenData,
         blockHash,
-        numberOfParts,
+        Number(pieces?.amount),
         blockTimestamp,
         needCheckNesting,
       );

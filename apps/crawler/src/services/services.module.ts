@@ -18,6 +18,7 @@ import { EventArgumentsService } from './event/event.arguments.service';
 import { SdkModule } from '../sdk/sdk.module';
 import { TokenNestingService } from './token/nesting.service';
 import { EvmService } from './evm/evm.service';
+import { TokensOwners } from '@entities/TokensOwners';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { EvmService } from './evm/evm.service';
       Event,
       Extrinsic,
       Tokens,
+      TokensOwners,
       EvmTransaction,
     ]),
     ConfigModule,

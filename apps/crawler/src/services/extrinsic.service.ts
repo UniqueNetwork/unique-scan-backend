@@ -17,6 +17,9 @@ import {
 } from '../subscribers/blocks.subscriber.service';
 import { EventValues } from './event/event.types';
 
+import { TokensOwners } from '@entities/TokensOwners';
+import { SdkService } from '../sdk/sdk.service';
+
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
   ExtrinsicMethod.TRANSFER_FROM,
@@ -45,6 +48,10 @@ export class ExtrinsicService {
   constructor(
     @InjectRepository(Extrinsic)
     private extrinsicsRepository: Repository<Extrinsic>,
+
+    @InjectRepository(TokensOwners)
+    private tokensOwnersRepository: Repository<TokensOwners>,
+    private sdkService: SdkService,
   ) {}
 
   private extractExtrinsicItems(items: IBlockItem[]): IExtrinsicExtended[] {
@@ -165,6 +172,41 @@ export class ExtrinsicService {
     });
   }
 
+  private prepareTokenForDb(
+    blockCommonData: IBlockCommonData,
+    events: Event[],
+  ): any {
+    const { blockTimestamp, blockHash } = blockCommonData;
+    const substrateAddress = [];
+    events.map(async (event) => {
+      const extrinsicsEventName = `${event.section}.${event.method}`;
+      if (extrinsicsEventName !== 'Common.Transfer') {
+        return;
+      }
+
+      const { to, from, tokenId, collectionId } = event?.values as any;
+
+      substrateAddress.push({
+        owner: to.value,
+        owner_normalized: normalizeSubstrateAddress(to.value),
+        collection_id: collectionId,
+        token_id: tokenId,
+        block_hash: blockHash,
+        date_created: String(normalizeTimestamp(blockTimestamp)),
+      });
+      substrateAddress.push({
+        owner: from.value,
+        owner_normalized: normalizeSubstrateAddress(from.value),
+        collection_id: collectionId,
+        token_id: tokenId,
+        block_hash: blockHash,
+        date_created: String(normalizeTimestamp(blockTimestamp)),
+      });
+    });
+
+    return substrateAddress;
+  }
+
   async upsert({
     blockItems,
     blockCommonData,
@@ -175,6 +217,43 @@ export class ExtrinsicService {
     events: Event[];
   }) {
     const extrinsicItems = this.extractExtrinsicItems(blockItems);
+
+    const extrinsicTokenTransfer = this.prepareTokenForDb(
+      blockCommonData,
+      events,
+    );
+
+    for (const ext of extrinsicTokenTransfer) {
+      const pieceToken = await this.sdkService.getRFTBalances({
+        address: ext.owner,
+        collectionId: ext.collection_id,
+        tokenId: ext.token_id,
+      });
+      const updateTokenTransfer = { ...ext, ...pieceToken };
+
+      const ownerToken = await this.tokensOwnersRepository.findOne({
+        where: {
+          owner: ext.owner,
+          collection_id: ext.collection_id,
+          token_id: ext.token_id,
+        },
+      });
+      if (ownerToken) {
+        await this.tokensOwnersRepository.update(
+          {
+            owner: ext.owner,
+            collection_id: ext.collection_id,
+            token_id: ext.token_id,
+          },
+          {
+            amount: updateTokenTransfer.amount,
+            block_hash: updateTokenTransfer.block_hash,
+          },
+        );
+      } else {
+        await this.tokensOwnersRepository.save(updateTokenTransfer);
+      }
+    }
 
     const extrinsicsData = this.prepareDataForDb({
       blockCommonData,
