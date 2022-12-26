@@ -176,7 +176,7 @@ export class ExtrinsicService {
     blockCommonData: IBlockCommonData,
     events: Event[],
   ): any {
-    const { blockTimestamp, blockHash } = blockCommonData;
+    const { blockTimestamp } = blockCommonData;
     const substrateAddress = [];
     events.map(async (event) => {
       const extrinsicsEventName = `${event.section}.${event.method}`;
@@ -191,7 +191,6 @@ export class ExtrinsicService {
         owner_normalized: normalizeSubstrateAddress(to.value),
         collection_id: collectionId,
         token_id: tokenId,
-        block_hash: blockHash,
         date_created: String(normalizeTimestamp(blockTimestamp)),
       });
       substrateAddress.push({
@@ -199,7 +198,6 @@ export class ExtrinsicService {
         owner_normalized: normalizeSubstrateAddress(from.value),
         collection_id: collectionId,
         token_id: tokenId,
-        block_hash: blockHash,
         date_created: String(normalizeTimestamp(blockTimestamp)),
       });
     });
@@ -263,7 +261,6 @@ export class ExtrinsicService {
         },
         {
           amount: updateData.amount,
-          block_hash: updateData.block_hash,
         },
       );
     } else {
