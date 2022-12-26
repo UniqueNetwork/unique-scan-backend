@@ -223,36 +223,15 @@ export class ExtrinsicService {
       events,
     );
 
-    for (const ext of extrinsicTokenTransfer) {
+    for (const extrinsic of extrinsicTokenTransfer) {
       const pieceToken = await this.sdkService.getRFTBalances({
-        address: ext.owner,
-        collectionId: ext.collection_id,
-        tokenId: ext.token_id,
+        address: extrinsic.owner,
+        collectionId: extrinsic.collection_id,
+        tokenId: extrinsic.token_id,
       });
-      const updateTokenTransfer = { ...ext, ...pieceToken };
+      const updateTokenTransfer = { ...extrinsic, ...pieceToken };
 
-      const ownerToken = await this.tokensOwnersRepository.findOne({
-        where: {
-          owner: ext.owner,
-          collection_id: ext.collection_id,
-          token_id: ext.token_id,
-        },
-      });
-      if (ownerToken) {
-        await this.tokensOwnersRepository.update(
-          {
-            owner: ext.owner,
-            collection_id: ext.collection_id,
-            token_id: ext.token_id,
-          },
-          {
-            amount: updateTokenTransfer.amount,
-            block_hash: updateTokenTransfer.block_hash,
-          },
-        );
-      } else {
-        await this.tokensOwnersRepository.save(updateTokenTransfer);
-      }
+      await this.updateOrSaveTokenOwnerPart(extrinsic, updateTokenTransfer);
     }
 
     const extrinsicsData = this.prepareDataForDb({
@@ -265,5 +244,30 @@ export class ExtrinsicService {
       'block_number',
       'extrinsic_index',
     ]);
+  }
+
+  private async updateOrSaveTokenOwnerPart(ext: any, updateData: any) {
+    const ownerToken = await this.tokensOwnersRepository.findOne({
+      where: {
+        owner: ext.owner,
+        collection_id: ext.collection_id,
+        token_id: ext.token_id,
+      },
+    });
+    if (ownerToken) {
+      await this.tokensOwnersRepository.update(
+        {
+          owner: ext.owner,
+          collection_id: ext.collection_id,
+          token_id: ext.token_id,
+        },
+        {
+          amount: updateData.amount,
+          block_hash: updateData.block_hash,
+        },
+      );
+    } else {
+      await this.tokensOwnersRepository.save(updateData);
+    }
   }
 }

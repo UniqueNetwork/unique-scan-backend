@@ -20,7 +20,7 @@ import {
   ItemsBatchProcessingResult,
 } from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
-import { TokenData } from './token.types';
+import { TokenData, TokenOwnerData } from './token.types';
 import { chunk } from 'lodash';
 
 import { ConfigService } from '@nestjs/config';
@@ -237,7 +237,7 @@ export class TokenService {
       );
 
       if (data.length != 0) {
-        const tokenOwner = {
+        const tokenOwner: TokenOwnerData = {
           owner: tokenData.tokenDecoded.owner,
           owner_normalized: normalizeSubstrateAddress(
             tokenData.tokenDecoded.owner,
@@ -248,8 +248,9 @@ export class TokenService {
           date_created: String(normalizeTimestamp(blockTimestamp)),
           amount: pieces.amount,
         };
-        await this.tokensOwnersRepository.save(tokenOwner);
+        await this.checkAndSaveOrUpdateTokenOwnerPart(tokenOwner);
       }
+
       const preparedData = await this.prepareDataForDb(
         tokenData,
         blockHash,
@@ -303,5 +304,30 @@ export class TokenService {
         TOKEN_BURN_EVENTS.includes(eventName)
       );
     });
+  }
+
+  private async checkAndSaveOrUpdateTokenOwnerPart(tokenOwner: TokenOwnerData) {
+    const ownerToken = await this.tokensOwnersRepository.findOne({
+      where: {
+        owner: tokenOwner.owner,
+        collection_id: tokenOwner.collection_id,
+        token_id: tokenOwner.token_id,
+      },
+    });
+    if (ownerToken) {
+      await this.tokensOwnersRepository.update(
+        {
+          owner: tokenOwner.owner,
+          collection_id: tokenOwner.collection_id,
+          token_id: tokenOwner.token_id,
+        },
+        {
+          amount: tokenOwner.amount,
+          block_hash: tokenOwner.block_hash,
+        },
+      );
+    } else {
+      await this.tokensOwnersRepository.save(tokenOwner);
+    }
   }
 }
