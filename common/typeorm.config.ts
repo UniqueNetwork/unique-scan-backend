@@ -15,6 +15,7 @@ import { EvmTransaction } from './entities/EvmTransaction';
 import { DataSourceOptions } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { TokensOwners } from './entities/TokensOwners';
 
 dotenv.config();
 const migrationsDir = path.join(__dirname, '..', 'migrations');
@@ -39,6 +40,7 @@ const typeormConfig: DataSourceOptions = {
     HarvesterError,
     System,
     TokensStats,
+    TokensOwners,
     Tokens,
     Total,
     EvmTransaction,

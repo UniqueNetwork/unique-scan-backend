@@ -10,23 +10,24 @@ import {
   sanitizePropertiesValues,
 } from '@common/utils';
 import { Event } from '@entities/Event';
-import { Tokens, TokenType, ITokenEntities } from '@entities/Tokens';
+import { ITokenEntities, Tokens, TokenType } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
 import {
-  ItemsBatchProcessingResult,
   IBlockCommonData,
+  ItemsBatchProcessingResult,
 } from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
-import { TokenData } from './token.types';
+import { TokenData, TokenOwnerData } from './token.types';
 import { chunk } from 'lodash';
-import { CollectionMode } from '@unique-nft/substrate-client/tokens';
 
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
+import { TokensOwners } from '@entities/TokensOwners';
+
 @Injectable()
 export class TokenService {
   constructor(
@@ -34,6 +35,8 @@ export class TokenService {
     private nestingService: TokenNestingService,
     private collectionService: CollectionService,
     private configService: ConfigService<Config>,
+    @InjectRepository(TokensOwners)
+    private tokensOwnersRepository: Repository<TokensOwners>,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -57,12 +60,12 @@ export class TokenService {
     }
 
     // TODO: delete after rft support
-    if (
-      tokenDecoded.owner === '' ||
-      tokenDecoded.collection.mode === CollectionMode.ReFungible
-    ) {
-      return null;
-    }
+    // if (
+    //   tokenDecoded.owner === '' ||
+    //   tokenDecoded.collection.mode === CollectionMode.ReFungible
+    // ) {
+    //   return null;
+    // }
 
     const [tokenProperties, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
@@ -79,11 +82,11 @@ export class TokenService {
   async prepareDataForDb(
     tokenData: TokenData,
     blockHash: string,
+    totalPieces: number,
     blockTimestamp?: number,
     needCheckNesting = false,
   ): Promise<Omit<Tokens, 'id'>> {
     const { tokenDecoded, tokenProperties, isBundle } = tokenData;
-
     const {
       tokenId: token_id,
       collectionId: collection_id,
@@ -100,7 +103,10 @@ export class TokenService {
       token_id,
     });
 
-    let tokenType = TokenType.NFT;
+    //const tokenBalance = await this.sdkService.getRFTBalances();
+
+    let tokenType =
+      tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
     let parentId = null;
     if (nestingParentToken) {
       const { collectionId, tokenId } = nestingParentToken;
@@ -121,7 +127,8 @@ export class TokenService {
     }
 
     if (!children.length && !parentId) {
-      tokenType = TokenType.NFT;
+      tokenType =
+        tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
     }
 
     return {
@@ -141,6 +148,7 @@ export class TokenService {
       type: tokenType,
       children,
       bundle_created: tokenType === TokenType.NFT ? null : undefined,
+      total_pieces: totalPieces,
     };
   }
 
@@ -157,8 +165,8 @@ export class TokenService {
       tokenEvents,
       this.configService.get('scanTokensBatchSize'),
     );
-
     let rejected = [];
+    let data = [];
     for (const chunk of eventChunks) {
       const result = await Promise.allSettled(
         chunk.map((event) => {
@@ -170,6 +178,9 @@ export class TokenService {
 
           const { blockHash, blockTimestamp } = blockCommonData;
           const eventName = `${section}.${method}`;
+          if (eventName === 'Common.ItemCreated') {
+            data = JSON.parse(event.data);
+          }
 
           if (TOKEN_UPDATE_EVENTS.includes(eventName)) {
             return this.update({
@@ -178,6 +189,7 @@ export class TokenService {
               eventName,
               blockTimestamp,
               blockHash,
+              data,
             });
           } else {
             return this.burn(collectionId, tokenId);
@@ -204,22 +216,45 @@ export class TokenService {
     eventName,
     blockTimestamp,
     blockHash,
+    data,
   }: {
     collectionId: number;
     tokenId: number;
     eventName: string;
     blockTimestamp: number;
     blockHash: string;
+    data: any;
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
-
     let result;
 
     if (tokenData) {
       const needCheckNesting = eventName === EventName.TRANSFER;
+
+      const pieces = await this.sdkService.getTotalPieces(
+        tokenId,
+        collectionId,
+      );
+
+      if (data.length != 0) {
+        const tokenOwner: TokenOwnerData = {
+          owner: tokenData.tokenDecoded.owner,
+          owner_normalized: normalizeSubstrateAddress(
+            tokenData.tokenDecoded.owner,
+          ),
+          collection_id: collectionId,
+          token_id: tokenId,
+          block_hash: blockHash,
+          date_created: String(normalizeTimestamp(blockTimestamp)),
+          amount: pieces.amount,
+        };
+        await this.checkAndSaveOrUpdateTokenOwnerPart(tokenOwner);
+      }
+
       const preparedData = await this.prepareDataForDb(
         tokenData,
         blockHash,
+        Number(pieces?.amount),
         blockTimestamp,
         needCheckNesting,
       );
@@ -269,5 +304,30 @@ export class TokenService {
         TOKEN_BURN_EVENTS.includes(eventName)
       );
     });
+  }
+
+  private async checkAndSaveOrUpdateTokenOwnerPart(tokenOwner: TokenOwnerData) {
+    const ownerToken = await this.tokensOwnersRepository.findOne({
+      where: {
+        owner: tokenOwner.owner,
+        collection_id: tokenOwner.collection_id,
+        token_id: tokenOwner.token_id,
+      },
+    });
+    if (ownerToken) {
+      await this.tokensOwnersRepository.update(
+        {
+          owner: tokenOwner.owner,
+          collection_id: tokenOwner.collection_id,
+          token_id: tokenOwner.token_id,
+        },
+        {
+          amount: tokenOwner.amount,
+          block_hash: tokenOwner.block_hash,
+        },
+      );
+    } else {
+      await this.tokensOwnersRepository.save(tokenOwner);
+    }
   }
 }

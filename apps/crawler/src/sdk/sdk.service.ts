@@ -10,6 +10,7 @@ import {
 } from '@unique-nft/substrate-client/tokens';
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
+import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
 
 @Injectable()
 export class SdkService {
@@ -84,5 +85,22 @@ export class SdkService {
   @SdkCache('getBalances')
   async getBalances(rawAddress: string) {
     return this.sdk.balance.get({ address: rawAddress });
+  }
+
+  @SdkCache('getRFTBalances')
+  async getRFTBalances(tokenBalance: TokenBalanceRequest): Promise<any> {
+    return await this.sdk.refungible.getBalance({
+      address: `${tokenBalance.address}`,
+      collectionId: tokenBalance.collectionId,
+      tokenId: tokenBalance.tokenId,
+    });
+  }
+
+  @SdkCache('getTotalPieces')
+  async getTotalPieces(tokenId, collectionId): Promise<any> {
+    return await this.sdk.refungible.totalPieces({
+      tokenId: tokenId,
+      collectionId: collectionId,
+    });
   }
 }
