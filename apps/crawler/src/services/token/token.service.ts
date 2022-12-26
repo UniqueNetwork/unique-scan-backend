@@ -244,7 +244,6 @@ export class TokenService {
           ),
           collection_id: collectionId,
           token_id: tokenId,
-          block_hash: blockHash,
           date_created: String(normalizeTimestamp(blockTimestamp)),
           amount: pieces.amount,
         };
@@ -323,7 +322,6 @@ export class TokenService {
         },
         {
           amount: tokenOwner.amount,
-          block_hash: tokenOwner.block_hash,
         },
       );
     } else {

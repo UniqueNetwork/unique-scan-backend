@@ -5,9 +5,6 @@ export class TokensOwners {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('text', { primary: true, name: 'block_hash' })
-  block_hash: string;
-
   @Column('bigint', { name: 'collection_id' })
   collection_id: number;
 

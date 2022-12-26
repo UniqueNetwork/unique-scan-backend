@@ -15,11 +15,6 @@ export class tokenowners1671109762424 implements MigrationInterface {
             default: 'uuid_generate_v4()',
           },
           {
-            name: 'block_hash',
-            type: 'text',
-            isPrimary: true,
-          },
-          {
             name: 'collection_id',
             type: 'bigint',
           },
