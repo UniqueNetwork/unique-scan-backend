@@ -82,9 +82,9 @@ export class CollectionService {
     }
 
     // TODO: delete after rft support
-    if (collectionDecoded.mode === CollectionMode.ReFungible) {
-      return null;
-    }
+    // if (collectionDecoded.mode === CollectionMode.ReFungible) {
+    //   return null;
+    // }
 
     const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
       this.sdkService.getCollectionLimits(
