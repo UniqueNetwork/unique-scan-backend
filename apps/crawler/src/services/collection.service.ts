@@ -18,15 +18,14 @@ import {
   CollectionInfoWithSchema,
   CollectionLimits,
   CollectionProperty,
-  UniqueCollectionSchemaDecoded,
   PropertyKeyPermission,
-  CollectionMode,
+  UniqueCollectionSchemaDecoded,
 } from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
 import { SdkService } from '../sdk/sdk.service';
 import {
-  ItemsBatchProcessingResult,
   IBlockCommonData,
+  ItemsBatchProcessingResult,
 } from '../subscribers/blocks.subscriber.service';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../config/config.module';
@@ -200,7 +199,6 @@ export class CollectionService {
   ): Promise<Collections> {
     const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
       collectionData;
-
     const {
       id: collection_id,
       owner,
@@ -269,7 +267,7 @@ export class CollectionService {
       sponsorship: sponsorship?.isConfirmed ? sponsorship.address : null,
       schema_version: schemaVersion,
       token_prefix,
-      mode,
+      mode: mode === 'ReFungible' ? 'RFT' : mode,
       mint_mode: mintMode,
       nesting_enabled: nesting?.collectionAdmin || nesting?.tokenOwner,
       owner_normalized: normalizeSubstrateAddress(owner),
@@ -350,6 +348,7 @@ export class CollectionService {
 
     if (collectionData) {
       const preparedData = await this.prepareDataForDb(collectionData);
+      logger.info(preparedData);
 
       await this.collectionsRepository.upsert(
         {

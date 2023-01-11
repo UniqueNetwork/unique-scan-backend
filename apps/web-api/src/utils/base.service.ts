@@ -234,6 +234,19 @@ export class BaseService<T, S> {
     return { data, count };
   }
 
+  protected async getDataAndCountMany(
+    qb: SelectQueryBuilder<T>,
+    args: IGQLQueryArgs<S>,
+  ) {
+    const data = await qb.getMany();
+    let count = 0;
+    if (data?.length) {
+      count = await this.getCount(qb, args);
+    }
+
+    return { data, count };
+  }
+
   private applyConditionTree(
     qb: SelectQueryBuilder<T>,
     where: TWhere<S>,

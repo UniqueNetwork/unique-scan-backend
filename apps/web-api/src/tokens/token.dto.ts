@@ -61,6 +61,9 @@ export class SimpleTokenDTO implements Partial<Tokens> {
 
   @Field(() => TokenType, { nullable: true })
   type?: TokenType;
+
+  @Field(() => Int, { nullable: true })
+  total_pieces?: number;
 }
 
 @ObjectType('token')
