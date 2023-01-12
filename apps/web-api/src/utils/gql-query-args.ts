@@ -8,6 +8,7 @@ import {
   registerEnumType,
 } from '@nestjs/graphql';
 import { Type } from '@nestjs/common';
+import { TokensOwners } from '@entities/TokensOwners';
 
 export interface IWhereOperators {
   _eq?: number | string | boolean;
@@ -171,6 +172,24 @@ export function ListDataType<T>(classRef: Type<T>): Type<IDataListResponse<T>> {
   }
 
   return ListDataType as Type<IDataListResponse<T>>;
+}
+
+export function ListDataTypeOwner<T>(
+  classRef: Type<T>,
+): Type<IDataListResponse<T>> {
+  @ObjectType({ isAbstract: false })
+  class ListDataTypeOwner implements IDataListResponse<T> {
+    @Field(() => [classRef], { nullable: true })
+    data: T[];
+
+    @Field(() => Int)
+    count: number;
+
+    @Field(() => Float)
+    timestamp: number;
+  }
+
+  return ListDataTypeOwner as Type<IDataListResponse<T>>;
 }
 
 @ArgsType()

@@ -20,6 +20,7 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
 import { ContractModule } from './contract/contract.module';
 import { AttributesModule } from './attributes/attributes.module';
 import { EvmTransactionModule } from './evm-transactions/evm-transaction.module';
+import { TokenOwnersModule } from './tokens-owners/token-owners.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { EvmTransactionModule } from './evm-transactions/evm-transaction.module'
     HolderModule,
     TransferModule,
     TokenModule,
+    TokenOwnersModule,
     CollectionModule,
     ContractModule,
     EventModule,
