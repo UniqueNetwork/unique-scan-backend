@@ -27,7 +27,6 @@ import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
-import { logger } from 'ethers';
 
 @Injectable()
 export class TokenService {
@@ -185,7 +184,7 @@ export class TokenService {
 
           if (eventName === 'Common.ItemDestroyed') {
             data = JSON.parse(event.data);
-            logger.info(data);
+
             return this.update({
               collectionId,
               tokenId,
@@ -241,12 +240,11 @@ export class TokenService {
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
     let result;
-    logger.info('Update start begin', eventName, tokenData);
+
     if (
       eventName !== 'Common.ItemDestroyed' &&
       tokenData.tokenDecoded.collection.mode != 'ReFungible'
     ) {
-      logger.info('Update start', eventName, tokenData);
       return;
     }
 
@@ -257,7 +255,7 @@ export class TokenService {
         tokenId,
         collectionId,
       );
-      logger.info('Update data', data);
+
       if (data.length != 0) {
         const tokenOwner: TokenOwnerData = {
           owner: tokenData.tokenDecoded.owner,
@@ -279,7 +277,7 @@ export class TokenService {
         blockTimestamp,
         needCheckNesting,
       );
-      logger.info('preparedData', preparedData);
+
       // Write token data into db
       await this.tokensRepository.upsert(
         {

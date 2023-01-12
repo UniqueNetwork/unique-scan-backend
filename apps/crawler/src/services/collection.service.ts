@@ -348,7 +348,6 @@ export class CollectionService {
 
     if (collectionData) {
       const preparedData = await this.prepareDataForDb(collectionData);
-      logger.info(preparedData);
 
       await this.collectionsRepository.upsert(
         {
