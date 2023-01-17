@@ -81,4 +81,7 @@ export class Tokens {
 
   @Column('bigint', { name: 'total_pieces' })
   total_pieces: number;
+
+  @Column('boolean', { name: 'nested', default: false })
+  nested: boolean;
 }

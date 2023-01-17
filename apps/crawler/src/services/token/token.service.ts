@@ -86,6 +86,7 @@ export class TokenService {
     blockTimestamp?: number,
     needCheckNesting = false,
   ): Promise<Omit<Tokens, 'id'>> {
+    let nestedType = false;
     const { tokenDecoded, tokenProperties, isBundle } = tokenData;
     const {
       tokenId: token_id,
@@ -108,10 +109,11 @@ export class TokenService {
     let tokenType =
       tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
     let parentId = null;
+
     if (nestingParentToken) {
       const { collectionId, tokenId } = nestingParentToken;
       parentId = `${collectionId}_${tokenId}`;
-      tokenType = TokenType.NESTED;
+      nestedType = true;
     }
 
     const children: ITokenEntities[] = needCheckNesting
@@ -123,7 +125,7 @@ export class TokenService {
       : token?.children ?? [];
 
     if (isBundle) {
-      tokenType = TokenType.NESTED;
+      nestedType = true;
     }
 
     if (!children.length && !parentId) {
@@ -149,6 +151,7 @@ export class TokenService {
       children,
       bundle_created: tokenType === TokenType.NFT ? null : undefined,
       total_pieces: totalPieces,
+      nested: nestedType,
     };
   }
 
