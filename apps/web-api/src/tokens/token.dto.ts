@@ -64,6 +64,9 @@ export class SimpleTokenDTO implements Partial<Tokens> {
 
   @Field(() => Int, { nullable: true })
   total_pieces?: number;
+
+  @Field(() => Boolean)
+  nested?: boolean;
 }
 
 @ObjectType('token')

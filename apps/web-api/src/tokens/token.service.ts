@@ -73,7 +73,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     qb.andWhere('parent_id is null');
-    qb.andWhere(`type = :type`, { type: TokenType.NESTED });
+    qb.andWhere(`nested = :nested`, { nested: true });
 
     this.applyArgs(qb, queryArgs, queryInfo);
 
@@ -104,7 +104,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
           .andWhere('"Tokens".collection_id = :collection_id', {
             collection_id,
           })
-          .andWhere(`type = :type`, { type: TokenType.NESTED });
+          .andWhere(`nested = :nested`, { nested: true });
       }),
     );
 
