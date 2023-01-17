@@ -6,13 +6,13 @@ export class updatenesteddata1673954094930 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     try {
       await queryRunner.query(
-        `UPDATE tokens SET nested = true WHERE type = "NESTED"`,
+        `UPDATE tokens SET nested = true WHERE type = 'NESTED'`,
       );
       await queryRunner.query(
-        `UPDATE tokens SET type = "NFT" WHERE type = "NESTED" AND total_pieces = 1`,
+        `UPDATE tokens SET type = 'NFT' WHERE type = 'NESTED' AND total_pieces = 1`,
       );
       await queryRunner.query(
-        `UPDATE tokens SET type = "RFT" WHERE type = "NESTED" AND total_pieces > 1`,
+        `UPDATE tokens SET type = 'RFT' WHERE type = 'NESTED' AND total_pieces > 1`,
       );
     } catch (e) {
       await queryRunner.rollbackTransaction();
