@@ -5,7 +5,6 @@ import { ProcessorConfigService } from '../../config/processor.config.service';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { STATE_SCHEMA_NAME_BY_MODE } from '@common/constants';
 import { StoreBaseService } from './store-base.service';
-import * as console from 'console';
 
 @Injectable()
 export class HarvesterStoreService {
@@ -44,6 +43,7 @@ export class HarvesterStoreService {
         await this.dataSource.query(
           `UPDATE ${this.stateSchema}.status SET height = ${range.from} WHERE id = 0`,
         );
+        return Object.values(range);
       } catch (err) {
         // First run, no schema yet
         this.sentry.instance().captureException(err);
@@ -52,6 +52,6 @@ export class HarvesterStoreService {
     const status = await this.dataSource.query(
       `SELECT * FROM ${this.stateSchema}.status `,
     );
-    return status[0].height;
+    return [status[0].height];
   }
 }
