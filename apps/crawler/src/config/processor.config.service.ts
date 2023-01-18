@@ -27,12 +27,12 @@ export class ProcessorConfigService {
   }
 
   public getAllParams(): {
-    dataSource: SubscquidDataSource;
+    // dataSource: SubscquidDataSource;
     range: Range;
     typesBundle: string;
   } {
     return {
-      dataSource: this.getDataSource(),
+      //dataSource: this.getDataSource(),
       range: this.getRange(),
       typesBundle: this.getTypesBundle(),
     };

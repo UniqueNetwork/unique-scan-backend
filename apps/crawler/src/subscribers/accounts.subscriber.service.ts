@@ -3,9 +3,9 @@ import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { EventName } from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
-import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
 import { EventService } from '../services/event/event.service';
+import { logger } from 'ethers';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
@@ -20,7 +20,7 @@ export class AccountsSubscriberService implements ISubscriberService {
     this.sentry.setContext(AccountsSubscriberService.name);
   }
 
-  subscribe(processorService: ProcessorService) {
+  subscribe() {
     [
       // Balances
       EventName.BALANCES_BALANCE_SET,
@@ -62,12 +62,7 @@ export class AccountsSubscriberService implements ISubscriberService {
       EventName.COLLECTION_SPONSOR_SET,
       EventName.COLLECTION_SPONSOR_REMOVED,
       EventName.SPONSORSHIP_CONFIRMED,
-    ].forEach((eventName) =>
-      processorService.processor.addEventHandler(
-        eventName,
-        this.upsertHandler.bind(this),
-      ),
-    );
+    ].forEach((eventName) => eventName);
   }
 
   private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {

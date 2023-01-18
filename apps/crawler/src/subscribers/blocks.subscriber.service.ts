@@ -11,6 +11,10 @@ import { BlockService } from '../services/block.service';
 import { ExtrinsicService } from '../services/extrinsic.service';
 import { EventService } from '../services/event/event.service';
 import { Event } from '@entities/Event';
+import { logger } from 'ethers';
+import { ReaderRepository } from '@unique-nft/harvester/src/database';
+import { HarvesterStoreService } from './processor/harvester-store.service';
+import * as console from 'console';
 
 export interface IEvent {
   name: string;
@@ -65,25 +69,25 @@ export class BlocksSubscriberService implements ISubscriberService {
     private blockService: BlockService,
     private extrinsicService: ExtrinsicService,
     private eventService: EventService,
+
+    private harvesterStore: HarvesterStoreService,
+    private reader: ReaderRepository,
+
     @InjectSentry()
     private readonly sentry: SentryService,
   ) {
     this.sentry.setContext(BlocksSubscriberService.name);
   }
 
-  subscribe(processorService: ProcessorService) {
-    processorService.processor.addPreHook(
-      {
-        data: {
-          includeAllBlocks: true,
-          items: true,
-        },
-      } as const,
-      this.upsertHandler.bind(this),
-    );
+  async subscribe() {
+    const stateNumber = await this.harvesterStore.getState(true);
+    console.dir(stateNumber);
+    for await (const block of this.reader.readBlocks(stateNumber)) {
+      console.dir(block, { depth: 4 });
+    }
   }
 
-  private async upsertHandler(ctx: BlockHandlerContext<Store>): Promise<void> {
+  private async upsertHandler(ctx): Promise<void> {
     const { block, items } = ctx;
     const {
       height: blockNumber,
