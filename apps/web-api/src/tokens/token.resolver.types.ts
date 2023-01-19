@@ -142,6 +142,9 @@ export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   bundle_created?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  total_pieces?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
