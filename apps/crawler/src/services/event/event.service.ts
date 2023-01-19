@@ -23,6 +23,7 @@ import { TokenService } from '../token/token.service';
 import { CollectionService } from '../collection.service';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
+import * as console from 'console';
 
 @Injectable()
 export class EventService {
@@ -40,7 +41,7 @@ export class EventService {
     private eventsRepository: Repository<Event>,
   ) {}
 
-  private extractEventItems(blockItems: IBlockItem[]): IEvent[] {
+  private extractEventItems(blockItems: any): IEvent[] {
     return blockItems
       .map((item) => {
         if (item.kind === 'event') {
@@ -109,11 +110,14 @@ export class EventService {
     blockItems,
     blockCommonData,
   }: {
-    blockItems: IBlockItem[];
+    blockItems: any;
     blockCommonData: IBlockCommonData;
-  }): Promise<EventsProcessingResult> {
+  }): Promise<any> {
     const eventItems = this.extractEventItems(blockItems);
 
+    console.dir(eventItems, { depth: 2 });
+
+    /*
     const events = await this.prepareDataForDb({
       blockCommonData,
       eventItems,
@@ -153,7 +157,7 @@ export class EventService {
       events,
       collectionsResult,
       tokensResult,
-    };
+    };*/
   }
 
   async processEventWithAccounts(

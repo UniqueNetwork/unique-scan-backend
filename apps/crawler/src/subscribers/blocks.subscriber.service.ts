@@ -10,6 +10,8 @@ import { HarvesterStoreService } from './processor/harvester-store.service';
 import * as console from 'console';
 import { Reader } from '@unique-nft/harvester';
 import { BlockEntity } from '@unique-nft/harvester/src/database/entities';
+import { SdkService } from '../sdk/sdk.service';
+import { ChainProperties } from '@unique-nft/substrate-client/types';
 
 export interface IEvent {
   name: string;
@@ -62,6 +64,8 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   constructor(
     private blockService: BlockService,
+
+    private sdkService: SdkService,
     private extrinsicService: ExtrinsicService,
     private eventService: EventService,
 
@@ -76,31 +80,53 @@ export class BlocksSubscriberService implements ISubscriberService {
   }
 
   async subscribe() {
+    const chainProps = await this.sdkService.getChainProperties();
     const stateNumber = await this.harvesterStore.getState(true);
-
-    //const bbb = await this.reader.getBlock(stateNumber);
 
     console.dir(stateNumber);
     for await (const block of this.reader.readBlocks(
       stateNumber[0],
       stateNumber[1],
     )) {
-      this.upsertHandlerBlock(block);
+      this.upsertHandlerBlock(block, chainProps);
     }
   }
 
-  private async upsertHandlerBlock(blockData: BlockEntity): Promise<void> {
+  private async upsertHandlerBlock(
+    blockData: BlockEntity,
+    chain: ChainProperties,
+  ): Promise<void> {
+    const { SS58Prefix } = chain;
     const { id, timestamp, hash, parentHash, extrinsics } = blockData;
-    // console.dir(
-    //   { block: id, ex: extrinsics, len: extrinsics.length },
-    //   { depth: 0 },
-    // );
+
     console.dir(
-      { block: id, len: extrinsics.length, ex: extrinsics },
-      { depth: 0 },
+      { block: id, len: extrinsics.length, ex: extrinsics, chain: chain },
+      { depth: 2 },
     );
 
+    const blockTimestamp = new Date(timestamp).getTime();
+    const blockHash = hash;
     const blockItems = extrinsics;
+    const blockNumber = id;
+
+    const blockCommonData = {
+      blockNumber,
+      blockTimestamp,
+      blockHash,
+      ss58Prefix: SS58Prefix,
+    };
+
+    const log = {
+      blockNumber,
+    };
+
+    const { events, collectionsResult, tokensResult } =
+      await this.eventService.process({
+        blockCommonData,
+        blockItems,
+      });
+
+    console.dir(blockCommonData, { depth: 0 });
   }
 
   private async upsertHandler(ctx): Promise<void> {

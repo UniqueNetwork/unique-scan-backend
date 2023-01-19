@@ -11,6 +11,7 @@ import {
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
+import { ChainProperties } from '@unique-nft/substrate-client/types';
 
 @Injectable()
 export class SdkService {
@@ -26,6 +27,11 @@ export class SdkService {
     at?: string,
   ): Promise<CollectionInfoWithSchema | null> {
     return this.sdk.collections.get({ collectionId, at });
+  }
+
+  @SdkCache('getChainProperties')
+  async getChainProperties(): Promise<ChainProperties> {
+    return this.sdk.common.chainProperties();
   }
 
   @SdkCache('getCollectionLimits')
