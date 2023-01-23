@@ -244,11 +244,10 @@ export class TokenService {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
     let result;
 
-    if (
-      eventName !== 'Common.ItemDestroyed' &&
-      tokenData.tokenDecoded.collection.mode != 'ReFungible'
-    ) {
-      return;
+    if (tokenData.tokenDecoded.collection.mode === 'ReFungible') {
+      if (eventName !== 'Common.ItemDestroyed') {
+        return null;
+      }
     }
 
     if (tokenData) {
