@@ -180,7 +180,7 @@ export class TokenNestingService {
         },
         {
           children,
-          type: TokenType.NESTED,
+          nested: true,
           bundle_created: blockTimestamp
             ? normalizeTimestamp(blockTimestamp)
             : undefined,
