@@ -4,7 +4,11 @@ import {
   ExtrinsicMethod,
   ExtrinsicSection,
 } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import {
+  capitalize,
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+} from '@common/utils';
 import { Event } from '@entities/Event';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Injectable } from '@nestjs/common';
@@ -19,6 +23,9 @@ import { EventValues } from './event/event.types';
 
 import { TokensOwners } from '@entities/TokensOwners';
 import { SdkService } from '../sdk/sdk.service';
+import { ExtrinsicEntity } from '@unique-nft/harvester/src/database/entities';
+import { ChainProperties } from '@unique-nft/substrate-client/types';
+import * as console from 'console';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
@@ -266,5 +273,27 @@ export class ExtrinsicService {
     } else {
       await this.tokensOwnersRepository.save(updateData);
     }
+  }
+
+  upsertNew(
+    blockNumber: number,
+    blockHash: string,
+    extrinsicsEntity: ExtrinsicEntity[],
+    chain: ChainProperties,
+  ) {
+    for (const extrinsic of extrinsicsEntity) {
+      const extrinsicName = `${capitalize(extrinsic.section)}.${capitalize(
+        extrinsic.method,
+      )}`;
+      console.log(blockNumber, extrinsicName, extrinsic);
+
+      const extrinsicStoreData = {
+        blockNumber: blockNumber,
+        extrinsic_index: extrinsic.index,
+        is_signed: !!extrinsic.signer,
+      } as unknown as Extrinsic;
+      console.dir(extrinsicStoreData);
+    }
+    return { blockNumber, blockHash };
   }
 }

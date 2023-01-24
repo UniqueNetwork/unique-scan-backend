@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { SubstrateBlock } from '@subsquid/substrate-processor';
 import { Repository } from 'typeorm';
 import {
+  IBlockDataContainer,
   IBlockItem,
   IItemCounts,
 } from '../subscribers/blocks.subscriber.service';
@@ -90,19 +91,8 @@ export class BlockService {
     };
   }
 
-  async upsert({
-    block,
-    blockItems,
-  }: {
-    block: SubstrateBlock;
-    blockItems: IBlockItem[];
-  }): Promise<IItemCounts> {
-    const itemCounts = this.collectItemCounts(blockItems);
-
-    const blockData = this.prepareDataForDb({ block, itemCounts });
-
+  async upsertNew(blockData): Promise<IBlockDataContainer> {
     await this.blocksRepository.upsert(blockData, ['block_number']);
-
-    return itemCounts;
+    return blockData;
   }
 }

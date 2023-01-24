@@ -9,9 +9,15 @@ import { Event } from '@entities/Event';
 import { HarvesterStoreService } from './processor/harvester-store.service';
 import * as console from 'console';
 import { Reader } from '@unique-nft/harvester';
-import { BlockEntity } from '@unique-nft/harvester/src/database/entities';
+import { capitalize, normalizeTimestamp } from '@common/utils';
+import {
+  BlockEntity,
+  ExtrinsicEntity,
+} from '@unique-nft/harvester/src/database/entities';
 import { SdkService } from '../sdk/sdk.service';
 import { ChainProperties } from '@unique-nft/substrate-client/types';
+import { EventName } from '@common/constants';
+import { Block } from '@entities/Block';
 
 export interface IEvent {
   name: string;
@@ -38,6 +44,26 @@ export interface IBlockCommonData {
   blockTimestamp: number;
   ss58Prefix: number;
   blockHash?: string;
+}
+
+export interface IBlockDataContainer {
+  block_number: number;
+  block_hash: string;
+  parent_hash: string;
+  extrinsics_root?: string;
+  state_root?: string;
+  spec_name: string;
+  spec_version: string;
+  timestamp: string;
+  total_events: number;
+  num_transfers: number;
+  new_accounts: number;
+  total_extrinsics: number;
+}
+
+export interface ISpecSystemVersion {
+  spec_version: number;
+  spec_name: string;
 }
 
 export interface IItemCounts {
@@ -99,34 +125,45 @@ export class BlocksSubscriberService implements ISubscriberService {
     const { SS58Prefix } = chain;
     const { id, timestamp, hash, parentHash, extrinsics } = blockData;
 
-    console.dir(
-      { block: id, len: extrinsics.length, ex: extrinsics, chain: chain },
-      { depth: 2 },
-    );
-
-    const blockTimestamp = new Date(timestamp).getTime();
-    const blockHash = hash;
-    const blockItems = extrinsics;
-    const blockNumber = id;
+    const countEvents = this.collectEventsCount(extrinsics);
+    const specDataChain = await this.sdkService.getSpecLastUpgrade(hash);
 
     const blockCommonData = {
-      blockNumber,
-      blockTimestamp,
-      blockHash,
-      ss58Prefix: SS58Prefix,
-    };
+      block_number: +id,
+      block_hash: hash,
+      parent_hash: parentHash,
+      extrinsics_root: '0x000', // TODO: remove this ???
+      state_root: '0x000', // TODO: remove this ???
+      ...specDataChain,
+      timestamp: new Date(timestamp).getTime(),
+      total_events: countEvents.totalEvents,
+      num_transfers: countEvents.numTransfers,
+      new_accounts: countEvents.newAccounts,
+      total_extrinsics: extrinsics.length,
+    } as unknown as Block;
 
     const log = {
-      blockNumber,
+      blockNumber: id,
     };
 
-    const { events, collectionsResult, tokensResult } =
-      await this.eventService.process({
-        blockCommonData,
-        blockItems,
-      });
+    const [itemCounts] = await Promise.all([
+      this.blockService.upsertNew(blockCommonData),
+      this.extrinsicService.upsertNew(id, hash, extrinsics, chain),
+    ]);
+    //console.dir(itemCount, { depth: 1 });
 
-    console.dir(blockCommonData, { depth: 0 });
+    this.logger.verbose({
+      ...log,
+      ...countEvents,
+
+      // Collections service results
+      //totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
+      //totalRejectedCollections: collectionsResult?.rejected.length ?? undefined,
+
+      // Tokens service results
+      //totalTokenEvents: tokensResult?.totalEvents ?? undefined,
+      //totalRejectedTokens: tokensResult?.rejected.length ?? undefined,
+    });
   }
 
   private async upsertHandler(ctx): Promise<void> {
@@ -162,21 +199,21 @@ export class BlocksSubscriberService implements ISubscriberService {
           blockItems,
         });
 
-      const [itemCounts] = await Promise.all([
-        this.blockService.upsert({
-          block,
-          blockItems,
-        }),
-        this.extrinsicService.upsert({
-          blockCommonData,
-          blockItems,
-          events,
-        }),
-      ]);
+      // const [itemCounts] = await Promise.all([
+      //   this.blockService.upsert({
+      //     block,
+      //     blockItems,
+      //   }),
+      //   this.extrinsicService.upsert({
+      //     blockCommonData,
+      //     blockItems,
+      //     events,
+      //   }),
+      // ]);
 
       this.logger.verbose({
         ...log,
-        ...itemCounts,
+        // ...itemCounts,
 
         // Collections service results
         totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
@@ -203,5 +240,27 @@ export class BlocksSubscriberService implements ISubscriberService {
       this.logger.error({ ...log, error: error.message || error });
       this.sentry.instance().captureException({ ...log, error });
     }
+  }
+
+  private collectEventsCount(extrinsics) {
+    const itemCounts = {
+      totalEvents: 0,
+      numTransfers: 0,
+      newAccounts: 0,
+    };
+
+    extrinsics.map((ext) => {
+      ext.events.forEach((event) => {
+        const name = `${capitalize(event.section)}.${event.method}`;
+        itemCounts.totalEvents += 1;
+        if (name === EventName.BALANCES_TRANSFER) {
+          itemCounts.numTransfers += 1;
+        } else if (name === EventName.BALANCES_ENDOWED) {
+          itemCounts.newAccounts += 1;
+        }
+      });
+    });
+
+    return itemCounts;
   }
 }
