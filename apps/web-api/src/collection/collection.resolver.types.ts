@@ -49,6 +49,9 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
   mint_mode?: IWhereOperators;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
+  mode?: IWhereOperators;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
   nesting_enabled?: IWhereOperators;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
