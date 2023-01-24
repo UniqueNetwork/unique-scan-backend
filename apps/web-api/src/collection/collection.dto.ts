@@ -40,7 +40,7 @@ export class CollectionDTO implements Partial<Collections> {
   collection_cover?: string;
 
   @Field(() => String)
-  type?: string;
+  mode?: string;
 
   @Field(() => Boolean)
   mint_mode?: boolean;
