@@ -244,12 +244,6 @@ export class TokenService {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
     let result;
 
-    if (tokenData.tokenDecoded.collection.mode === 'ReFungible') {
-      if (eventName !== 'Common.ItemDestroyed') {
-        return null;
-      }
-    }
-
     if (tokenData) {
       const needCheckNesting = eventName === EventName.TRANSFER;
 
@@ -275,7 +269,7 @@ export class TokenService {
       const preparedData = await this.prepareDataForDb(
         tokenData,
         blockHash,
-        Number(pieces?.amount),
+        pieces?.amount,
         blockTimestamp,
         needCheckNesting,
       );
