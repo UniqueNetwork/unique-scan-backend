@@ -1,4 +1,4 @@
-import { Tokens, TokenType } from '@entities/Tokens';
+import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
@@ -16,7 +16,6 @@ import { GraphQLResolveInfo } from 'graphql';
 import { IRelations } from '../utils/base.service.types';
 import { FieldsListOptions } from 'graphql-fields-list';
 import { JOIN_TYPE } from '@common/constants';
-import * as console from 'console';
 
 const COLLECTION_RELATION_ALIAS = 'Collection';
 const STATISTICS_RELATION_ALIAS = 'Statistics';
@@ -59,7 +58,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
-    console.dir(qb);
     this.applyArgs(qb, queryArgs, queryInfo);
 
     return this.getDataAndCount(qb, queryArgs);
