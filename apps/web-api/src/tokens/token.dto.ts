@@ -1,6 +1,6 @@
 import { Tokens, TokenType } from '@entities/Tokens';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import { GraphQLJSONObject, GraphQLJSON } from 'graphql-type-json';
+import { GraphQLJSON, GraphQLJSONObject } from 'graphql-type-json';
 
 export enum TokenDistinctFieldsEnum {
   token_id = 'token_id',
@@ -62,7 +62,7 @@ export class SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => TokenType, { nullable: true })
   type?: TokenType;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => String, { nullable: true })
   total_pieces?: number;
 
   @Field(() => Boolean)

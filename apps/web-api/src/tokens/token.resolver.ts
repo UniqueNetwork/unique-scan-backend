@@ -19,7 +19,6 @@ import {
   TokenDataResponse,
   TokenEntity,
 } from './token.resolver.types';
-import * as console from 'console';
 
 @Resolver(() => TokenEntity)
 export class TokenResolver {
@@ -35,7 +34,6 @@ export class TokenResolver {
     @Info() info,
   ): Promise<IDataListResponse<TokenEntity>> {
     const resolver = this.service.find(args, info);
-    console.dir(await resolver);
     return resolver;
   }
 
