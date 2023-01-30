@@ -11,7 +11,6 @@ import {
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
-import * as console from 'console';
 
 @Injectable()
 export class SdkService {
@@ -55,13 +54,7 @@ export class SdkService {
     tokenId: number,
     at?: string,
   ): Promise<TokenByIdResult | null> {
-    try {
-      const result = await this.sdk.tokens.get({ collectionId, tokenId });
-      console.log(result);
-      return result;
-    } catch (err) {
-      console.error(err);
-    }
+    return await this.sdk.tokens.get({ collectionId, tokenId });
   }
 
   @SdkCache('isTokenBundle')
