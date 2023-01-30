@@ -49,12 +49,12 @@ export class SdkService {
   }
 
   @SdkCache('getToken')
-  getToken(
+  async getToken(
     collectionId: number,
     tokenId: number,
     at?: string,
   ): Promise<TokenByIdResult | null> {
-    return this.sdk.tokens.get({ collectionId, tokenId, at });
+    return await this.sdk.tokens.get({ collectionId, tokenId });
   }
 
   @SdkCache('isTokenBundle')

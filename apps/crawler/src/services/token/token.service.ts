@@ -41,44 +41,6 @@ export class TokenService {
     private tokensRepository: Repository<Tokens>,
   ) {}
 
-  private async getTokenData(
-    collectionId: number,
-    tokenId: number,
-    blockHash: string,
-  ): Promise<TokenData | null> {
-    let tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
-    if (!tokenDecoded) {
-      tokenDecoded = await this.sdkService.getToken(
-        collectionId,
-        tokenId,
-        blockHash,
-      );
-    }
-
-    if (!tokenDecoded) {
-      return null;
-    }
-
-    // TODO: delete after rft support
-    // if (
-    //   tokenDecoded.owner === '' ||
-    //   tokenDecoded.collection.mode === CollectionMode.ReFungible
-    // ) {
-    //   return null;
-    // }
-
-    const [tokenProperties, isBundle] = await Promise.all([
-      this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.isTokenBundle(collectionId, tokenId),
-    ]);
-
-    return {
-      tokenDecoded,
-      tokenProperties,
-      isBundle,
-    };
-  }
-
   async prepareDataForDb(
     tokenData: TokenData,
     blockHash: string,
@@ -132,12 +94,12 @@ export class TokenService {
       tokenType =
         tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
     }
-
+    const ownerCollection = owner || collectionOwner;
     return {
       token_id,
       collection_id,
-      owner,
-      owner_normalized: normalizeSubstrateAddress(owner),
+      owner: ownerCollection,
+      owner_normalized: normalizeSubstrateAddress(ownerCollection),
       image,
       attributes,
       properties: tokenProperties.properties
@@ -243,7 +205,6 @@ export class TokenService {
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
     let result;
-
     if (tokenData) {
       const needCheckNesting = eventName === EventName.TRANSFER;
 
@@ -254,15 +215,19 @@ export class TokenService {
 
       if (data.length != 0) {
         const tokenOwner: TokenOwnerData = {
-          owner: tokenData.tokenDecoded.owner,
+          owner:
+            tokenData.tokenDecoded.owner ||
+            tokenData.tokenDecoded.collection.owner,
           owner_normalized: normalizeSubstrateAddress(
-            tokenData.tokenDecoded.owner,
+            tokenData.tokenDecoded.owner ||
+              tokenData.tokenDecoded.collection.owner,
           ),
           collection_id: collectionId,
           token_id: tokenId,
           date_created: String(normalizeTimestamp(blockTimestamp)),
           amount: pieces.amount,
         };
+
         await this.checkAndSaveOrUpdateTokenOwnerPart(tokenOwner);
       }
 
@@ -309,6 +274,36 @@ export class TokenService {
         burned: true,
       },
     );
+  }
+
+  private async getTokenData(
+    collectionId: number,
+    tokenId: number,
+    blockHash: string,
+  ): Promise<TokenData | null> {
+    let tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+    if (!tokenDecoded) {
+      tokenDecoded = await this.sdkService.getToken(
+        collectionId,
+        tokenId,
+        blockHash,
+      );
+    }
+
+    if (!tokenDecoded) {
+      return null;
+    }
+
+    const [tokenProperties, isBundle] = await Promise.all([
+      this.sdkService.getTokenProperties(collectionId, tokenId),
+      this.sdkService.isTokenBundle(collectionId, tokenId),
+    ]);
+
+    return {
+      tokenDecoded,
+      tokenProperties,
+      isBundle,
+    };
   }
 
   private extractTokenEvents(events: Event[]) {
