@@ -56,7 +56,6 @@ export class TokenService {
       image,
       attributes,
       nestingParentToken,
-      collection,
       owner,
     } = tokenDecoded;
 
@@ -294,14 +293,6 @@ export class TokenService {
     if (!tokenDecoded) {
       return null;
     }
-
-    // TODO: delete after rft support
-    // if (
-    //   tokenDecoded.owner === '' ||
-    //   tokenDecoded.collection.mode === CollectionMode.ReFungible
-    // ) {
-    //   return null;
-    // }
 
     const [tokenProperties, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
