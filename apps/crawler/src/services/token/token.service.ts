@@ -27,6 +27,7 @@ import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
+import * as console from 'console';
 
 @Injectable()
 export class TokenService {
@@ -40,44 +41,6 @@ export class TokenService {
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
-
-  private async getTokenData(
-    collectionId: number,
-    tokenId: number,
-    blockHash: string,
-  ): Promise<TokenData | null> {
-    let tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
-    if (!tokenDecoded) {
-      tokenDecoded = await this.sdkService.getToken(
-        collectionId,
-        tokenId,
-        blockHash,
-      );
-    }
-
-    if (!tokenDecoded) {
-      return null;
-    }
-
-    // TODO: delete after rft support
-    // if (
-    //   tokenDecoded.owner === '' ||
-    //   tokenDecoded.collection.mode === CollectionMode.ReFungible
-    // ) {
-    //   return null;
-    // }
-
-    const [tokenProperties, isBundle] = await Promise.all([
-      this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.isTokenBundle(collectionId, tokenId),
-    ]);
-
-    return {
-      tokenDecoded,
-      tokenProperties,
-      isBundle,
-    };
-  }
 
   async prepareDataForDb(
     tokenData: TokenData,
@@ -199,6 +162,7 @@ export class TokenService {
           }
 
           if (TOKEN_UPDATE_EVENTS.includes(eventName)) {
+            console.dir(eventName);
             return this.update({
               collectionId,
               tokenId,
@@ -241,9 +205,10 @@ export class TokenService {
     blockHash: string;
     data: any;
   }): Promise<SubscriberAction> {
+    console.log('--------------------------------');
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
     let result;
-
+    console.log(tokenData);
     if (tokenData) {
       const needCheckNesting = eventName === EventName.TRANSFER;
 
@@ -309,6 +274,46 @@ export class TokenService {
         burned: true,
       },
     );
+  }
+
+  private async getTokenData(
+    collectionId: number,
+    tokenId: number,
+    blockHash: string,
+  ): Promise<TokenData | null> {
+    console.log('getTokenData ------------------------');
+    let tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+    console.log('Token decode ------- ', tokenDecoded);
+    if (!tokenDecoded) {
+      tokenDecoded = await this.sdkService.getToken(
+        collectionId,
+        tokenId,
+        blockHash,
+      );
+    }
+
+    if (!tokenDecoded) {
+      return null;
+    }
+
+    // TODO: delete after rft support
+    // if (
+    //   tokenDecoded.owner === '' ||
+    //   tokenDecoded.collection.mode === CollectionMode.ReFungible
+    // ) {
+    //   return null;
+    // }
+
+    const [tokenProperties, isBundle] = await Promise.all([
+      this.sdkService.getTokenProperties(collectionId, tokenId),
+      this.sdkService.isTokenBundle(collectionId, tokenId),
+    ]);
+
+    return {
+      tokenDecoded,
+      tokenProperties,
+      isBundle,
+    };
   }
 
   private extractTokenEvents(events: Event[]) {
