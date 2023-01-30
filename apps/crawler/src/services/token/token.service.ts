@@ -27,7 +27,6 @@ import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
-import * as console from 'console';
 
 @Injectable()
 export class TokenService {
@@ -57,6 +56,7 @@ export class TokenService {
       image,
       attributes,
       nestingParentToken,
+      collection,
       owner,
     } = tokenDecoded;
 
@@ -95,12 +95,12 @@ export class TokenService {
       tokenType =
         tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
     }
-
+    const ownerCollection = owner || collectionOwner;
     return {
       token_id,
       collection_id,
-      owner,
-      owner_normalized: normalizeSubstrateAddress(owner),
+      owner: ownerCollection,
+      owner_normalized: normalizeSubstrateAddress(ownerCollection),
       image,
       attributes,
       properties: tokenProperties.properties
@@ -162,7 +162,6 @@ export class TokenService {
           }
 
           if (TOKEN_UPDATE_EVENTS.includes(eventName)) {
-            console.dir(eventName);
             return this.update({
               collectionId,
               tokenId,
@@ -205,10 +204,8 @@ export class TokenService {
     blockHash: string;
     data: any;
   }): Promise<SubscriberAction> {
-    console.log('--------------------------------');
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
     let result;
-    console.log(tokenData);
     if (tokenData) {
       const needCheckNesting = eventName === EventName.TRANSFER;
 
@@ -219,15 +216,19 @@ export class TokenService {
 
       if (data.length != 0) {
         const tokenOwner: TokenOwnerData = {
-          owner: tokenData.tokenDecoded.owner,
+          owner:
+            tokenData.tokenDecoded.owner ||
+            tokenData.tokenDecoded.collection.owner,
           owner_normalized: normalizeSubstrateAddress(
-            tokenData.tokenDecoded.owner,
+            tokenData.tokenDecoded.owner ||
+              tokenData.tokenDecoded.collection.owner,
           ),
           collection_id: collectionId,
           token_id: tokenId,
           date_created: String(normalizeTimestamp(blockTimestamp)),
           amount: pieces.amount,
         };
+
         await this.checkAndSaveOrUpdateTokenOwnerPart(tokenOwner);
       }
 
@@ -281,9 +282,7 @@ export class TokenService {
     tokenId: number,
     blockHash: string,
   ): Promise<TokenData | null> {
-    console.log('getTokenData ------------------------');
     let tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
-    console.log('Token decode ------- ', tokenDecoded);
     if (!tokenDecoded) {
       tokenDecoded = await this.sdkService.getToken(
         collectionId,
