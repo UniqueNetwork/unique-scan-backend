@@ -16,7 +16,9 @@ import { GraphQLResolveInfo } from 'graphql';
 import { IRelations } from '../utils/base.service.types';
 import { FieldsListOptions } from 'graphql-fields-list';
 import { JOIN_TYPE } from '@common/constants';
+import { TokensOwners } from '@entities/TokensOwners';
 
+const TOKENSOWNERS_RELATION_ALIAS = 'TokenOwners';
 const COLLECTION_RELATION_ALIAS = 'Collection';
 const STATISTICS_RELATION_ALIAS = 'Statistics';
 
@@ -27,6 +29,8 @@ const relationsFields = {
   collection_owner_normalized: COLLECTION_RELATION_ALIAS,
   collection_cover: COLLECTION_RELATION_ALIAS,
   collection_description: COLLECTION_RELATION_ALIAS,
+  tokens_owner: TOKENSOWNERS_RELATION_ALIAS,
+  tokens_amount: TOKENSOWNERS_RELATION_ALIAS,
 
   transfers_count: STATISTICS_RELATION_ALIAS,
   children_count: STATISTICS_RELATION_ALIAS,
@@ -37,6 +41,8 @@ const aliasFields = {
   collection_owner: 'owner',
   collection_owner_normalized: 'owner_normalized',
   collection_description: 'description',
+  tokens_owner: 'owner',
+  tokens_amount: 'amount',
 };
 
 const customQueryFields = {
@@ -58,6 +64,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     queryInfo: GraphQLResolveInfo,
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
+
     this.applyArgs(qb, queryArgs, queryInfo);
 
     return this.getDataAndCount(qb, queryArgs);
@@ -247,6 +254,11 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       [COLLECTION_RELATION_ALIAS]: {
         table: 'collections',
         on: `"Tokens".collection_id = "${COLLECTION_RELATION_ALIAS}".collection_id`,
+        join: JOIN_TYPE.INNER,
+      },
+      [TOKENSOWNERS_RELATION_ALIAS]: {
+        table: 'tokens_owners',
+        on: `"Tokens".collection_id = "${TOKENSOWNERS_RELATION_ALIAS}".collection_id AND  "Tokens".token_id = "${TOKENSOWNERS_RELATION_ALIAS}".token_id`,
         join: JOIN_TYPE.INNER,
       },
       [STATISTICS_RELATION_ALIAS]: {
