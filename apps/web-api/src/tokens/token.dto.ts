@@ -9,6 +9,7 @@ export enum TokenDistinctFieldsEnum {
   owner_normalized = 'owner_normalized',
   token_prefix = 'token_prefix',
   collection_name = 'collection_name',
+  tokens_owner = 'tokens_owner',
   token_name = 'token_name',
 }
 
@@ -65,6 +66,9 @@ export class SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => String, { nullable: true })
   total_pieces?: number;
 
+  @Field(() => String, { nullable: true })
+  amount?: number;
+
   @Field(() => Boolean)
   nested?: boolean;
 }
@@ -73,6 +77,12 @@ export class SimpleTokenDTO implements Partial<Tokens> {
 export class TokenDTO extends SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => String)
   collection_name?: string;
+
+  @Field(() => String, { nullable: true })
+  tokens_owner?: string;
+
+  @Field(() => String, { nullable: true })
+  tokens_amount?: string;
 
   @Field(() => String, { nullable: true })
   collection_description?: string;
