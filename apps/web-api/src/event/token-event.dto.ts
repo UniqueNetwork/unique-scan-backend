@@ -20,13 +20,13 @@ export class TokenEventDTO {
   @Field(() => String, { nullable: true })
   author?: string;
 
-  @Field(() => Boolean)
+  @Field(() => Boolean, { nullable: true })
   result?: boolean;
 
   @Field(() => Int)
   collection_id?: number;
 
-  @Field(() => Int)
+  @Field(() => Int, { nullable: true })
   token_id?: number;
 
   @Field(() => GraphQLJSONObject, { nullable: true })
