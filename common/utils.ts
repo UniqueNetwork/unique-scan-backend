@@ -1,10 +1,15 @@
 import BigNumber from 'bignumber.js';
 import { Address } from '@unique-nft/utils';
 
-export function normalizeSubstrateAddress(address, ss58Format?: number) {
-  return Address.is.ethereumAddress(address)
-    ? address
-    : Address.normalize.substrateAddress(address, ss58Format);
+export function normalizeSubstrateAddress(
+  address,
+  ss58Format?: number,
+  hash?: string,
+) {
+  return address;
+  // return Address.is.ethereumAddress(address)
+  //   ? address
+  //   : Address.normalize.substrateAddress(address, ss58Format);
 }
 
 export function normalizeTimestamp(timestamp: number) {

@@ -4,7 +4,6 @@ export enum TokenType {
   NFT = 'NFT',
   RFT = 'RFT',
   FRACTIONAL = 'FRACTIONAL',
-  NESTED = 'NESTED',
 }
 
 export interface ITokenEntities {
