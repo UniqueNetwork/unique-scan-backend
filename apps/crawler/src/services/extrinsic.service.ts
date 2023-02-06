@@ -26,6 +26,12 @@ const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER_ALL,
   ExtrinsicMethod.TRANSFER_KEEP_ALIVE,
   ExtrinsicMethod.VESTED_TRANSFER,
+  ExtrinsicMethod.CREATE_COLLECTION_EX,
+];
+
+const EVENTS_METHODS = [
+  EventMethod.ITEM_CREATED,
+  EventMethod.COLLECTION_CREATED,
 ];
 
 export interface IExtrinsicExtended extends SubstrateExtrinsic {
@@ -117,31 +123,64 @@ export class ExtrinsicService {
         ExtrinsicSection,
         ExtrinsicMethod,
       ];
+      const { blockTimestamp, blockNumber, ss58Prefix, blockHash } =
+        blockCommonData;
 
-      const { blockTimestamp, blockNumber, ss58Prefix } = blockCommonData;
-
-      // Don't need to use AccountService for signer and to_owner addresses,
-      // because all addresses are already processed in EventService.
-      let signer = null;
-      const { signature } = extrinsic;
-      if (signature) {
-        const {
-          address: { value: rawSigner },
-        } = signature;
-
-        signer = normalizeSubstrateAddress(rawSigner, ss58Prefix);
-      }
+      // if (
+      //   section === ExtrinsicSection.UNIQUE &&
+      //   method === ExtrinsicMethod.CREATE_COLLECTION_EX
+      // ) {
+      //   console.dir({ extrinsic, events }, { depth: 10 });
+      //   debugger;
+      // }
 
       const {
         call: { args },
       } = extrinsic;
-
+      let signer = null;
       let toOwner = null;
+      for (const event of events) {
+        if (
+          (section === 'Unique' && event.method === EventMethod.ITEM_CREATED) ||
+          event.method === EventMethod.COLLECTION_CREATED ||
+          event.method === ExtrinsicMethod.CREATE_COLLECTION_EX
+        ) {
+          const { values } = event as any;
+          const {
+            account: { value: rawSigner },
+          } = values;
+          signer = normalizeSubstrateAddress(rawSigner, ss58Prefix, blockHash);
+        }
+        // console.dir(
+        //   {
+        //     blockNumber,
+        //     section,
+        //     method,
+        //     signer,
+        //     index: extrinsic.indexInBlock,
+        //     eventSection: event.section,
+        //     eventMetod: event.method,
+        //     eventValues: event.values,
+        //   },
+        //   { depth: 4 },
+        // );
+      }
+
+      // Don't need to use AccountService for signer and to_owner addresses,
+      // because all addresses are already processed in EventService.
+
+      const { signature } = extrinsic;
+      // if (signature) {
+      //   const {
+      //     address: { value: rawSigner },
+      //   } = signature;
+      // }
+
       if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
         const recipientAddress = args as IExtrinsicRecipient;
         const rawToOwner =
           recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
-        toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix);
+        toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix, blockHash);
       }
 
       const { hash, indexInBlock, success } = extrinsic;
@@ -222,14 +261,16 @@ export class ExtrinsicService {
     );
 
     for (const extrinsic of extrinsicTokenTransfer) {
-      const pieceToken = await this.sdkService.getRFTBalances({
-        address: extrinsic.owner,
-        collectionId: extrinsic.collection_id,
-        tokenId: extrinsic.token_id,
-      });
-      const updateTokenTransfer = { ...extrinsic, ...pieceToken };
+      if (extrinsic.token_id) {
+        const pieceToken = await this.sdkService.getRFTBalances({
+          address: extrinsic.owner,
+          collectionId: extrinsic.collection_id,
+          tokenId: extrinsic.token_id,
+        });
+        const updateTokenTransfer = { ...extrinsic, ...pieceToken };
 
-      await this.updateOrSaveTokenOwnerPart(extrinsic, updateTokenTransfer);
+        await this.updateOrSaveTokenOwnerPart(extrinsic, updateTokenTransfer);
+      }
     }
 
     const extrinsicsData = this.prepareDataForDb({
@@ -252,19 +293,26 @@ export class ExtrinsicService {
         token_id: ext.token_id,
       },
     });
-    if (ownerToken) {
-      await this.tokensOwnersRepository.update(
-        {
-          owner: ext.owner,
-          collection_id: ext.collection_id,
-          token_id: ext.token_id,
-        },
-        {
-          amount: updateData.amount,
-        },
-      );
-    } else {
-      await this.tokensOwnersRepository.save(updateData);
-    }
+
+    try {
+      if (ownerToken != null) {
+        await this.tokensOwnersRepository.update(
+          {
+            owner: ext.owner,
+            collection_id: ext.collection_id,
+            token_id: ext.token_id,
+          },
+          {
+            amount: updateData.amount,
+          },
+        );
+      } else {
+        //await this.tokensOwnersRepository.save(updateData);
+        await this.tokensOwnersRepository
+          .createQueryBuilder()
+          .insert()
+          .values(updateData);
+      }
+    } catch (e) {}
   }
 }

@@ -1,11 +1,10 @@
-import { Tokens, TokenType, ITokenEntities } from '@entities/Tokens';
+import { ITokenEntities, Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NestedToken } from '@unique-nft/substrate-client/tokens';
 import { SentryService } from '@ntegral/nestjs-sentry';
 import { normalizeTimestamp } from '@common/utils';
-import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
 import { TokenData } from './token.types';
 
@@ -180,7 +179,7 @@ export class TokenNestingService {
         },
         {
           children,
-          type: TokenType.NESTED,
+          nested: true,
           bundle_created: blockTimestamp
             ? normalizeTimestamp(blockTimestamp)
             : undefined,

@@ -11,6 +11,7 @@ import {
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
+import * as console from 'console';
 
 @Injectable()
 export class SdkService {
@@ -19,6 +20,12 @@ export class SdkService {
     private configService: ConfigService<Config>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
+
+  @SdkCache('getApi')
+  async getApi(hash) {
+    const optionUpgrade = await this.sdk.api.query.system.events.at(hash);
+    return optionUpgrade.toJSON();
+  }
 
   @SdkCache('getCollection')
   getCollection(
@@ -89,11 +96,20 @@ export class SdkService {
 
   @SdkCache('getRFTBalances')
   async getRFTBalances(tokenBalance: TokenBalanceRequest): Promise<any> {
-    return await this.sdk.refungible.getBalance({
-      address: `${tokenBalance.address}`,
-      collectionId: tokenBalance.collectionId,
-      tokenId: tokenBalance.tokenId,
-    });
+    const collection = await this.getCollection(tokenBalance.collectionId);
+    console.dir(collection, { depth: 5 });
+    if (collection.mode === 'NFT') {
+      return {
+        amount: 1,
+      };
+    }
+    if (collection.mode === 'ReFungible') {
+      return await this.sdk.refungible.getBalance({
+        address: `${tokenBalance.address}`,
+        collectionId: tokenBalance.collectionId,
+        tokenId: tokenBalance.tokenId,
+      });
+    }
   }
 
   @SdkCache('getTotalPieces')

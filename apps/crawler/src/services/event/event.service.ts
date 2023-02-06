@@ -23,6 +23,7 @@ import { TokenService } from '../token/token.service';
 import { CollectionService } from '../collection.service';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
+import * as console from 'console';
 
 @Injectable()
 export class EventService {
