@@ -134,11 +134,6 @@ export class ExtrinsicService {
       let signer = null;
       let toOwner = null;
       for (const event of events) {
-        console.dir(
-          { eveSection: event.section, eveMethod: event.method },
-          { depth: 10 },
-        );
-
         //********************************
         if (section === 'Unique' || 'Common') {
           switch (event.method) {
