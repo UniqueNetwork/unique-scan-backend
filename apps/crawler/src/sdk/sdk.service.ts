@@ -11,7 +11,6 @@ import {
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
-import * as console from 'console';
 
 @Injectable()
 export class SdkService {
@@ -97,7 +96,6 @@ export class SdkService {
   @SdkCache('getRFTBalances')
   async getRFTBalances(tokenBalance: TokenBalanceRequest): Promise<any> {
     const collection = await this.getCollection(tokenBalance.collectionId);
-    console.dir(collection, { depth: 5 });
     if (collection.mode === 'NFT') {
       return {
         amount: 1,

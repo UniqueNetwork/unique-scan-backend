@@ -26,7 +26,6 @@ const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER_ALL,
   ExtrinsicMethod.TRANSFER_KEEP_ALIVE,
   ExtrinsicMethod.VESTED_TRANSFER,
-  ExtrinsicMethod.CREATE_COLLECTION_EX,
 ];
 
 const EVENTS_METHODS = [
@@ -126,62 +125,73 @@ export class ExtrinsicService {
       const { blockTimestamp, blockNumber, ss58Prefix, blockHash } =
         blockCommonData;
 
-      // if (
-      //   section === ExtrinsicSection.UNIQUE &&
-      //   method === ExtrinsicMethod.CREATE_COLLECTION_EX
-      // ) {
-      //   console.dir({ extrinsic, events }, { depth: 10 });
-      //   debugger;
-      // }
-
       const {
         call: { args },
       } = extrinsic;
+
+      const { signature } = extrinsic;
+
       let signer = null;
       let toOwner = null;
       for (const event of events) {
-        if (
-          (section === 'Unique' && event.method === EventMethod.ITEM_CREATED) ||
-          event.method === EventMethod.COLLECTION_CREATED ||
-          event.method === ExtrinsicMethod.CREATE_COLLECTION_EX
-        ) {
-          const { values } = event as any;
-          const {
-            account: { value: rawSigner },
-          } = values;
-          signer = normalizeSubstrateAddress(rawSigner, ss58Prefix, blockHash);
+        console.dir(
+          { eveSection: event.section, eveMethod: event.method },
+          { depth: 10 },
+        );
+
+        //********************************
+        if (section === 'Unique' || 'Common') {
+          switch (event.method) {
+            case EventMethod.ITEM_CREATED:
+              const { values } = event as any;
+              const {
+                account: { value: rawSigner },
+              } = values;
+              signer = normalizeSubstrateAddress(
+                rawSigner,
+                ss58Prefix,
+                blockHash,
+              );
+              break;
+            case EventMethod.ITEM_DESTROYED:
+              const ownerDestroy = event.values['account'].value;
+              signer = normalizeSubstrateAddress(
+                ownerDestroy,
+                ss58Prefix,
+                blockHash,
+              );
+              break;
+            case EventMethod.COLLECTION_CREATED:
+              const ownerCollection = event.values['account'];
+              signer = normalizeSubstrateAddress(
+                ownerCollection,
+                ss58Prefix,
+                blockHash,
+              );
+              break;
+            case EventMethod.TRANSFER:
+              const fromOwner = event.values['from'].value;
+              const rawToOwner = event.values['to'].value;
+              signer = normalizeSubstrateAddress(
+                fromOwner,
+                ss58Prefix,
+                blockHash,
+              );
+
+              if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
+                toOwner = normalizeSubstrateAddress(
+                  rawToOwner,
+                  ss58Prefix,
+                  blockHash,
+                );
+              }
+              break;
+          }
         }
-        // console.dir(
-        //   {
-        //     blockNumber,
-        //     section,
-        //     method,
-        //     signer,
-        //     index: extrinsic.indexInBlock,
-        //     eventSection: event.section,
-        //     eventMetod: event.method,
-        //     eventValues: event.values,
-        //   },
-        //   { depth: 4 },
-        // );
       }
 
       // Don't need to use AccountService for signer and to_owner addresses,
       // because all addresses are already processed in EventService.
-
-      const { signature } = extrinsic;
-      // if (signature) {
-      //   const {
-      //     address: { value: rawSigner },
-      //   } = signature;
-      // }
-
-      if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
-        const recipientAddress = args as IExtrinsicRecipient;
-        const rawToOwner =
-          recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
-        toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix, blockHash);
-      }
 
       const { hash, indexInBlock, success } = extrinsic;
 
