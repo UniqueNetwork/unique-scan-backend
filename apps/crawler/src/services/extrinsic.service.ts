@@ -1,5 +1,6 @@
 import {
   EventMethod,
+  EventName,
   EventSection,
   ExtrinsicMethod,
   ExtrinsicSection,
@@ -19,6 +20,7 @@ import { EventValues } from './event/event.types';
 
 import { TokensOwners } from '@entities/TokensOwners';
 import { SdkService } from '../sdk/sdk.service';
+import * as console from 'console';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
@@ -128,65 +130,25 @@ export class ExtrinsicService {
       const {
         call: { args },
       } = extrinsic;
-
-      const { signature } = extrinsic;
-
       let signer = null;
-      let toOwner = null;
-      for (const event of events) {
-        //********************************
-        if (section === 'Unique' || 'Common') {
-          switch (event.method) {
-            case EventMethod.ITEM_CREATED:
-              const { values } = event as any;
-              const {
-                account: { value: rawSigner },
-              } = values;
-              signer = normalizeSubstrateAddress(
-                rawSigner,
-                ss58Prefix,
-                blockHash,
-              );
-              break;
-            case EventMethod.ITEM_DESTROYED:
-              const ownerDestroy = event.values['account'].value;
-              signer = normalizeSubstrateAddress(
-                ownerDestroy,
-                ss58Prefix,
-                blockHash,
-              );
-              break;
-            case EventMethod.COLLECTION_CREATED:
-              const ownerCollection = event.values['account'];
-              signer = normalizeSubstrateAddress(
-                ownerCollection,
-                ss58Prefix,
-                blockHash,
-              );
-              break;
-            case EventMethod.TRANSFER:
-              const fromOwner = event.values['from'].value;
-              const rawToOwner = event.values['to'].value;
-              signer = normalizeSubstrateAddress(
-                fromOwner,
-                ss58Prefix,
-                blockHash,
-              );
-
-              if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
-                toOwner = normalizeSubstrateAddress(
-                  rawToOwner,
-                  ss58Prefix,
-                  blockHash,
-                );
-              }
-              break;
-          }
-        }
-      }
-
       // Don't need to use AccountService for signer and to_owner addresses,
       // because all addresses are already processed in EventService.
+
+      const { signature } = extrinsic;
+      if (signature) {
+        const {
+          address: { value: rawSigner },
+        } = signature;
+        signer = normalizeSubstrateAddress(rawSigner, ss58Prefix);
+      }
+
+      let toOwner = null;
+      if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
+        const recipientAddress = args as IExtrinsicRecipient;
+        const rawToOwner =
+          recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
+        toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix);
+      }
 
       const { hash, indexInBlock, success } = extrinsic;
 
@@ -273,10 +235,17 @@ export class ExtrinsicService {
           tokenId: extrinsic.token_id,
         });
         const updateTokenTransfer = { ...extrinsic, ...pieceToken };
+        console.dir(extrinsic.token_id, { depth: 10 });
 
         await this.updateOrSaveTokenOwnerPart(extrinsic, updateTokenTransfer);
       }
     }
+
+    // const eventsCollector = this.eventsCollector(
+    //   blockCommonData,
+    //   extrinsicItems,
+    //   events,
+    // );
 
     const extrinsicsData = this.prepareDataForDb({
       blockCommonData,
@@ -318,6 +287,9 @@ export class ExtrinsicService {
           .insert()
           .values(updateData);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.dir(e, { depth: 10 });
+      debugger;
+    }
   }
 }
