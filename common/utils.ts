@@ -6,10 +6,9 @@ export function normalizeSubstrateAddress(
   ss58Format?: number,
   hash?: string,
 ) {
-  return address;
-  // return Address.is.ethereumAddress(address)
-  //   ? address
-  //   : Address.normalize.substrateAddress(address, ss58Format);
+  return Address.is.ethereumAddress(address)
+    ? address
+    : Address.normalize.substrateAddress(address, ss58Format);
 }
 
 export function normalizeTimestamp(timestamp: number) {
