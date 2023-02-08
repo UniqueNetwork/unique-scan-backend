@@ -33,6 +33,9 @@ export class TokenEventDTO {
   values?: object;
 
   @Field(() => GraphQLJSON, { nullable: true })
+  data?: object[];
+
+  @Field(() => GraphQLJSON, { nullable: true })
   tokens?: object[];
 
   @Field(() => TokenType, { nullable: true })
