@@ -20,7 +20,6 @@ import { EventValues } from './event/event.types';
 
 import { TokensOwners } from '@entities/TokensOwners';
 import { SdkService } from '../sdk/sdk.service';
-import * as console from 'console';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
@@ -235,17 +234,9 @@ export class ExtrinsicService {
           tokenId: extrinsic.token_id,
         });
         const updateTokenTransfer = { ...extrinsic, ...pieceToken };
-        console.dir(extrinsic.token_id, { depth: 10 });
-
         await this.updateOrSaveTokenOwnerPart(extrinsic, updateTokenTransfer);
       }
     }
-
-    // const eventsCollector = this.eventsCollector(
-    //   blockCommonData,
-    //   extrinsicItems,
-    //   events,
-    // );
 
     const extrinsicsData = this.prepareDataForDb({
       blockCommonData,
@@ -288,8 +279,7 @@ export class ExtrinsicService {
           .values(updateData);
       }
     } catch (e) {
-      console.dir(e, { depth: 10 });
-      debugger;
+      throw new Error(e);
     }
   }
 }
