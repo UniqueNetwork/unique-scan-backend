@@ -1,5 +1,11 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+export enum TokenType {
+  NFT = 'NFT',
+  RFT = 'RFT',
+  FRACTIONAL = 'FRACTIONAL',
+}
+
 @Entity('tokens_owners', { schema: 'public' })
 export class TokensOwners {
   @PrimaryGeneratedColumn('uuid')
@@ -22,4 +28,14 @@ export class TokensOwners {
 
   @Column('bigint', { name: 'date_created', nullable: true })
   date_created: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: TokenType,
+    default: TokenType.NFT,
+  })
+  type: TokenType;
+
+  @Column('bigint', { name: 'block_number' })
+  block_number: number;
 }

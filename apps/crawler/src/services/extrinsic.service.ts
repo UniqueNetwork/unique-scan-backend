@@ -1,6 +1,5 @@
 import {
   EventMethod,
-  EventName,
   EventSection,
   ExtrinsicMethod,
   ExtrinsicSection,
@@ -20,6 +19,7 @@ import { EventValues } from './event/event.types';
 
 import { TokensOwners } from '@entities/TokensOwners';
 import { SdkService } from '../sdk/sdk.service';
+import { Tokens } from '@entities/Tokens';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
@@ -57,6 +57,8 @@ export class ExtrinsicService {
 
     @InjectRepository(TokensOwners)
     private tokensOwnersRepository: Repository<TokensOwners>,
+    @InjectRepository(Tokens)
+    private tokensRepository: Repository<Tokens>,
     private sdkService: SdkService,
   ) {}
 
@@ -181,7 +183,7 @@ export class ExtrinsicService {
     blockCommonData: IBlockCommonData,
     events: Event[],
   ): any {
-    const { blockTimestamp } = blockCommonData;
+    const { blockTimestamp, blockNumber } = blockCommonData;
     const substrateAddress = [];
     events.map(async (event) => {
       const extrinsicsEventName = `${event.section}.${event.method}`;
@@ -192,18 +194,20 @@ export class ExtrinsicService {
       const { to, from, tokenId, collectionId } = event?.values as any;
 
       substrateAddress.push({
-        owner: to.value,
-        owner_normalized: normalizeSubstrateAddress(to.value),
-        collection_id: collectionId,
-        token_id: tokenId,
-        date_created: String(normalizeTimestamp(blockTimestamp)),
-      });
-      substrateAddress.push({
         owner: from.value,
         owner_normalized: normalizeSubstrateAddress(from.value),
         collection_id: collectionId,
         token_id: tokenId,
         date_created: String(normalizeTimestamp(blockTimestamp)),
+        block_number: blockNumber,
+      });
+      substrateAddress.push({
+        owner: to.value,
+        owner_normalized: normalizeSubstrateAddress(to.value),
+        collection_id: collectionId,
+        token_id: tokenId,
+        date_created: String(normalizeTimestamp(blockTimestamp)),
+        block_number: blockNumber,
       });
     });
 
@@ -220,7 +224,6 @@ export class ExtrinsicService {
     events: Event[];
   }) {
     const extrinsicItems = this.extractExtrinsicItems(blockItems);
-
     const extrinsicTokenTransfer = this.prepareTokenForDb(
       blockCommonData,
       events,
@@ -251,6 +254,9 @@ export class ExtrinsicService {
   }
 
   private async updateOrSaveTokenOwnerPart(ext: any, updateData: any) {
+    const token = await this.tokensRepository.findOne({
+      where: { collection_id: ext.collection_id, token_id: ext.token_id },
+    });
     const ownerToken = await this.tokensOwnersRepository.findOne({
       where: {
         owner: ext.owner,
@@ -258,9 +264,8 @@ export class ExtrinsicService {
         token_id: ext.token_id,
       },
     });
-
     try {
-      if (ownerToken != null) {
+      if (ownerToken !== null) {
         await this.tokensOwnersRepository.update(
           {
             owner: ext.owner,
@@ -269,14 +274,16 @@ export class ExtrinsicService {
           },
           {
             amount: updateData.amount,
+            type: token.type,
+            block_number: updateData.block_number,
           },
         );
       } else {
         //await this.tokensOwnersRepository.save(updateData);
-        await this.tokensOwnersRepository
-          .createQueryBuilder()
-          .insert()
-          .values(updateData);
+        await this.tokensOwnersRepository.save({
+          ...updateData,
+          type: token.type,
+        });
       }
     } catch (e) {
       throw new Error(e);
