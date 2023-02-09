@@ -1,6 +1,6 @@
 {
   "name": "polkastats-backend-uniquenetwork",
-  "version": "2.0.0",
+  "version": "1.7.1",
   "description": "",
   "author": "Unique Network Team",
   "private": true,
@@ -38,7 +38,8 @@
     "environment:dev:init": "docker-compose --env-file .env up -d",
     "environment:dev:start": "docker-compose --env-file .env start",
     "environment:dev:stop": "docker-compose --env-file .env stop",
-    "environment:dev:ps": "docker-compose --env-file .env ps"
+    "environment:dev:ps": "docker-compose --env-file .env ps",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@nestjs/apollo": "^10.1.7",
@@ -94,6 +95,7 @@
     "eslint": "8.22.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "husky": "^8.0.3",
     "jest": "^27.2.5",
     "json-to-graphql-query": "^2.2.2",
     "mocha": "^9.2.1",
