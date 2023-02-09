@@ -22,7 +22,6 @@ import {
 import { TokenNestingService } from './nesting.service';
 import { TokenData, TokenOwnerData } from './token.types';
 import { chunk } from 'lodash';
-
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
@@ -141,9 +140,13 @@ export class TokenService {
             tokenId: number;
           };
 
-          const { blockHash, blockTimestamp } = blockCommonData;
+          const { blockHash, blockTimestamp, blockNumber } = blockCommonData;
           const eventName = `${section}.${method}`;
-          if (eventName === 'Common.ItemCreated') {
+
+          if (
+            eventName === 'Common.ItemCreated' ||
+            eventName === 'Common.Transfer'
+          ) {
             data = JSON.parse(event.data);
           }
 
@@ -151,6 +154,7 @@ export class TokenService {
             data = JSON.parse(event.data);
 
             return this.update({
+              blockNumber,
               collectionId,
               tokenId,
               eventName,
@@ -162,6 +166,7 @@ export class TokenService {
 
           if (TOKEN_UPDATE_EVENTS.includes(eventName)) {
             return this.update({
+              blockNumber,
               collectionId,
               tokenId,
               eventName,
@@ -189,6 +194,7 @@ export class TokenService {
   }
 
   async update({
+    blockNumber,
     collectionId,
     tokenId,
     eventName,
@@ -196,6 +202,7 @@ export class TokenService {
     blockHash,
     data,
   }: {
+    blockNumber: number;
     collectionId: number;
     tokenId: number;
     eventName: string;
@@ -204,8 +211,10 @@ export class TokenService {
     data: any;
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
+
     let result;
     if (tokenData) {
+      const { tokenDecoded } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
 
       const pieces = await this.sdkService.getTotalPieces(
@@ -214,18 +223,18 @@ export class TokenService {
       );
 
       if (data.length != 0) {
+        const typeMode = tokenDecoded.collection.mode;
         const tokenOwner: TokenOwnerData = {
-          owner:
-            tokenData.tokenDecoded.owner ||
-            tokenData.tokenDecoded.collection.owner,
+          owner: tokenDecoded.owner || tokenDecoded.collection.owner,
           owner_normalized: normalizeSubstrateAddress(
-            tokenData.tokenDecoded.owner ||
-              tokenData.tokenDecoded.collection.owner,
+            tokenDecoded.owner || tokenDecoded.collection.owner,
           ),
           collection_id: collectionId,
           token_id: tokenId,
           date_created: String(normalizeTimestamp(blockTimestamp)),
           amount: pieces.amount,
+          type: typeMode === 'ReFungible' ? 'RFT' : typeMode,
+          block_number: blockNumber,
         };
 
         await this.checkAndSaveOrUpdateTokenOwnerPart(tokenOwner);
@@ -324,6 +333,7 @@ export class TokenService {
         token_id: tokenOwner.token_id,
       },
     });
+
     if (ownerToken) {
       await this.tokensOwnersRepository.update(
         {
@@ -333,6 +343,8 @@ export class TokenService {
         },
         {
           amount: tokenOwner.amount,
+          block_number: tokenOwner.block_number,
+          type: tokenOwner.type,
         },
       );
     } else {
