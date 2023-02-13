@@ -60,7 +60,11 @@ export class SdkService {
     tokenId: number,
     at?: string,
   ): Promise<TokenByIdResult | null> {
-    return await this.sdk.tokens.get({ collectionId, tokenId });
+    if (at) {
+      return await this.sdk.tokens.get({ collectionId, tokenId, at });
+    } else {
+      return await this.sdk.tokens.get({ collectionId, tokenId });
+    }
   }
 
   @SdkCache('isTokenBundle')
@@ -111,10 +115,22 @@ export class SdkService {
   }
 
   @SdkCache('getTotalPieces')
-  async getTotalPieces(tokenId, collectionId): Promise<any> {
-    return await this.sdk.refungible.totalPieces({
-      tokenId: tokenId,
-      collectionId: collectionId,
-    });
+  async getTotalPieces(
+    tokenId: number,
+    collectionId: number,
+    at?: string,
+  ): Promise<any> {
+    if (at) {
+      return await this.sdk.refungible.totalPieces({
+        tokenId,
+        collectionId,
+        at,
+      });
+    } else {
+      return await this.sdk.refungible.totalPieces({
+        tokenId,
+        collectionId,
+      });
+    }
   }
 }
