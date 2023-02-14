@@ -131,6 +131,7 @@ export class TokenService {
     );
     let rejected = [];
     let data = [];
+
     for (const chunk of eventChunks) {
       const result = await Promise.allSettled(
         chunk.map((event) => {
@@ -149,7 +150,7 @@ export class TokenService {
 
           if (eventName === 'Common.ItemDestroyed') {
             data = JSON.parse(event.data);
-            debugger;
+
             return this.update({
               blockNumber,
               collectionId,
@@ -212,7 +213,7 @@ export class TokenService {
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
     let result;
-    debugger;
+
     if (tokenData) {
       const { tokenDecoded } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
@@ -238,7 +239,11 @@ export class TokenService {
           block_number: blockNumber,
         };
 
-        await this.checkAndSaveOrUpdateTokenOwnerPart(tokenOwner);
+        await this.tokensOwnersRepository.upsert({ ...tokenOwner }, [
+          'collection_id',
+          'token_id',
+          'owner',
+        ]);
       }
 
       const preparedData = await this.prepareDataForDb(
@@ -311,7 +316,6 @@ export class TokenService {
         blockHash,
       );
     }
-    debugger;
     if (!tokenDecoded) {
       return null;
     }
@@ -370,13 +374,10 @@ export class TokenService {
         token_id: tokenOwner.token_id,
       },
     });
-    debugger;
-    if (ownerToken) {
+    if (ownerToken != null) {
       await this.tokensOwnersRepository.update(
         {
-          owner: tokenOwner.owner,
-          collection_id: tokenOwner.collection_id,
-          token_id: tokenOwner.token_id,
+          id: ownerToken.id,
         },
         {
           amount: tokenOwner.amount,
