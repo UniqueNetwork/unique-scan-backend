@@ -237,7 +237,12 @@ export class ExtrinsicService {
           tokenId: extrinsic.token_id,
         });
         const updateTokenTransfer = { ...extrinsic, ...pieceToken };
-        await this.updateOrSaveTokenOwnerPart(extrinsic, updateTokenTransfer);
+        //await this.updateOrSaveTokenOwnerPart(extrinsic, updateTokenTransfer);
+        await this.tokensOwnersRepository.upsert({ ...updateTokenTransfer }, [
+          'collection_id',
+          'token_id',
+          'owner',
+        ]);
       }
     }
 
