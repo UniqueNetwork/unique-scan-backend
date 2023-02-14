@@ -131,6 +131,7 @@ export class TokenService {
     );
     let rejected = [];
     let data = [];
+
     for (const chunk of eventChunks) {
       const result = await Promise.allSettled(
         chunk.map((event) => {
@@ -143,10 +144,7 @@ export class TokenService {
           const { blockHash, blockTimestamp, blockNumber } = blockCommonData;
           const eventName = `${section}.${method}`;
 
-          if (
-            eventName === 'Common.ItemCreated' ||
-            eventName === 'Common.Transfer'
-          ) {
+          if (eventName === 'Common.ItemCreated') {
             data = JSON.parse(event.data);
           }
 
@@ -165,6 +163,9 @@ export class TokenService {
           }
 
           if (TOKEN_UPDATE_EVENTS.includes(eventName)) {
+            if (eventName === 'Common.Transfer') {
+              data = JSON.parse(event.data);
+            }
             return this.update({
               blockNumber,
               collectionId,
@@ -211,8 +212,8 @@ export class TokenService {
     data: any;
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
-
     let result;
+
     if (tokenData) {
       const { tokenDecoded } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
@@ -220,6 +221,7 @@ export class TokenService {
       const pieces = await this.sdkService.getTotalPieces(
         tokenId,
         collectionId,
+        blockHash,
       );
 
       if (data.length != 0) {
@@ -237,7 +239,11 @@ export class TokenService {
           block_number: blockNumber,
         };
 
-        await this.checkAndSaveOrUpdateTokenOwnerPart(tokenOwner);
+        await this.tokensOwnersRepository.upsert({ ...tokenOwner }, [
+          'collection_id',
+          'token_id',
+          'owner',
+        ]);
       }
 
       const preparedData = await this.prepareDataForDb(
@@ -259,9 +265,17 @@ export class TokenService {
         },
         ['collection_id', 'token_id'],
       );
-
       result = SubscriberAction.UPSERT;
     } else {
+      const ownerToken = normalizeSubstrateAddress(data[2].value);
+
+      await this.burnTokenOwnerPart({
+        collection_id: collectionId,
+        token_id: tokenId,
+        owner: ownerToken,
+        owner_normalized: ownerToken,
+        block_number: blockNumber,
+      });
       // No entity returned from sdk. Most likely it was destroyed in a future block.
       await this.burn(collectionId, tokenId);
 
@@ -271,7 +285,11 @@ export class TokenService {
     return result;
   }
 
-  async burn(collectionId: number, tokenId: number) {
+  async burn(
+    collectionId: number,
+    tokenId: number,
+    owner?: string,
+  ): Promise<any> {
     await this.nestingService.removeTokenFromParents(collectionId, tokenId);
 
     return this.tokensRepository.update(
@@ -298,7 +316,6 @@ export class TokenService {
         blockHash,
       );
     }
-
     if (!tokenDecoded) {
       return null;
     }
@@ -325,7 +342,7 @@ export class TokenService {
     });
   }
 
-  private async checkAndSaveOrUpdateTokenOwnerPart(tokenOwner: TokenOwnerData) {
+  private async burnTokenOwnerPart(tokenOwner: TokenOwnerData) {
     const ownerToken = await this.tokensOwnersRepository.findOne({
       where: {
         owner: tokenOwner.owner,
@@ -340,6 +357,27 @@ export class TokenService {
           owner: tokenOwner.owner,
           collection_id: tokenOwner.collection_id,
           token_id: tokenOwner.token_id,
+        },
+        {
+          amount: 0,
+          block_number: tokenOwner.block_number,
+        },
+      );
+    }
+  }
+
+  private async checkAndSaveOrUpdateTokenOwnerPart(tokenOwner: TokenOwnerData) {
+    const ownerToken = await this.tokensOwnersRepository.findOne({
+      where: {
+        owner: tokenOwner.owner,
+        collection_id: tokenOwner.collection_id,
+        token_id: tokenOwner.token_id,
+      },
+    });
+    if (ownerToken != null) {
+      await this.tokensOwnersRepository.update(
+        {
+          id: ownerToken.id,
         },
         {
           amount: tokenOwner.amount,

@@ -115,7 +115,6 @@ export class BlocksSubscriberService implements ISubscriberService {
           blockCommonData,
           blockItems,
         });
-      //console.dir(events);
       const [itemCounts] = await Promise.all([
         this.blockService.upsert({
           block,
