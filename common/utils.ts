@@ -1,6 +1,12 @@
 import BigNumber from 'bignumber.js';
 import { Address } from '@unique-nft/utils';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+
+export function getParentCollectionAndToken(address) {
+  return Address.validate.nestingAddress(address)
+    ? Address.nesting.addressToIds(address)
+    : false;
+}
 export function normalizeSubstrateAddress(address, ss58Format?: number) {
   return Address.is.ethereumAddress(address)
     ? address

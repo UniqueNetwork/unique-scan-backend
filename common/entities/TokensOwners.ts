@@ -1,4 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { ITokenEntities } from '@entities/Tokens';
 
 export enum TokenType {
   NFT = 'NFT',
@@ -38,4 +39,15 @@ export class TokensOwners {
 
   @Column('bigint', { name: 'block_number' })
   block_number: number;
+
+  @Column('text', { name: 'parent_id', nullable: true })
+  parent_id: string;
+
+  @Column({
+    type: 'jsonb',
+    array: false,
+    default: () => "'[]'",
+    nullable: false,
+  })
+  public children?: ITokenEntities[];
 }

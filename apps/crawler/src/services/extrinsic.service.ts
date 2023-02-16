@@ -4,7 +4,11 @@ import {
   ExtrinsicMethod,
   ExtrinsicSection,
 } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import {
+  getParentCollectionAndToken,
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+} from '@common/utils';
 import { Event } from '@entities/Event';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Injectable } from '@nestjs/common';
@@ -20,6 +24,7 @@ import { EventValues } from './event/event.types';
 import { TokensOwners } from '@entities/TokensOwners';
 import { SdkService } from '../sdk/sdk.service';
 import { Tokens } from '@entities/Tokens';
+import * as console from 'console';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
@@ -192,7 +197,6 @@ export class ExtrinsicService {
       }
 
       const { to, from, tokenId, collectionId } = event?.values as any;
-
       substrateAddress.push({
         owner: from.value,
         owner_normalized: normalizeSubstrateAddress(from.value),
@@ -201,6 +205,13 @@ export class ExtrinsicService {
         date_created: String(normalizeTimestamp(blockTimestamp)),
         block_number: blockNumber,
       });
+      let parentId = null;
+      const toNestedAddress =
+        getParentCollectionAndToken(to.value) || undefined;
+      if (toNestedAddress) {
+        const { collectionId, tokenId } = toNestedAddress;
+        parentId = `${collectionId}_${tokenId}`;
+      }
       substrateAddress.push({
         owner: to.value,
         owner_normalized: normalizeSubstrateAddress(to.value),
@@ -208,6 +219,7 @@ export class ExtrinsicService {
         token_id: tokenId,
         date_created: String(normalizeTimestamp(blockTimestamp)),
         block_number: blockNumber,
+        parent_id: parentId,
       });
     });
 
@@ -237,12 +249,20 @@ export class ExtrinsicService {
           tokenId: extrinsic.token_id,
         });
         const updateTokenTransfer = { ...extrinsic, ...pieceToken };
-        //await this.updateOrSaveTokenOwnerPart(extrinsic, updateTokenTransfer);
-        await this.tokensOwnersRepository.upsert({ ...updateTokenTransfer }, [
-          'collection_id',
-          'token_id',
-          'owner',
-        ]);
+
+        if (pieceToken.amount === 0) {
+          await this.tokensOwnersRepository.delete({
+            collection_id: extrinsic.collection_id,
+            token_id: extrinsic.token_id,
+            owner: extrinsic.owner,
+          });
+        } else {
+          await this.tokensOwnersRepository.upsert({ ...updateTokenTransfer }, [
+            'collection_id',
+            'token_id',
+            'owner',
+          ]);
+        }
       }
     }
 
