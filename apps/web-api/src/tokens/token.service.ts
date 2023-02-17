@@ -79,7 +79,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
 
-    qb.andWhere('"TokenOwners"."parent_id" is null');
+    qb.andWhere('parent_id is null');
     qb.andWhere(`nested = :nested`, { nested: true });
 
     this.applyArgs(qb, queryArgs, queryInfo);
@@ -96,7 +96,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     qb.where(
       new Brackets((qb) => {
-        qb.where('"TokenOwners"."parent_id" is null').andWhere(
+        qb.where('parent_id is null').andWhere(
           `children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
         );
       }),
@@ -104,7 +104,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     qb.orWhere(
       new Brackets((qb) => {
-        qb.where('"TokenOwners"."parent_id" is null')
+        qb.where('parent_id is null')
           .andWhere('"Tokens".token_id = :token_id', {
             token_id,
           })
@@ -158,7 +158,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     const parentCredentials = `${collection_id}_${token_id}`;
-    qb.where('"TokenOwners"."parent_id" = :parentCredentials', {
+    qb.where('parent_id = :parentCredentials', {
       parentCredentials,
     });
     //qb.andWhere('Tokens.burned = false');
