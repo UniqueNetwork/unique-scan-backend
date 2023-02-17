@@ -50,4 +50,7 @@ export class TokensOwners {
     nullable: false,
   })
   public children?: ITokenEntities[];
+
+  @Column('boolean', { name: 'nested', default: false })
+  nested: boolean;
 }

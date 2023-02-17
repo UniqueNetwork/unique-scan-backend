@@ -220,6 +220,7 @@ export class ExtrinsicService {
         date_created: String(normalizeTimestamp(blockTimestamp)),
         block_number: blockNumber,
         parent_id: parentId,
+        nested: true,
       });
     });
 

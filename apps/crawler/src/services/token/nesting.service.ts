@@ -241,6 +241,17 @@ export class TokenNestingService {
             : undefined,
         },
       );
+
+      await this.tokensOwnersRepository.update(
+        {
+          token_id,
+          collection_id,
+        },
+        {
+          children,
+          nested: true,
+        },
+      );
     }
   }
 
