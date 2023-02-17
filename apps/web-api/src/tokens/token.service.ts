@@ -32,6 +32,7 @@ const relationsFields = {
   tokens_owner: TOKENSOWNERS_RELATION_ALIAS,
   tokens_amount: TOKENSOWNERS_RELATION_ALIAS,
   tokens_parent: TOKENSOWNERS_RELATION_ALIAS,
+  tokens_children: TOKENSOWNERS_RELATION_ALIAS,
 
   transfers_count: STATISTICS_RELATION_ALIAS,
   children_count: STATISTICS_RELATION_ALIAS,
@@ -45,11 +46,12 @@ const aliasFields = {
   tokens_owner: 'owner',
   tokens_amount: 'amount',
   tokens_parent: 'parent_id',
+  tokens_children: 'children',
 };
 
 const customQueryFields = {
   transfers_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".transfers_count, 0)`,
-  children_count: `jsonb_array_length(children)`,
+  children_count: `jsonb_array_length("Tokens".children)`,
   bundle_created:
     'COALESCE("Tokens".bundle_created, "Tokens".date_of_creation)',
 };
@@ -79,7 +81,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
 
-    qb.andWhere('"TokenOwners"."parent_id" is null');
+    qb.andWhere('parent_id is null');
     qb.andWhere(`nested = :nested`, { nested: true });
 
     this.applyArgs(qb, queryArgs, queryInfo);
@@ -96,15 +98,15 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     qb.where(
       new Brackets((qb) => {
-        qb.where('"TokenOwners"."parent_id" is null').andWhere(
-          `children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
+        qb.where('parent_id is null').andWhere(
+          `"Tokens",children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
         );
       }),
     );
 
     qb.orWhere(
       new Brackets((qb) => {
-        qb.where('"TokenOwners"."parent_id" is null')
+        qb.where('parent_id is null')
           .andWhere('"Tokens".token_id = :token_id', {
             token_id,
           })
@@ -158,7 +160,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     const parentCredentials = `${collection_id}_${token_id}`;
-    qb.where('"TokenOwners"."parent_id" = :parentCredentials', {
+    qb.where('parent_id = :parentCredentials', {
       parentCredentials,
     });
     //qb.andWhere('Tokens.burned = false');

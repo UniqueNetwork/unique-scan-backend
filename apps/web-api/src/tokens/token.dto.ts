@@ -88,6 +88,9 @@ export class TokenDTO extends SimpleTokenDTO implements Partial<Tokens> {
   tokens_parent?: string;
 
   @Field(() => String, { nullable: true })
+  tokens_children?: string;
+
+  @Field(() => String, { nullable: true })
   collection_description?: string;
 
   @Field(() => String, { nullable: true })

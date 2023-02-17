@@ -79,7 +79,6 @@ export class TokenService {
       nestedType = true;
     }
 
-    debugger;
     const children: ITokenEntities[] = needCheckNesting
       ? await this.nestingService.handleNesting(
           tokenData,
@@ -87,7 +86,7 @@ export class TokenService {
           blockTimestamp,
         )
       : token?.children ?? [];
-    debugger;
+
     if (isBundle) {
       nestedType = true;
     }
@@ -220,7 +219,6 @@ export class TokenService {
       const { tokenDecoded } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
 
-      debugger;
       const pieces = await this.sdkService.getTotalPieces(
         tokenId,
         collectionId,
@@ -237,6 +235,11 @@ export class TokenService {
 
       if (data.length != 0) {
         const typeMode = tokenDecoded.collection.mode;
+        const pieceToken = await this.sdkService.getRFTBalances({
+          address: tokenDecoded.owner || tokenDecoded.collection.owner,
+          collectionId: collectionId,
+          tokenId: tokenId,
+        });
         const tokenOwner: TokenOwnerData = {
           owner: tokenDecoded.owner || tokenDecoded.collection.owner,
           owner_normalized: normalizeSubstrateAddress(
@@ -245,8 +248,9 @@ export class TokenService {
           collection_id: collectionId,
           token_id: tokenId,
           date_created: String(normalizeTimestamp(blockTimestamp)),
-          amount: pieces.amount,
-          type: typeMode === 'ReFungible' ? 'RFT' : typeMode,
+          amount: pieceToken.amount,
+          type:
+            preparedData.type || typeMode === 'ReFungible' ? 'RFT' : typeMode,
           block_number: blockNumber,
           parent_id: preparedData.parent_id,
           children: preparedData.children,
@@ -339,7 +343,7 @@ export class TokenService {
       this.sdkService.getTokenProperties(collectionId, tokenId),
       this.sdkService.isTokenBundle(collectionId, tokenId),
     ]);
-    debugger;
+
     return {
       tokenDecoded,
       tokenProperties,
