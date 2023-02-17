@@ -234,9 +234,14 @@ export class TokenService {
         blockTimestamp,
         needCheckNesting,
       );
-
+      debugger;
       if (data.length != 0) {
         const typeMode = tokenDecoded.collection.mode;
+        const pieceToken = await this.sdkService.getRFTBalances({
+          address: tokenDecoded.owner || tokenDecoded.collection.owner,
+          collectionId: collectionId,
+          tokenId: tokenId,
+        });
         const tokenOwner: TokenOwnerData = {
           owner: tokenDecoded.owner || tokenDecoded.collection.owner,
           owner_normalized: normalizeSubstrateAddress(
@@ -245,8 +250,9 @@ export class TokenService {
           collection_id: collectionId,
           token_id: tokenId,
           date_created: String(normalizeTimestamp(blockTimestamp)),
-          amount: pieces.amount,
-          type: typeMode === 'ReFungible' ? 'RFT' : typeMode,
+          amount: pieceToken.amount,
+          type:
+            preparedData.type || typeMode === 'ReFungible' ? 'RFT' : typeMode,
           block_number: blockNumber,
           parent_id: preparedData.parent_id,
           children: preparedData.children,
