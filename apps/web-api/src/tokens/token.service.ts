@@ -31,6 +31,7 @@ const relationsFields = {
   collection_description: COLLECTION_RELATION_ALIAS,
   tokens_owner: TOKENSOWNERS_RELATION_ALIAS,
   tokens_amount: TOKENSOWNERS_RELATION_ALIAS,
+  tokens_parent: TOKENSOWNERS_RELATION_ALIAS,
 
   transfers_count: STATISTICS_RELATION_ALIAS,
   children_count: STATISTICS_RELATION_ALIAS,
@@ -43,6 +44,7 @@ const aliasFields = {
   collection_description: 'description',
   tokens_owner: 'owner',
   tokens_amount: 'amount',
+  tokens_parent: 'parent_id',
 };
 
 const customQueryFields = {
@@ -77,7 +79,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
 
-    qb.andWhere('parent_id is null');
+    qb.andWhere('"TokenOwners"."parent_id" is null');
     qb.andWhere(`nested = :nested`, { nested: true });
 
     this.applyArgs(qb, queryArgs, queryInfo);
@@ -94,7 +96,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     qb.where(
       new Brackets((qb) => {
-        qb.where('parent_id is null').andWhere(
+        qb.where('"TokenOwners"."parent_id" is null').andWhere(
           `children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
         );
       }),
@@ -102,7 +104,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
     qb.orWhere(
       new Brackets((qb) => {
-        qb.where('parent_id is null')
+        qb.where('"TokenOwners"."parent_id" is null')
           .andWhere('"Tokens".token_id = :token_id', {
             token_id,
           })
@@ -156,8 +158,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     const parentCredentials = `${collection_id}_${token_id}`;
-    qb.where('parent_id = :parentCredentials', { parentCredentials });
-    qb.andWhere('Tokens.burned = false');
+    qb.where('"TokenOwners"."parent_id" = :parentCredentials', {
+      parentCredentials,
+    });
+    //qb.andWhere('Tokens.burned = false');
     // qb.limit(null);
     qb.orderBy('token_id', 'ASC');
 

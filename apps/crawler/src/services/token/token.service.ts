@@ -5,6 +5,7 @@ import {
   TOKEN_UPDATE_EVENTS,
 } from '@common/constants';
 import {
+  getParentCollectionAndToken,
   normalizeSubstrateAddress,
   normalizeTimestamp,
   sanitizePropertiesValues,
@@ -26,6 +27,7 @@ import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
+import * as console from 'console';
 
 @Injectable()
 export class TokenService {
@@ -77,6 +79,7 @@ export class TokenService {
       nestedType = true;
     }
 
+    debugger;
     const children: ITokenEntities[] = needCheckNesting
       ? await this.nestingService.handleNesting(
           tokenData,
@@ -84,7 +87,7 @@ export class TokenService {
           blockTimestamp,
         )
       : token?.children ?? [];
-
+    debugger;
     if (isBundle) {
       nestedType = true;
     }
@@ -213,15 +216,23 @@ export class TokenService {
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
     let result;
-
     if (tokenData) {
       const { tokenDecoded } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
 
+      debugger;
       const pieces = await this.sdkService.getTotalPieces(
         tokenId,
         collectionId,
         blockHash,
+      );
+
+      const preparedData = await this.prepareDataForDb(
+        tokenData,
+        blockHash,
+        pieces?.amount,
+        blockTimestamp,
+        needCheckNesting,
       );
 
       if (data.length != 0) {
@@ -237,6 +248,8 @@ export class TokenService {
           amount: pieces.amount,
           type: typeMode === 'ReFungible' ? 'RFT' : typeMode,
           block_number: blockNumber,
+          parent_id: preparedData.parent_id,
+          children: preparedData.children,
         };
 
         await this.tokensOwnersRepository.upsert({ ...tokenOwner }, [
@@ -245,14 +258,6 @@ export class TokenService {
           'owner',
         ]);
       }
-
-      const preparedData = await this.prepareDataForDb(
-        tokenData,
-        blockHash,
-        pieces?.amount,
-        blockTimestamp,
-        needCheckNesting,
-      );
 
       // Write token data into db
       await this.tokensRepository.upsert(
@@ -276,6 +281,17 @@ export class TokenService {
         owner_normalized: ownerToken,
         block_number: blockNumber,
       });
+
+      const pieceToken = await this.sdkService.getRFTBalances({
+        address: ownerToken,
+        collectionId: collectionId,
+        tokenId: tokenId,
+      });
+      if (pieceToken.amount === 0) {
+        console.error(
+          `Destroy token full amount: ${pieceToken.amount} / collection: ${collectionId} / token: ${tokenId}`,
+        );
+      }
       // No entity returned from sdk. Most likely it was destroyed in a future block.
       await this.burn(collectionId, tokenId);
 
@@ -319,12 +335,11 @@ export class TokenService {
     if (!tokenDecoded) {
       return null;
     }
-
     const [tokenProperties, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
       this.sdkService.isTokenBundle(collectionId, tokenId),
     ]);
-
+    debugger;
     return {
       tokenDecoded,
       tokenProperties,
@@ -352,17 +367,18 @@ export class TokenService {
     });
 
     if (ownerToken) {
-      await this.tokensOwnersRepository.update(
-        {
-          owner: tokenOwner.owner,
-          collection_id: tokenOwner.collection_id,
-          token_id: tokenOwner.token_id,
-        },
-        {
-          amount: 0,
-          block_number: tokenOwner.block_number,
-        },
-      );
+      // await this.tokensOwnersRepository.update(
+      //   {
+      //     id: ownerToken.id,
+      //   },
+      //   {
+      //     amount: 0,
+      //     block_number: tokenOwner.block_number,
+      //   },
+      // );
+      await this.tokensOwnersRepository.delete({
+        id: ownerToken.id,
+      });
     }
   }
 

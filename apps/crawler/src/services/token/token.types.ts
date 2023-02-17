@@ -2,7 +2,7 @@ import {
   TokenByIdResult,
   TokenPropertiesResult,
 } from '@unique-nft/substrate-client/tokens';
-import { TokenType } from '@entities/Tokens';
+import { ITokenEntities, TokenType } from '@entities/Tokens';
 
 export interface TokenData {
   tokenDecoded: TokenByIdResult;
@@ -19,4 +19,8 @@ export interface TokenOwnerData {
   amount?: number;
   type?: TokenType;
   block_number?: number;
+
+  parent_id?: string;
+
+  children?: ITokenEntities[];
 }
