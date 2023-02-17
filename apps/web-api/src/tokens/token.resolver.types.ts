@@ -70,6 +70,9 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
   tokens_amount?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
+  tokens_parent?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
   collection_owner?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
@@ -122,6 +125,9 @@ export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   tokens_amount?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  tokens_parent?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   owner_normalized?: GQLOrderByParamsArgs;
