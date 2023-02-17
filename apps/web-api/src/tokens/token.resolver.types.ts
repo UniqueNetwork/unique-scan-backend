@@ -130,6 +130,9 @@ export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
   tokens_parent?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  tokens_children?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
   owner_normalized?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })

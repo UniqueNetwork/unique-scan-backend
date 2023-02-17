@@ -32,6 +32,7 @@ const relationsFields = {
   tokens_owner: TOKENSOWNERS_RELATION_ALIAS,
   tokens_amount: TOKENSOWNERS_RELATION_ALIAS,
   tokens_parent: TOKENSOWNERS_RELATION_ALIAS,
+  tokens_children: TOKENSOWNERS_RELATION_ALIAS,
 
   transfers_count: STATISTICS_RELATION_ALIAS,
   children_count: STATISTICS_RELATION_ALIAS,
@@ -45,11 +46,12 @@ const aliasFields = {
   tokens_owner: 'owner',
   tokens_amount: 'amount',
   tokens_parent: 'parent_id',
+  tokens_children: 'children',
 };
 
 const customQueryFields = {
   transfers_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".transfers_count, 0)`,
-  children_count: `jsonb_array_length(children)`,
+  children_count: `jsonb_array_length("Tokens".children)`,
   bundle_created:
     'COALESCE("Tokens".bundle_created, "Tokens".date_of_creation)',
 };
@@ -97,7 +99,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.where(
       new Brackets((qb) => {
         qb.where('parent_id is null').andWhere(
-          `children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
+          `"Tokens",children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
         );
       }),
     );
