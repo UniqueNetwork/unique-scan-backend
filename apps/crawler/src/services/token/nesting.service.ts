@@ -43,7 +43,7 @@ export class TokenNestingService {
       collection_id,
       token_id,
     });
-    debugger;
+
     let children: ITokenEntities[] = [];
     try {
       // token nested. Update children. Update parent.
@@ -148,7 +148,7 @@ export class TokenNestingService {
     childrenToBeDeleted: ITokenEntities[],
   ) {
     const { parent_id, children } = token;
-    debugger;
+
     if (parent_id && children.length) {
       const [collectionId, tokenId] = parent_id?.split('_');
 

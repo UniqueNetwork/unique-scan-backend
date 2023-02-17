@@ -79,7 +79,6 @@ export class TokenService {
       nestedType = true;
     }
 
-    debugger;
     const children: ITokenEntities[] = needCheckNesting
       ? await this.nestingService.handleNesting(
           tokenData,
@@ -87,7 +86,7 @@ export class TokenService {
           blockTimestamp,
         )
       : token?.children ?? [];
-    debugger;
+
     if (isBundle) {
       nestedType = true;
     }
@@ -220,7 +219,6 @@ export class TokenService {
       const { tokenDecoded } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
 
-      debugger;
       const pieces = await this.sdkService.getTotalPieces(
         tokenId,
         collectionId,
@@ -234,7 +232,7 @@ export class TokenService {
         blockTimestamp,
         needCheckNesting,
       );
-      debugger;
+
       if (data.length != 0) {
         const typeMode = tokenDecoded.collection.mode;
         const pieceToken = await this.sdkService.getRFTBalances({
@@ -345,7 +343,7 @@ export class TokenService {
       this.sdkService.getTokenProperties(collectionId, tokenId),
       this.sdkService.isTokenBundle(collectionId, tokenId),
     ]);
-    debugger;
+
     return {
       tokenDecoded,
       tokenProperties,
