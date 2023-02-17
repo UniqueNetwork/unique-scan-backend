@@ -25,6 +25,7 @@ import { TokensOwners } from '@entities/TokensOwners';
 import { SdkService } from '../sdk/sdk.service';
 import { Tokens } from '@entities/Tokens';
 import * as console from 'console';
+import { Address } from '@unique-nft/utils';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
@@ -206,8 +207,7 @@ export class ExtrinsicService {
         block_number: blockNumber,
       });
       let parentId = null;
-      const toNestedAddress =
-        getParentCollectionAndToken(to.value) || undefined;
+      const toNestedAddress = getParentCollectionAndToken(to.value);
       if (toNestedAddress) {
         const { collectionId, tokenId } = toNestedAddress;
         parentId = `${collectionId}_${tokenId}`;

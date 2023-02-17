@@ -4,9 +4,11 @@ import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 
 export function getParentCollectionAndToken(address) {
   if (Address.is.ethereumAddress(address)) {
-    return Address.validate.nestingAddress(address)
+    return Address.is.nestingAddress(address)
       ? Address.nesting.addressToIds(address)
-      : null;
+      : undefined;
+  } else {
+    return undefined;
   }
 }
 export function normalizeSubstrateAddress(address, ss58Format?: number) {
