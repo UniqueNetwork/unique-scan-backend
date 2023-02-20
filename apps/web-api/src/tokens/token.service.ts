@@ -99,7 +99,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.where(
       new Brackets((qb) => {
         qb.where('parent_id is null').andWhere(
-          `"Tokens",children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
+          `"Tokens".children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
         );
       }),
     );
@@ -113,7 +113,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
           .andWhere('"Tokens".collection_id = :collection_id', {
             collection_id,
           })
-          .andWhere(`nested = :nested`, { nested: true });
+          .andWhere(`"Tokens".nested = :nested`, { nested: true });
       }),
     );
 
