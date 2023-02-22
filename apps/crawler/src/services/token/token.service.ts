@@ -219,16 +219,17 @@ export class TokenService {
       const { tokenDecoded } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
 
-      const pieces = await this.sdkService.getTotalPieces(
-        tokenId,
-        collectionId,
-        blockHash,
-      );
+      let pieces = 1;
+      if (tokenDecoded.collection.mode !== 'NFT') {
+        pieces = (
+          await this.sdkService.getTotalPieces(tokenId, collectionId, blockHash)
+        ).amount;
+      }
 
       const preparedData = await this.prepareDataForDb(
         tokenData,
         blockHash,
-        pieces?.amount,
+        pieces,
         blockTimestamp,
         needCheckNesting,
       );
