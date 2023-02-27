@@ -5,16 +5,16 @@ export class indexevents1677504087299 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE INDEX "event_values_token_id" ON "event" (((values ->> 'tokenId')::int))`,
+      `CREATE INDEX IF NOT EXISTS "event_values_token_id" ON "event" (((values ->> 'tokenId')::int))`,
     );
     await queryRunner.query(
-      `CREATE INDEX "event_values_collection_id" ON "event" (((values ->> 'collectionId')::int))`,
+      `CREATE INDEX IF NOT EXISTS "event_values_collection_id" ON "event" (((values ->> 'collectionId')::int))`,
     );
     await queryRunner.query(
-      `CREATE INDEX "event_values_nested_token_id" ON "event" (((values -> 'nestedTo' ->> 'tokenId')::int))`,
+      `CREATE INDEX IF NOT EXISTS "event_values_nested_token_id" ON "event" (((values -> 'nestedTo' ->> 'tokenId')::int))`,
     );
     await queryRunner.query(
-      `CREATE INDEX "event_values_nested_collection_id" ON "event" (((values -> 'nestedTo' ->> 'collectionId')::int))`,
+      `CREATE INDEX IF NOT EXISTS "event_values_nested_collection_id" ON "event" (((values -> 'nestedTo' ->> 'collectionId')::int))`,
     );
   }
 
