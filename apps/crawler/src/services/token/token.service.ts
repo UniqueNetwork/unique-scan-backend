@@ -250,6 +250,7 @@ export class TokenService {
               blockTimestamp,
               preparedData,
               typeMode,
+              eventName,
             );
 
             break;
@@ -297,6 +298,7 @@ export class TokenService {
         collectionId: collectionId,
         tokenId: tokenId,
       });
+
       if (pieceToken.amount === 0) {
         console.error(
           `Destroy token full amount: ${pieceToken.amount} / collection: ${collectionId} / token: ${tokenId}`,
@@ -433,12 +435,8 @@ export class TokenService {
     blockTimestamp,
     preparedData,
     typeMode,
+    eventName,
   ) {
-    const pieceToken = await this.sdkService.getRFTBalances({
-      address: tokenDecoded.owner || tokenDecoded.collection.owner,
-      collectionId: collectionId,
-      tokenId: tokenId,
-    });
     const tokenOwner: TokenOwnerData = {
       owner: tokenDecoded.owner || tokenDecoded.collection.owner,
       owner_normalized: normalizeSubstrateAddress(
@@ -447,17 +445,29 @@ export class TokenService {
       collection_id: collectionId,
       token_id: tokenId,
       date_created: String(normalizeTimestamp(blockTimestamp)),
-      amount: pieceToken.amount,
+      amount: 1,
       type: preparedData.type || typeMode,
       block_number: blockNumber,
       parent_id: preparedData.parent_id,
       children: preparedData.children,
     };
+    await this.tokensOwnersRepository.delete({
+      collection_id: collectionId,
+      token_id: tokenId,
+    });
     await this.tokensOwnersRepository.upsert({ ...tokenOwner }, [
       'collection_id',
       'token_id',
       'owner',
     ]);
+    console.log(
+      blockNumber,
+      eventName,
+      typeMode,
+      collectionId,
+      tokenId,
+      tokenDecoded.owner || tokenDecoded.collection.owner,
+    );
   }
 
   async burn(
