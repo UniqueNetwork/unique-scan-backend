@@ -324,6 +324,16 @@ export class TokenService {
   ) {
     const arrayToken = [];
 
+    await this.tokensRepository.update(
+      {
+        collection_id: collectionId,
+        token_id: tokenId,
+      },
+      {
+        burned: false,
+      },
+    );
+
     const pieceFrom = await this.sdkService.getRFTBalances(
       {
         address: normalizeSubstrateAddress(data[2].value),
