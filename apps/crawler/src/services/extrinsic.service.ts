@@ -212,6 +212,13 @@ export class ExtrinsicService {
         const { collectionId, tokenId } = toNestedAddress;
         parentId = `${collectionId}_${tokenId}`;
       }
+      console.log(
+        blockNumber,
+        'Update to token',
+        tokenId,
+        collectionId,
+        to.value,
+      );
       substrateAddress.push({
         owner: to.value,
         owner_normalized: normalizeSubstrateAddress(to.value),
@@ -237,35 +244,36 @@ export class ExtrinsicService {
     events: Event[];
   }) {
     const extrinsicItems = this.extractExtrinsicItems(blockItems);
-    const extrinsicTokenTransfer = this.prepareTokenForDb(
-      blockCommonData,
-      events,
-    );
+    // const extrinsicTokenTransfer = this.prepareTokenForDb(
+    //   blockCommonData,
+    //   events,
+    // );
 
-    for (const extrinsic of extrinsicTokenTransfer) {
-      if (extrinsic.token_id) {
-        const pieceToken = await this.sdkService.getRFTBalances({
-          address: extrinsic.owner,
-          collectionId: extrinsic.collection_id,
-          tokenId: extrinsic.token_id,
-        });
-        const updateTokenTransfer = { ...extrinsic, ...pieceToken };
-
-        if (pieceToken.amount === 0) {
-          await this.tokensOwnersRepository.delete({
-            collection_id: extrinsic.collection_id,
-            token_id: extrinsic.token_id,
-            owner: extrinsic.owner,
-          });
-        } else {
-          await this.tokensOwnersRepository.upsert({ ...updateTokenTransfer }, [
-            'collection_id',
-            'token_id',
-            'owner',
-          ]);
-        }
-      }
-    }
+    // for (const extrinsic of extrinsicTokenTransfer) {
+    //   console.dir(extrinsic);
+    //   if (extrinsic.token_id) {
+    //     const pieceToken = await this.sdkService.getRFTBalances({
+    //       address: extrinsic.owner,
+    //       collectionId: extrinsic.collection_id,
+    //       tokenId: extrinsic.token_id,
+    //     });
+    //     const updateTokenTransfer = { ...extrinsic, ...pieceToken };
+    //
+    //     if (pieceToken.amount === 0) {
+    //       await this.tokensOwnersRepository.delete({
+    //         collection_id: extrinsic.collection_id,
+    //         token_id: extrinsic.token_id,
+    //         owner: extrinsic.owner,
+    //       });
+    //     } else {
+    //       await this.tokensOwnersRepository.upsert({ ...updateTokenTransfer }, [
+    //         'collection_id',
+    //         'token_id',
+    //         'owner',
+    //       ]);
+    //     }
+    //   }
+    // }
 
     const extrinsicsData = this.prepareDataForDb({
       blockCommonData,
