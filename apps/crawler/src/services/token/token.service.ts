@@ -51,6 +51,7 @@ export class TokenService {
   ): Promise<Omit<Tokens, 'id'>> {
     let nestedType = false;
     const { tokenDecoded, tokenProperties, isBundle } = tokenData;
+
     const {
       tokenId: token_id,
       collectionId: collection_id,
@@ -133,7 +134,6 @@ export class TokenService {
     );
     let rejected = [];
     let data = [];
-
     for (const chunk of eventChunks) {
       const result = await Promise.allSettled(
         chunk.map((event) => {
@@ -219,48 +219,54 @@ export class TokenService {
       const { tokenDecoded } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
 
-      const pieces = await this.sdkService.getTotalPieces(
-        tokenId,
-        collectionId,
-        blockHash,
-      );
+      let pieces = 1;
+      if (tokenDecoded.collection.mode !== 'NFT') {
+        pieces = (
+          await this.sdkService.getTotalPieces(tokenId, collectionId, blockHash)
+        ).amount;
+      }
 
       const preparedData = await this.prepareDataForDb(
         tokenData,
         blockHash,
-        pieces?.amount,
+        pieces,
         blockTimestamp,
         needCheckNesting,
       );
 
       if (data.length != 0) {
-        const typeMode = tokenDecoded.collection.mode;
-        const pieceToken = await this.sdkService.getRFTBalances({
-          address: tokenDecoded.owner || tokenDecoded.collection.owner,
-          collectionId: collectionId,
-          tokenId: tokenId,
-        });
-        const tokenOwner: TokenOwnerData = {
-          owner: tokenDecoded.owner || tokenDecoded.collection.owner,
-          owner_normalized: normalizeSubstrateAddress(
-            tokenDecoded.owner || tokenDecoded.collection.owner,
-          ),
-          collection_id: collectionId,
-          token_id: tokenId,
-          date_created: String(normalizeTimestamp(blockTimestamp)),
-          amount: pieceToken.amount,
-          type:
-            preparedData.type || typeMode === 'ReFungible' ? 'RFT' : typeMode,
-          block_number: blockNumber,
-          parent_id: preparedData.parent_id,
-          children: preparedData.children,
-        };
+        const typeMode =
+          tokenDecoded.collection.mode === 'ReFungible'
+            ? 'RFT'
+            : tokenDecoded.collection.mode;
 
-        await this.tokensOwnersRepository.upsert({ ...tokenOwner }, [
-          'collection_id',
-          'token_id',
-          'owner',
-        ]);
+        switch (tokenDecoded.collection.mode) {
+          case 'NFT':
+            await this.saveNFTOwnerToken(
+              tokenDecoded,
+              collectionId,
+              tokenId,
+              blockNumber,
+              blockTimestamp,
+              preparedData,
+              typeMode,
+            );
+
+            break;
+          case 'ReFungible':
+            await this.saveReFungibleOwnerToken(
+              collectionId,
+              tokenId,
+              blockNumber,
+              blockHash,
+              data,
+              preparedData,
+              typeMode,
+              eventName,
+              blockTimestamp,
+            );
+            break;
+        }
       }
 
       // Write token data into db
@@ -303,6 +309,124 @@ export class TokenService {
     }
 
     return result;
+  }
+
+  private async saveReFungibleOwnerToken(
+    collectionId,
+    tokenId,
+    blockNumber,
+    blockHash,
+    data,
+    preparedData,
+    typeMode,
+    eventName,
+    blockTimestamp,
+  ) {
+    const arrayToken = [];
+
+    const pieceFrom = await this.sdkService.getRFTBalances(
+      {
+        address: normalizeSubstrateAddress(data[2].value),
+        collectionId: collectionId,
+        tokenId: tokenId,
+      },
+      blockHash,
+    );
+    arrayToken.push({
+      owner: normalizeSubstrateAddress(data[2].value),
+      owner_normalized: normalizeSubstrateAddress(data[2].value),
+      collection_id: collectionId,
+      token_id: tokenId,
+      date_created: String(normalizeTimestamp(blockTimestamp)),
+      amount: pieceFrom.amount,
+      type: preparedData.type || typeMode,
+      block_number: blockNumber,
+      parent_id: preparedData.parent_id,
+      children: preparedData.children,
+    });
+
+    if (data.length === 5) {
+      const owner = normalizeSubstrateAddress(data[3].value);
+      const pieceTo = await this.sdkService.getRFTBalances(
+        {
+          address: owner,
+          collectionId: collectionId,
+          tokenId: tokenId,
+        },
+        blockHash,
+      );
+      let parentId = null;
+      let nested = false;
+      const toNestedAddress = getParentCollectionAndToken(owner);
+      if (toNestedAddress) {
+        parentId = `${toNestedAddress.collectionId}_${toNestedAddress.tokenId}`;
+        nested = true;
+      }
+      arrayToken.push({
+        owner: owner,
+        owner_normalized: normalizeSubstrateAddress(data[3].value),
+        collection_id: collectionId,
+        token_id: tokenId,
+        date_created: String(normalizeTimestamp(blockTimestamp)),
+        amount: pieceTo.amount,
+        type: preparedData.type || typeMode,
+        block_number: blockNumber,
+        parent_id: parentId,
+        children: preparedData.children,
+        nested: nested,
+      });
+    }
+
+    for (const tokenOwnerData of arrayToken) {
+      if (tokenOwnerData.amount === 0) {
+        await this.tokensOwnersRepository.delete({
+          collection_id: tokenOwnerData.collection_id,
+          token_id: tokenOwnerData.token_id,
+          owner: tokenOwnerData.owner,
+        });
+      } else {
+        await this.tokensOwnersRepository.upsert({ ...tokenOwnerData }, [
+          'collection_id',
+          'token_id',
+          'owner',
+        ]);
+      }
+    }
+  }
+
+  private async saveNFTOwnerToken(
+    tokenDecoded,
+    collectionId,
+    tokenId,
+    blockNumber,
+    blockTimestamp,
+    preparedData,
+    typeMode,
+  ) {
+    const pieceToken = await this.sdkService.getRFTBalances({
+      address: tokenDecoded.owner || tokenDecoded.collection.owner,
+      collectionId: collectionId,
+      tokenId: tokenId,
+    });
+    const tokenOwner: TokenOwnerData = {
+      owner: tokenDecoded.owner || tokenDecoded.collection.owner,
+      owner_normalized: normalizeSubstrateAddress(
+        tokenDecoded.owner || tokenDecoded.collection.owner,
+      ),
+      collection_id: collectionId,
+      token_id: tokenId,
+      date_created: String(normalizeTimestamp(blockTimestamp)),
+      amount: pieceToken.amount,
+      type: preparedData.type || typeMode,
+      block_number: blockNumber,
+      parent_id: preparedData.parent_id,
+      children: preparedData.children,
+    };
+    await this.tokensOwnersRepository.upsert({ ...tokenOwner }, [
+      'collection_id',
+      'token_id',
+      'owner',
+    ]);
   }
 
   async burn(

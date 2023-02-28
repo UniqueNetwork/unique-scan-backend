@@ -98,7 +98,10 @@ export class SdkService {
   }
 
   @SdkCache('getRFTBalances')
-  async getRFTBalances(tokenBalance: TokenBalanceRequest): Promise<any> {
+  async getRFTBalances(
+    tokenBalance: TokenBalanceRequest,
+    at?: string,
+  ): Promise<any> {
     const collection = await this.getCollection(tokenBalance.collectionId);
     if (collection.mode === 'NFT') {
       return {
@@ -106,11 +109,22 @@ export class SdkService {
       };
     }
     if (collection.mode === 'ReFungible') {
-      return await this.sdk.refungible.getBalance({
-        address: `${tokenBalance.address}`,
-        collectionId: tokenBalance.collectionId,
-        tokenId: tokenBalance.tokenId,
-      });
+      let dataCheckNalance;
+      if (at) {
+        dataCheckNalance = {
+          address: `${tokenBalance.address}`,
+          collectionId: tokenBalance.collectionId,
+          tokenId: tokenBalance.tokenId,
+          at,
+        };
+      } else {
+        dataCheckNalance = {
+          address: `${tokenBalance.address}`,
+          collectionId: tokenBalance.collectionId,
+          tokenId: tokenBalance.tokenId,
+        };
+      }
+      return await this.sdk.refungible.getBalance(dataCheckNalance);
     }
   }
 
