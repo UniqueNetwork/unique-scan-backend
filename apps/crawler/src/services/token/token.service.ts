@@ -110,7 +110,7 @@ export class TokenService {
       parent_id: parentId,
       is_sold: owner !== collectionOwner,
       token_name: `${tokenPrefix} #${token_id}`,
-      burned: token?.burned ?? false,
+      burned: false,
       type: tokenType,
       children,
       bundle_created: tokenType === TokenType.NFT ? null : undefined,
@@ -301,11 +301,10 @@ export class TokenService {
         console.error(
           `Destroy token full amount: ${pieceToken.amount} / collection: ${collectionId} / token: ${tokenId}`,
         );
+        // No entity returned from sdk. Most likely it was destroyed in a future block.
+        await this.burn(collectionId, tokenId);
+        result = SubscriberAction.DELETE;
       }
-      // No entity returned from sdk. Most likely it was destroyed in a future block.
-      await this.burn(collectionId, tokenId);
-
-      result = SubscriberAction.DELETE;
     }
 
     return result;
@@ -324,7 +323,7 @@ export class TokenService {
   ) {
     const arrayToken = [];
 
-    await this.tokensRepository.update(
+    const testToken = await this.tokensRepository.update(
       {
         collection_id: collectionId,
         token_id: tokenId,
@@ -334,6 +333,7 @@ export class TokenService {
       },
     );
 
+    console.log(collectionId, tokenId, testToken);
     const pieceFrom = await this.sdkService.getRFTBalances(
       {
         address: normalizeSubstrateAddress(data[2].value),
@@ -354,7 +354,16 @@ export class TokenService {
       parent_id: preparedData.parent_id,
       children: preparedData.children,
     });
-
+    console.log(
+      blockNumber,
+      eventName,
+      typeMode,
+      collectionId,
+      tokenId,
+      data.length === 4 ? data[3] : null,
+      pieceFrom.amount,
+      normalizeSubstrateAddress(data[2].value),
+    );
     if (data.length === 5) {
       const owner = normalizeSubstrateAddress(data[3].value);
       const pieceTo = await this.sdkService.getRFTBalances(
@@ -385,6 +394,18 @@ export class TokenService {
         children: preparedData.children,
         nested: nested,
       });
+      console.log(
+        blockNumber,
+        eventName,
+        typeMode,
+        collectionId,
+        tokenId,
+        data.length === 5 ? data[4] : null,
+        '-',
+        pieceTo.amount,
+        normalizeSubstrateAddress(data[2].value),
+        normalizeSubstrateAddress(data[3].value),
+      );
     }
 
     for (const tokenOwnerData of arrayToken) {
