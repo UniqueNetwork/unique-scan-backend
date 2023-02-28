@@ -110,7 +110,7 @@ export class TokenService {
       parent_id: parentId,
       is_sold: owner !== collectionOwner,
       token_name: `${tokenPrefix} #${token_id}`,
-      burned: token?.burned ?? false,
+      burned: false,
       type: tokenType,
       children,
       bundle_created: tokenType === TokenType.NFT ? null : undefined,
@@ -250,6 +250,7 @@ export class TokenService {
               blockTimestamp,
               preparedData,
               typeMode,
+              eventName,
             );
 
             break;
@@ -297,15 +298,15 @@ export class TokenService {
         collectionId: collectionId,
         tokenId: tokenId,
       });
+
       if (pieceToken.amount === 0) {
         console.error(
           `Destroy token full amount: ${pieceToken.amount} / collection: ${collectionId} / token: ${tokenId}`,
         );
+        // No entity returned from sdk. Most likely it was destroyed in a future block.
+        await this.burn(collectionId, tokenId);
+        result = SubscriberAction.DELETE;
       }
-      // No entity returned from sdk. Most likely it was destroyed in a future block.
-      await this.burn(collectionId, tokenId);
-
-      result = SubscriberAction.DELETE;
     }
 
     return result;
@@ -324,6 +325,17 @@ export class TokenService {
   ) {
     const arrayToken = [];
 
+    const testToken = await this.tokensRepository.update(
+      {
+        collection_id: collectionId,
+        token_id: tokenId,
+      },
+      {
+        burned: false,
+      },
+    );
+
+    console.log(collectionId, tokenId, testToken);
     const pieceFrom = await this.sdkService.getRFTBalances(
       {
         address: normalizeSubstrateAddress(data[2].value),
@@ -344,7 +356,16 @@ export class TokenService {
       parent_id: preparedData.parent_id,
       children: preparedData.children,
     });
-
+    console.log(
+      blockNumber,
+      eventName,
+      typeMode,
+      collectionId,
+      tokenId,
+      data.length === 4 ? data[3] : null,
+      pieceFrom.amount,
+      normalizeSubstrateAddress(data[2].value),
+    );
     if (data.length === 5) {
       const owner = normalizeSubstrateAddress(data[3].value);
       const pieceTo = await this.sdkService.getRFTBalances(
@@ -375,6 +396,18 @@ export class TokenService {
         children: preparedData.children,
         nested: nested,
       });
+      console.log(
+        blockNumber,
+        eventName,
+        typeMode,
+        collectionId,
+        tokenId,
+        data.length === 5 ? data[4] : null,
+        '-',
+        pieceTo.amount,
+        normalizeSubstrateAddress(data[2].value),
+        normalizeSubstrateAddress(data[3].value),
+      );
     }
 
     for (const tokenOwnerData of arrayToken) {
@@ -402,12 +435,8 @@ export class TokenService {
     blockTimestamp,
     preparedData,
     typeMode,
+    eventName,
   ) {
-    const pieceToken = await this.sdkService.getRFTBalances({
-      address: tokenDecoded.owner || tokenDecoded.collection.owner,
-      collectionId: collectionId,
-      tokenId: tokenId,
-    });
     const tokenOwner: TokenOwnerData = {
       owner: tokenDecoded.owner || tokenDecoded.collection.owner,
       owner_normalized: normalizeSubstrateAddress(
@@ -416,17 +445,29 @@ export class TokenService {
       collection_id: collectionId,
       token_id: tokenId,
       date_created: String(normalizeTimestamp(blockTimestamp)),
-      amount: pieceToken.amount,
+      amount: 1,
       type: preparedData.type || typeMode,
       block_number: blockNumber,
       parent_id: preparedData.parent_id,
       children: preparedData.children,
     };
+    await this.tokensOwnersRepository.delete({
+      collection_id: collectionId,
+      token_id: tokenId,
+    });
     await this.tokensOwnersRepository.upsert({ ...tokenOwner }, [
       'collection_id',
       'token_id',
       'owner',
     ]);
+    console.log(
+      blockNumber,
+      eventName,
+      typeMode,
+      collectionId,
+      tokenId,
+      tokenDecoded.owner || tokenDecoded.collection.owner,
+    );
   }
 
   async burn(

@@ -105,7 +105,7 @@ export class SdkService {
     const collection = await this.getCollection(tokenBalance.collectionId);
     if (collection.mode === 'NFT') {
       return {
-        amount: 1,
+        amount: 0, // todo tak ne nado
       };
     }
     if (collection.mode === 'ReFungible') {
