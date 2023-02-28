@@ -250,6 +250,7 @@ export class TokenService {
               blockTimestamp,
               preparedData,
               typeMode,
+              eventName,
             );
 
             break;
@@ -433,6 +434,7 @@ export class TokenService {
     blockTimestamp,
     preparedData,
     typeMode,
+    eventName,
   ) {
     const pieceToken = await this.sdkService.getRFTBalances({
       address: tokenDecoded.owner || tokenDecoded.collection.owner,
@@ -453,11 +455,23 @@ export class TokenService {
       parent_id: preparedData.parent_id,
       children: preparedData.children,
     };
+    await this.tokensOwnersRepository.delete({
+      collection_id: collectionId,
+      token_id: tokenId,
+    });
     await this.tokensOwnersRepository.upsert({ ...tokenOwner }, [
       'collection_id',
       'token_id',
       'owner',
     ]);
+    console.log(
+      blockNumber,
+      eventName,
+      typeMode,
+      collectionId,
+      tokenId,
+      tokenDecoded.owner || tokenDecoded.collection.owner,
+    );
   }
 
   async burn(
