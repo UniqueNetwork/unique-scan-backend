@@ -507,14 +507,12 @@ export class TokenService {
     tokenId: number,
     blockHash: string,
   ): Promise<TokenData | null> {
-    let tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
-    if (!tokenDecoded) {
-      tokenDecoded = await this.sdkService.getToken(
-        collectionId,
-        tokenId,
-        blockHash,
-      );
-    }
+    const tokenDecoded = await this.sdkService.getToken(
+      collectionId,
+      tokenId,
+      blockHash,
+    );
+
     if (!tokenDecoded) {
       return null;
     }
