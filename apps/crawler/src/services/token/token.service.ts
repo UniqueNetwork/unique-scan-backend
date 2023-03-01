@@ -272,16 +272,29 @@ export class TokenService {
       }
 
       // Write token data into db
-      await this.tokensRepository.upsert(
-        {
-          ...preparedData,
-          date_of_creation:
-            eventName === EventName.ITEM_CREATED
-              ? normalizeTimestamp(blockTimestamp)
-              : undefined,
+      const entity = {
+        ...preparedData,
+        date_of_creation:
+          eventName === EventName.ITEM_CREATED
+            ? normalizeTimestamp(blockTimestamp)
+            : undefined,
+      };
+      const already = await this.tokensRepository.findOne({
+        where: {
+          token_id: preparedData.token_id,
+          collection_id: preparedData.collection_id,
         },
-        ['collection_id', 'token_id'],
-      );
+      });
+      if (already) {
+        await this.tokensRepository.update(
+          {
+            id: already.id,
+          },
+          entity,
+        );
+      } else {
+        await this.tokensRepository.insert(entity);
+      }
       result = SubscriberAction.UPSERT;
     } else {
       const ownerToken = normalizeSubstrateAddress(data[2].value);
