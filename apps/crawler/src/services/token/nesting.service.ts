@@ -287,19 +287,18 @@ export class TokenNestingService {
     child_collection_id: number,
     child_token_id: number,
   ) {
+    const children = parent.children.filter(
+      ({ token_id, collection_id }) =>
+        !(child_collection_id === collection_id && child_token_id === token_id),
+    );
     return this.tokensRepository.update(
       {
         collection_id: parent.collection_id,
         token_id: parent.token_id,
       },
       {
-        children: parent.children.filter(
-          ({ token_id, collection_id }) =>
-            !(
-              child_collection_id === collection_id &&
-              child_token_id === token_id
-            ),
-        ),
+        children,
+        nested: children.length > 0,
       },
     );
   }
