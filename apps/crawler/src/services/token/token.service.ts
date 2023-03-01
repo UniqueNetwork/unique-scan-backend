@@ -60,7 +60,7 @@ export class TokenService {
       nestingParentToken,
       owner,
     } = tokenDecoded;
-
+    debugger;
     const { owner: collectionOwner, tokenPrefix } = tokenDecoded.collection;
 
     const token = await this.tokensRepository.findOneBy({
@@ -214,6 +214,9 @@ export class TokenService {
     data: any;
   }): Promise<SubscriberAction> {
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
+    if (collectionId === 17) {
+      debugger;
+    }
     let result;
     if (tokenData) {
       const { tokenDecoded } = tokenData;
@@ -506,7 +509,7 @@ export class TokenService {
     }
     const [tokenProperties, isBundle] = await Promise.all([
       this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.isTokenBundle(collectionId, tokenId),
+      this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
     ]);
 
     return {
