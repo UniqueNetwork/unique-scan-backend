@@ -4,9 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Config } from '../config/config.module';
 import { AccountsSubscriberService } from './accounts.subscriber.service';
 import { BlocksSubscriberService } from './blocks.subscriber.service';
-import { CollectionsSubscriberService } from './collections.subscriber.service';
 import { ProcessorService } from './processor/processor.service';
-import { TokensSubscriberService } from './tokens.subscriber.service';
 
 export interface ISubscriberService {
   subscribe(processorService: ProcessorService);
@@ -19,8 +17,6 @@ export class SubscribersService {
     private processorService: ProcessorService,
     private accountsSubscriberService: AccountsSubscriberService,
     private blocksSubscriberService: BlocksSubscriberService,
-    private collectionsSubscriberService: CollectionsSubscriberService,
-    private tokensSubscriberService: TokensSubscriberService,
   ) {}
 
   run() {
@@ -32,14 +28,6 @@ export class SubscribersService {
 
     if (subscribersConfig[SubscriberName.BLOCKS]) {
       this.blocksSubscriberService.subscribe(this.processorService);
-    }
-
-    if (subscribersConfig[SubscriberName.COLLECTIONS]) {
-      this.collectionsSubscriberService.subscribe(this.processorService);
-    }
-
-    if (subscribersConfig[SubscriberName.TOKENS]) {
-      this.tokensSubscriberService.subscribe(this.processorService);
     }
 
     return this.processorService.run(this.configService.get('rescan'));

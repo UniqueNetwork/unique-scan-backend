@@ -1,4 +1,4 @@
-import { Tokens, TokenType } from '@entities/Tokens';
+import { Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
@@ -15,7 +15,10 @@ import { QueryArgs } from './token.resolver.types';
 import { GraphQLResolveInfo } from 'graphql';
 import { IRelations } from '../utils/base.service.types';
 import { FieldsListOptions } from 'graphql-fields-list';
+import { JOIN_TYPE } from '@common/constants';
+import { TokensOwners } from '@entities/TokensOwners';
 
+const TOKENSOWNERS_RELATION_ALIAS = 'TokenOwners';
 const COLLECTION_RELATION_ALIAS = 'Collection';
 const STATISTICS_RELATION_ALIAS = 'Statistics';
 
@@ -26,6 +29,10 @@ const relationsFields = {
   collection_owner_normalized: COLLECTION_RELATION_ALIAS,
   collection_cover: COLLECTION_RELATION_ALIAS,
   collection_description: COLLECTION_RELATION_ALIAS,
+  tokens_owner: TOKENSOWNERS_RELATION_ALIAS,
+  tokens_amount: TOKENSOWNERS_RELATION_ALIAS,
+  tokens_parent: TOKENSOWNERS_RELATION_ALIAS,
+  tokens_children: TOKENSOWNERS_RELATION_ALIAS,
 
   transfers_count: STATISTICS_RELATION_ALIAS,
   children_count: STATISTICS_RELATION_ALIAS,
@@ -36,11 +43,15 @@ const aliasFields = {
   collection_owner: 'owner',
   collection_owner_normalized: 'owner_normalized',
   collection_description: 'description',
+  tokens_owner: 'owner',
+  tokens_amount: 'amount',
+  tokens_parent: 'parent_id',
+  tokens_children: 'children',
 };
 
 const customQueryFields = {
   transfers_count: `COALESCE("${STATISTICS_RELATION_ALIAS}".transfers_count, 0)`,
-  children_count: `jsonb_array_length(children)`,
+  children_count: `jsonb_array_length("Tokens".children)`,
   bundle_created:
     'COALESCE("Tokens".bundle_created, "Tokens".date_of_creation)',
 };
@@ -71,7 +82,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     qb.andWhere('parent_id is null');
-    qb.andWhere(`type = :type`, { type: TokenType.NESTED });
+    qb.andWhere(`nested = :nested`, { nested: true });
 
     this.applyArgs(qb, queryArgs, queryInfo);
 
@@ -88,7 +99,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb.where(
       new Brackets((qb) => {
         qb.where('parent_id is null').andWhere(
-          `children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
+          `"Tokens".children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
         );
       }),
     );
@@ -102,7 +113,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
           .andWhere('"Tokens".collection_id = :collection_id', {
             collection_id,
           })
-          .andWhere(`type = :type`, { type: TokenType.NESTED });
+          .andWhere(`"Tokens".nested = :nested`, { nested: true });
       }),
     );
 
@@ -149,8 +160,10 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     const parentCredentials = `${collection_id}_${token_id}`;
-    qb.where('parent_id = :parentCredentials', { parentCredentials });
-    qb.andWhere('Tokens.burned = false');
+    qb.where('parent_id = :parentCredentials', {
+      parentCredentials,
+    });
+    //qb.andWhere('Tokens.burned = false');
     // qb.limit(null);
     qb.orderBy('token_id', 'ASC');
 
@@ -213,10 +226,12 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
           if (typeof rawValueParsed === 'object') {
             // Text field in format {_: "value"}
-            qb.orWhere(`attributes->'${key}'->'rawValue'='${rawValue}'::jsonb`);
+            qb.andWhere(
+              `attributes->'${key}'->'rawValue'='${rawValue}'::jsonb`,
+            );
           } else {
             // Select and multiselect field
-            qb.orWhere(
+            qb.andWhere(
               new Brackets((qb) => {
                 qb.where(
                   `attributes->'${key}'->>'rawValue'='${String(rawValue)}'`,
@@ -245,6 +260,12 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
       [COLLECTION_RELATION_ALIAS]: {
         table: 'collections',
         on: `"Tokens".collection_id = "${COLLECTION_RELATION_ALIAS}".collection_id`,
+        join: JOIN_TYPE.INNER,
+      },
+      [TOKENSOWNERS_RELATION_ALIAS]: {
+        table: 'tokens_owners',
+        on: `"Tokens".collection_id = "${TOKENSOWNERS_RELATION_ALIAS}".collection_id AND  "Tokens".token_id = "${TOKENSOWNERS_RELATION_ALIAS}".token_id`,
+        join: JOIN_TYPE.INNER,
       },
       [STATISTICS_RELATION_ALIAS]: {
         table: 'tokens_stats',

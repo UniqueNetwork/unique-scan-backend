@@ -1,13 +1,13 @@
-import { Tokens, TokenType, ITokenEntities } from '@entities/Tokens';
+import { ITokenEntities, Tokens } from '@entities/Tokens';
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NestedToken } from '@unique-nft/substrate-client/tokens';
 import { SentryService } from '@ntegral/nestjs-sentry';
 import { normalizeTimestamp } from '@common/utils';
-import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
 import { TokenData } from './token.types';
+import { TokensOwners } from '@entities/TokensOwners';
 
 @Injectable()
 export class TokenNestingService {
@@ -15,6 +15,8 @@ export class TokenNestingService {
     private sdkService: SdkService,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
+    @InjectRepository(TokensOwners)
+    private tokensOwnersRepository: Repository<TokensOwners>,
     private dataSource: DataSource,
     private readonly sentry: SentryService,
   ) {
@@ -37,6 +39,11 @@ export class TokenNestingService {
       collection_id,
       token_id,
     });
+    const tokenOwnersFromDb = await this.tokensOwnersRepository.findOneBy({
+      collection_id,
+      token_id,
+    });
+
     let children: ITokenEntities[] = [];
     try {
       // token nested. Update children. Update parent.
@@ -83,6 +90,16 @@ export class TokenNestingService {
         ]);
       }
 
+      if (tokenOwnersFromDb?.parent_id && isBundle && !parentId) {
+        await this.unnestBundleOwners(tokenOwnersFromDb, [
+          ...tokenOwnersFromDb.children,
+          {
+            token_id,
+            collection_id,
+          },
+        ]);
+      }
+
       return children;
     } catch {
       return children;
@@ -121,6 +138,44 @@ export class TokenNestingService {
 
         if (parent.parent_id) {
           await this.unnestBundle(parent, childrenToBeDeleted);
+        }
+      }
+    }
+  }
+
+  private async unnestBundleOwners(
+    token: TokensOwners,
+    childrenToBeDeleted: ITokenEntities[],
+  ) {
+    const { parent_id, children } = token;
+
+    if (parent_id && children.length) {
+      const [collectionId, tokenId] = parent_id?.split('_');
+
+      const parent = await this.tokensOwnersRepository.findOneBy({
+        collection_id: Number(collectionId),
+        token_id: Number(tokenId),
+      });
+
+      if (parent) {
+        const childrenSet = new Set<string>(
+          childrenToBeDeleted.map(
+            ({ collection_id, token_id }) => `${collection_id}_${token_id}`,
+          ),
+        );
+
+        await this.tokensOwnersRepository.update(
+          { id: parent.id },
+          {
+            children: parent.children.filter(
+              ({ collection_id, token_id }) =>
+                !childrenSet.has(`${collection_id}_${token_id}`),
+            ),
+          },
+        );
+
+        if (parent.parent_id) {
+          await this.unnestBundleOwners(parent, childrenToBeDeleted);
         }
       }
     }
@@ -180,10 +235,21 @@ export class TokenNestingService {
         },
         {
           children,
-          type: TokenType.NESTED,
+          nested: true,
           bundle_created: blockTimestamp
             ? normalizeTimestamp(blockTimestamp)
             : undefined,
+        },
+      );
+
+      await this.tokensOwnersRepository.update(
+        {
+          token_id,
+          collection_id,
+        },
+        {
+          children,
+          nested: true,
         },
       );
     }
@@ -221,19 +287,18 @@ export class TokenNestingService {
     child_collection_id: number,
     child_token_id: number,
   ) {
+    const children = parent.children.filter(
+      ({ token_id, collection_id }) =>
+        !(child_collection_id === collection_id && child_token_id === token_id),
+    );
     return this.tokensRepository.update(
       {
         collection_id: parent.collection_id,
         token_id: parent.token_id,
       },
       {
-        children: parent.children.filter(
-          ({ token_id, collection_id }) =>
-            !(
-              child_collection_id === collection_id &&
-              child_token_id === token_id
-            ),
-        ),
+        children,
+        nested: children.length > 0,
       },
     );
   }

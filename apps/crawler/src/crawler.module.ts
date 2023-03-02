@@ -13,6 +13,14 @@ import { CacheProviderModule } from './cache/cache-provider.module';
     GlobalConfigModule,
     CacheProviderModule,
     TypeOrmModule.forRoot(typeormConfig),
+    // HarvesterModule.registerAsync({
+    //   useFactory: (config: ConfigService<Config>) =>
+    //     ({
+    //       chainWsUrl: config.get('chainWsUrl'),
+    //       database: typeormConfig,
+    //     } as HarvesterModuleOptions),
+    //   inject: [ConfigService],
+    // }),
     SentryModule.forRootAsync({
       useFactory: async (configService: ConfigService<Config>) => {
         return configService.get('sentry');

@@ -26,11 +26,17 @@ export type Config = {
 
   scanRangeTo?: number;
 
+  scanCollectionsBatchSize?: number;
+
+  scanTokensBatchSize?: number;
+
   rescan: boolean;
 
   prometheusPort: number;
 
   batchSize: number;
+
+  rpcProviderUrl: string;
 };
 
 const loadConfig = (): Config => ({
@@ -54,11 +60,18 @@ const loadConfig = (): Config => ({
 
   scanRangeTo: +process.env.SCAN_RANGE_TO || undefined,
 
+  scanCollectionsBatchSize: +process.env.SCAN_COLLECTIONS_BATCH_SIZE || 50,
+
+  scanTokensBatchSize: +process.env.SCAN_TOKENS_BATCH_SIZE || 100,
+
   rescan: process.env.SCAN_FORCE_RESCAN === 'true',
 
   prometheusPort: +process.env.PROMETHEUS_PORT || 9090,
 
   batchSize: +process.env.BATCH_SIZE || 10,
+
+  rpcProviderUrl:
+    process.env.RPC_PROVIDER_URL || 'https://rpc-opal.unique.network',
 });
 
 export const GlobalConfigModule = ConfigModule.forRoot({

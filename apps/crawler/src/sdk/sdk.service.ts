@@ -1,5 +1,6 @@
 import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cache } from 'cache-manager';
 import { Client } from '@unique-nft/substrate-client';
 import {
   CollectionInfoWithSchema,
@@ -9,6 +10,7 @@ import {
 } from '@unique-nft/substrate-client/tokens';
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
+import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
 
 @Injectable()
 export class SdkService {
@@ -17,6 +19,12 @@ export class SdkService {
     private configService: ConfigService<Config>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
+
+  @SdkCache('getApi')
+  async getApi(hash) {
+    const optionUpgrade = await this.sdk.api.query.system.events.at(hash);
+    return optionUpgrade.toJSON();
+  }
 
   @SdkCache('getCollection')
   getCollection(
@@ -47,12 +55,16 @@ export class SdkService {
   }
 
   @SdkCache('getToken')
-  getToken(
+  async getToken(
     collectionId: number,
     tokenId: number,
     at?: string,
   ): Promise<TokenByIdResult | null> {
-    return this.sdk.tokens.get({ collectionId, tokenId, at });
+    if (at) {
+      return await this.sdk.tokens.get({ collectionId, tokenId, at });
+    } else {
+      return await this.sdk.tokens.get({ collectionId, tokenId });
+    }
   }
 
   @SdkCache('isTokenBundle')
@@ -83,5 +95,56 @@ export class SdkService {
   @SdkCache('getBalances')
   async getBalances(rawAddress: string) {
     return this.sdk.balance.get({ address: rawAddress });
+  }
+
+  @SdkCache('getRFTBalances')
+  async getRFTBalances(
+    tokenBalance: TokenBalanceRequest,
+    at?: string,
+  ): Promise<any> {
+    const collection = await this.getCollection(tokenBalance.collectionId);
+    if (collection.mode === 'NFT') {
+      return {
+        amount: 0, // todo tak ne nado
+      };
+    }
+    if (collection.mode === 'ReFungible') {
+      let dataCheckNalance;
+      if (at) {
+        dataCheckNalance = {
+          address: `${tokenBalance.address}`,
+          collectionId: tokenBalance.collectionId,
+          tokenId: tokenBalance.tokenId,
+          at,
+        };
+      } else {
+        dataCheckNalance = {
+          address: `${tokenBalance.address}`,
+          collectionId: tokenBalance.collectionId,
+          tokenId: tokenBalance.tokenId,
+        };
+      }
+      return await this.sdk.refungible.getBalance(dataCheckNalance);
+    }
+  }
+
+  @SdkCache('getTotalPieces')
+  async getTotalPieces(
+    tokenId: number,
+    collectionId: number,
+    at?: string,
+  ): Promise<any> {
+    if (at) {
+      return await this.sdk.refungible.totalPieces({
+        tokenId,
+        collectionId,
+        at,
+      });
+    } else {
+      return await this.sdk.refungible.totalPieces({
+        tokenId,
+        collectionId,
+      });
+    }
   }
 }

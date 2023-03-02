@@ -29,11 +29,12 @@ export class TokenResolver {
   ) {}
 
   @Query(() => TokenDataResponse)
-  public tokens(
+  public async tokens(
     @Args() args: QueryArgs,
     @Info() info,
   ): Promise<IDataListResponse<TokenEntity>> {
-    return this.service.find(args, info);
+    const resolver = this.service.find(args, info);
+    return resolver;
   }
 
   @Query(() => TokenDataResponse)

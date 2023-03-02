@@ -51,8 +51,28 @@ const relationsFields = {
 };
 
 const customQueryFields = {
-  collection_id: `"Event"."values"->>'collectionId'`,
-  token_id: `"Event"."values"->>'tokenId'`,
+  collection_id: `("Event"."values"->>'collectionId')::int`,
+  token_id: `("Event"."values"->>'tokenId')::int`,
+  tokens: `
+  array(
+    select json_build_object(
+      'token_name', t."token_name",
+      'token_prefix', SUBSTRING(t.token_name from '([^\\s]+)'),
+      'type', t."type",
+      'collection_id', t.collection_id,
+      'token_id', t.token_id,
+      'image', t.image
+      )
+        from
+      ${TOKEN_RELATION_ALIAS} t
+      where
+        (t.token_id = ("Event"."values"->>'tokenId')::int and
+        t.collection_id = ("Event"."values"->>'collectionId')::int)
+      or
+        (t.token_id = ("Event"."values"->'nestedTo'->>'tokenId')::int and
+        t.collection_id = ("Event"."values"->'nestedTo'->>'collectionId')::int)
+  )
+  `,
 };
 
 @Injectable()
@@ -167,7 +187,6 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
       [EXTRINSIC_RELATION_ALIAS]: {
         table: 'extrinsic',
         on: `"${EXTRINSIC_RELATION_ALIAS}".block_index = "Event".block_index`,
-        join: JOIN_TYPE.INNER,
       },
       [TOKEN_RELATION_ALIAS]: {
         table: 'tokens',

@@ -4,7 +4,6 @@ import { Client } from '@unique-nft/substrate-client';
 import { sdkFactory } from './sdk-factory';
 import { SdkService } from './sdk.service';
 import { Config } from '../config/config.module';
-import '@unique-nft/substrate-client/extrinsics';
 import '@unique-nft/substrate-client/tokens';
 import '@unique-nft/substrate-client/balance';
 

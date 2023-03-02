@@ -4,7 +4,11 @@ import {
   ExtrinsicMethod,
   ExtrinsicSection,
 } from '@common/constants';
-import { normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
+import {
+  getParentCollectionAndToken,
+  normalizeSubstrateAddress,
+  normalizeTimestamp,
+} from '@common/utils';
 import { Event } from '@entities/Event';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Injectable } from '@nestjs/common';
@@ -17,12 +21,23 @@ import {
 } from '../subscribers/blocks.subscriber.service';
 import { EventValues } from './event/event.types';
 
+import { TokensOwners } from '@entities/TokensOwners';
+import { SdkService } from '../sdk/sdk.service';
+import { Tokens } from '@entities/Tokens';
+import * as console from 'console';
+import { Address } from '@unique-nft/utils';
+
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
   ExtrinsicMethod.TRANSFER_FROM,
   ExtrinsicMethod.TRANSFER_ALL,
   ExtrinsicMethod.TRANSFER_KEEP_ALIVE,
   ExtrinsicMethod.VESTED_TRANSFER,
+];
+
+const EVENTS_METHODS = [
+  EventMethod.ITEM_CREATED,
+  EventMethod.COLLECTION_CREATED,
 ];
 
 export interface IExtrinsicExtended extends SubstrateExtrinsic {
@@ -45,6 +60,12 @@ export class ExtrinsicService {
   constructor(
     @InjectRepository(Extrinsic)
     private extrinsicsRepository: Repository<Extrinsic>,
+
+    @InjectRepository(TokensOwners)
+    private tokensOwnersRepository: Repository<TokensOwners>,
+    @InjectRepository(Tokens)
+    private tokensRepository: Repository<Tokens>,
+    private sdkService: SdkService,
   ) {}
 
   private extractExtrinsicItems(items: IBlockItem[]): IExtrinsicExtended[] {
@@ -98,11 +119,11 @@ export class ExtrinsicService {
   private prepareDataForDb({
     blockCommonData,
     extrinsicItems,
-    eventsData,
+    events,
   }: {
     extrinsicItems: IExtrinsicExtended[];
     blockCommonData: IBlockCommonData;
-    eventsData: Event[];
+    events: Event[];
   }): Extrinsic[] {
     return extrinsicItems.map((extrinsic) => {
       const { name } = extrinsic;
@@ -110,24 +131,23 @@ export class ExtrinsicService {
         ExtrinsicSection,
         ExtrinsicMethod,
       ];
+      const { blockTimestamp, blockNumber, ss58Prefix, blockHash } =
+        blockCommonData;
 
-      const { blockTimestamp, blockNumber, ss58Prefix } = blockCommonData;
-
+      const {
+        call: { args },
+      } = extrinsic;
+      let signer = null;
       // Don't need to use AccountService for signer and to_owner addresses,
       // because all addresses are already processed in EventService.
-      let signer = null;
+
       const { signature } = extrinsic;
       if (signature) {
         const {
           address: { value: rawSigner },
         } = signature;
-
         signer = normalizeSubstrateAddress(rawSigner, ss58Prefix);
       }
-
-      const {
-        call: { args },
-      } = extrinsic;
 
       let toOwner = null;
       if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
@@ -141,7 +161,7 @@ export class ExtrinsicService {
 
       const blockIndex = `${blockNumber}-${indexInBlock}`;
 
-      const amountValues = this.getAmountValues(blockIndex, eventsData);
+      const amountValues = this.getAmountValues(blockIndex, events);
 
       const { amount, fee } = amountValues;
 
@@ -165,26 +185,142 @@ export class ExtrinsicService {
     });
   }
 
+  private prepareTokenForDb(
+    blockCommonData: IBlockCommonData,
+    events: Event[],
+  ): any {
+    const { blockTimestamp, blockNumber } = blockCommonData;
+    const substrateAddress = [];
+    events.map(async (event) => {
+      const extrinsicsEventName = `${event.section}.${event.method}`;
+      if (extrinsicsEventName !== 'Common.Transfer') {
+        return;
+      }
+
+      const { to, from, tokenId, collectionId } = event?.values as any;
+      substrateAddress.push({
+        owner: from.value,
+        owner_normalized: normalizeSubstrateAddress(from.value),
+        collection_id: collectionId,
+        token_id: tokenId,
+        date_created: String(normalizeTimestamp(blockTimestamp)),
+        block_number: blockNumber,
+      });
+      let parentId = null;
+      const toNestedAddress = getParentCollectionAndToken(to.value);
+      if (toNestedAddress) {
+        const { collectionId, tokenId } = toNestedAddress;
+        parentId = `${collectionId}_${tokenId}`;
+      }
+      console.log(
+        blockNumber,
+        'Update to token',
+        tokenId,
+        collectionId,
+        to.value,
+      );
+      substrateAddress.push({
+        owner: to.value,
+        owner_normalized: normalizeSubstrateAddress(to.value),
+        collection_id: collectionId,
+        token_id: tokenId,
+        date_created: String(normalizeTimestamp(blockTimestamp)),
+        block_number: blockNumber,
+        parent_id: parentId,
+        nested: true,
+      });
+    });
+
+    return substrateAddress;
+  }
+
   async upsert({
     blockItems,
     blockCommonData,
-    eventsData,
+    events,
   }: {
     blockItems: IBlockItem[];
     blockCommonData: IBlockCommonData;
-    eventsData: Event[];
+    events: Event[];
   }) {
     const extrinsicItems = this.extractExtrinsicItems(blockItems);
+    // const extrinsicTokenTransfer = this.prepareTokenForDb(
+    //   blockCommonData,
+    //   events,
+    // );
+
+    // for (const extrinsic of extrinsicTokenTransfer) {
+    //   console.dir(extrinsic);
+    //   if (extrinsic.token_id) {
+    //     const pieceToken = await this.sdkService.getRFTBalances({
+    //       address: extrinsic.owner,
+    //       collectionId: extrinsic.collection_id,
+    //       tokenId: extrinsic.token_id,
+    //     });
+    //     const updateTokenTransfer = { ...extrinsic, ...pieceToken };
+    //
+    //     if (pieceToken.amount === 0) {
+    //       await this.tokensOwnersRepository.delete({
+    //         collection_id: extrinsic.collection_id,
+    //         token_id: extrinsic.token_id,
+    //         owner: extrinsic.owner,
+    //       });
+    //     } else {
+    //       await this.tokensOwnersRepository.upsert({ ...updateTokenTransfer }, [
+    //         'collection_id',
+    //         'token_id',
+    //         'owner',
+    //       ]);
+    //     }
+    //   }
+    // }
 
     const extrinsicsData = this.prepareDataForDb({
       blockCommonData,
       extrinsicItems,
-      eventsData,
+      events,
     });
 
     return this.extrinsicsRepository.upsert(extrinsicsData, [
       'block_number',
       'extrinsic_index',
     ]);
+  }
+
+  private async updateOrSaveTokenOwnerPart(ext: any, updateData: any) {
+    const token = await this.tokensRepository.findOne({
+      where: { collection_id: ext.collection_id, token_id: ext.token_id },
+    });
+    const ownerToken = await this.tokensOwnersRepository.findOne({
+      where: {
+        owner: ext.owner,
+        collection_id: ext.collection_id,
+        token_id: ext.token_id,
+      },
+    });
+    try {
+      if (ownerToken !== null) {
+        await this.tokensOwnersRepository.update(
+          {
+            owner: ext.owner,
+            collection_id: ext.collection_id,
+            token_id: ext.token_id,
+          },
+          {
+            amount: updateData.amount,
+            type: token.type,
+            block_number: updateData.block_number,
+          },
+        );
+      } else {
+        //await this.tokensOwnersRepository.save(updateData);
+        await this.tokensOwnersRepository.save({
+          ...updateData,
+          type: token.type,
+        });
+      }
+    } catch (e) {
+      throw new Error(e);
+    }
   }
 }

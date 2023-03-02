@@ -1,4 +1,10 @@
-import { EventName, SubscriberAction } from '@common/constants';
+import { chunk } from 'lodash';
+import {
+  COLLECTION_BURN_EVENTS,
+  COLLECTION_UPDATE_EVENTS,
+  EventName,
+  SubscriberAction,
+} from '@common/constants';
 import {
   normalizeSubstrateAddress,
   normalizeTimestamp,
@@ -12,12 +18,18 @@ import {
   CollectionInfoWithSchema,
   CollectionLimits,
   CollectionProperty,
-  UniqueCollectionSchemaDecoded,
   PropertyKeyPermission,
-  CollectionMode,
+  UniqueCollectionSchemaDecoded,
 } from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
 import { SdkService } from '../sdk/sdk.service';
+import {
+  IBlockCommonData,
+  ItemsBatchProcessingResult,
+} from '../subscribers/blocks.subscriber.service';
+import { ConfigService } from '@nestjs/config';
+import { Config } from '../config/config.module';
+import { Event } from '@entities/Event';
 
 type ParsedSchemaFields = {
   collectionCover?: string;
@@ -39,8 +51,12 @@ export class CollectionService {
 
   constructor(
     private sdkService: SdkService,
+
+    private configService: ConfigService<Config>,
+
     @InjectRepository(Collections)
     private collectionsRepository: Repository<Collections>,
+
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
   ) {}
@@ -65,9 +81,9 @@ export class CollectionService {
     }
 
     // TODO: delete after rft support
-    if (collectionDecoded.mode === CollectionMode.ReFungible) {
-      return null;
-    }
+    // if (collectionDecoded.mode === CollectionMode.ReFungible) {
+    //   return null;
+    // }
 
     const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
       this.sdkService.getCollectionLimits(
@@ -183,7 +199,6 @@ export class CollectionService {
   ): Promise<Collections> {
     const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
       collectionData;
-
     const {
       id: collection_id,
       owner,
@@ -252,12 +267,64 @@ export class CollectionService {
       sponsorship: sponsorship?.isConfirmed ? sponsorship.address : null,
       schema_version: schemaVersion,
       token_prefix,
-      mode,
+      mode: mode === 'ReFungible' ? 'RFT' : mode,
       mint_mode: mintMode,
       nesting_enabled: nesting?.collectionAdmin || nesting?.tokenOwner,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
       burned: collection?.burned ?? false,
+    };
+  }
+
+  async batchProcess({
+    events,
+    blockCommonData,
+  }: {
+    events: Event[];
+    blockCommonData: IBlockCommonData;
+  }): Promise<ItemsBatchProcessingResult> {
+    const collectionEvents = this.extractCollectionEvents(events);
+
+    const eventChunks = chunk(
+      collectionEvents,
+      this.configService.get('scanCollectionsBatchSize'),
+    );
+
+    let rejected = [];
+    for (const chunk of eventChunks) {
+      const result = await Promise.allSettled(
+        chunk.map((event) => {
+          const { section, method, values } = event;
+          const { collectionId } = values as unknown as {
+            collectionId: number;
+          };
+
+          const { blockHash, blockTimestamp } = blockCommonData;
+          const eventName = `${section}.${method}`;
+
+          if (COLLECTION_UPDATE_EVENTS.includes(eventName)) {
+            return this.update({
+              collectionId,
+              eventName,
+              blockTimestamp,
+              blockHash,
+            });
+          } else {
+            return this.burn(collectionId);
+          }
+        }),
+      );
+
+      // todo: Process rejected tokens again or maybe process sdk disconnect
+      rejected = [
+        ...rejected,
+        ...result.filter(({ status }) => status === 'rejected'),
+      ];
+    }
+
+    return {
+      totalEvents: collectionEvents.length,
+      rejected,
     };
   }
 
@@ -315,5 +382,15 @@ export class CollectionService {
         { burned: true },
       ),
     ]);
+  }
+
+  private extractCollectionEvents(events: Event[]) {
+    return events.filter(({ section, method }) => {
+      const eventName = `${section}.${method}`;
+      return (
+        COLLECTION_UPDATE_EVENTS.includes(eventName) ||
+        COLLECTION_BURN_EVENTS.includes(eventName)
+      );
+    });
   }
 }

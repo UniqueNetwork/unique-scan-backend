@@ -2,13 +2,15 @@ import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  EVENT_ARGS_ACCOUNT_KEYS,
   EventMethod,
   EventSection,
-  EVENT_ARGS_ACCOUNT_KEYS,
+  SubscriberName,
 } from '@common/constants';
 import { Event } from '@entities/Event';
 import { normalizeTimestamp } from '@common/utils';
 import {
+  EventsProcessingResult,
   IBlockCommonData,
   IBlockItem,
   IEvent,
@@ -16,11 +18,23 @@ import {
 import { EventArgumentsService } from './event.arguments.service';
 import { EventArgs } from './event.types';
 import { AccountRecord } from '../account/account.types';
+import { EvmService } from '../evm/evm.service';
+import { TokenService } from '../token/token.service';
+import { CollectionService } from '../collection.service';
+import { ConfigService } from '@nestjs/config';
+import { Config } from '../../config/config.module';
 
 @Injectable()
 export class EventService {
   constructor(
     private eventArgumentsService: EventArgumentsService,
+    private evmService: EvmService,
+
+    private tokenService: TokenService,
+
+    private collectionService: CollectionService,
+
+    private configService: ConfigService<Config>,
 
     @InjectRepository(Event)
     private eventsRepository: Repository<Event>,
@@ -29,7 +43,7 @@ export class EventService {
   private extractEventItems(blockItems: IBlockItem[]): IEvent[] {
     return blockItems
       .map((item) => {
-        if (item.kind == 'event') {
+        if (item.kind === 'event') {
           return item.event as IEvent;
         }
         return null;
@@ -91,26 +105,55 @@ export class EventService {
     );
   }
 
-  async upsert({
+  async process({
     blockItems,
     blockCommonData,
   }: {
     blockItems: IBlockItem[];
     blockCommonData: IBlockCommonData;
-  }): Promise<Event[]> {
+  }): Promise<EventsProcessingResult> {
     const eventItems = this.extractEventItems(blockItems);
 
-    const eventsData = await this.prepareDataForDb({
+    const events = await this.prepareDataForDb({
       blockCommonData,
       eventItems,
     });
 
-    await this.eventsRepository.upsert(eventsData, [
-      'block_number',
-      'event_index',
-    ]);
+    const ethereumEvents = events.filter(
+      ({ section, method }) =>
+        section === EventSection.ETHEREUM && method === EventMethod.EXECUTED,
+    );
 
-    return eventsData;
+    await this.evmService.parseEvents(
+      ethereumEvents,
+      blockCommonData.blockTimestamp,
+    );
+
+    await this.eventsRepository.upsert(events, ['block_number', 'event_index']);
+
+    const subscribersConfig = this.configService.get('subscribers');
+
+    let collectionsResult = null;
+    if (subscribersConfig[SubscriberName.COLLECTIONS]) {
+      collectionsResult = await this.collectionService.batchProcess({
+        events,
+        blockCommonData,
+      });
+    }
+
+    let tokensResult = null;
+    if (subscribersConfig[SubscriberName.TOKENS]) {
+      tokensResult = await this.tokenService.batchProcess({
+        events,
+        blockCommonData,
+      });
+    }
+
+    return {
+      events,
+      collectionsResult,
+      tokensResult,
+    };
   }
 
   async processEventWithAccounts(
