@@ -22,6 +22,12 @@ export class SdkService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
+  @SdkCache('getApi')
+  async getApi(hash) {
+    const optionUpgrade = await this.sdk.api.query.system.events.at(hash);
+    return optionUpgrade.toJSON();
+  }
+
   @SdkCache('getCollection')
   getCollection(
     collectionId: number,
@@ -68,12 +74,16 @@ export class SdkService {
   }
 
   @SdkCache('getToken')
-  getToken(
+  async getToken(
     collectionId: number,
     tokenId: number,
     at?: string,
   ): Promise<TokenByIdResult | null> {
-    return this.sdk.tokens.get({ collectionId, tokenId, at });
+    if (at) {
+      return await this.sdk.tokens.get({ collectionId, tokenId, at });
+    } else {
+      return await this.sdk.tokens.get({ collectionId, tokenId });
+    }
   }
 
   @SdkCache('isTokenBundle')
@@ -107,19 +117,53 @@ export class SdkService {
   }
 
   @SdkCache('getRFTBalances')
-  async getRFTBalances(tokenBalance: TokenBalanceRequest): Promise<any> {
-    return await this.sdk.refungible.getBalance({
-      address: `${tokenBalance.address}`,
-      collectionId: tokenBalance.collectionId,
-      tokenId: tokenBalance.tokenId,
-    });
+  async getRFTBalances(
+    tokenBalance: TokenBalanceRequest,
+    at?: string,
+  ): Promise<any> {
+    const collection = await this.getCollection(tokenBalance.collectionId);
+    if (collection.mode === 'NFT') {
+      return {
+        amount: 0, // todo tak ne nado
+      };
+    }
+    if (collection.mode === 'ReFungible') {
+      let dataCheckNalance;
+      if (at) {
+        dataCheckNalance = {
+          address: `${tokenBalance.address}`,
+          collectionId: tokenBalance.collectionId,
+          tokenId: tokenBalance.tokenId,
+          at,
+        };
+      } else {
+        dataCheckNalance = {
+          address: `${tokenBalance.address}`,
+          collectionId: tokenBalance.collectionId,
+          tokenId: tokenBalance.tokenId,
+        };
+      }
+      return await this.sdk.refungible.getBalance(dataCheckNalance);
+    }
   }
 
   @SdkCache('getTotalPieces')
-  async getTotalPieces(tokenId, collectionId): Promise<any> {
-    return await this.sdk.refungible.totalPieces({
-      tokenId: tokenId,
-      collectionId: collectionId,
-    });
+  async getTotalPieces(
+    tokenId: number,
+    collectionId: number,
+    at?: string,
+  ): Promise<any> {
+    if (at) {
+      return await this.sdk.refungible.totalPieces({
+        tokenId,
+        collectionId,
+        at,
+      });
+    } else {
+      return await this.sdk.refungible.totalPieces({
+        tokenId,
+        collectionId,
+      });
+    }
   }
 }

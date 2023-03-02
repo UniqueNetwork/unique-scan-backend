@@ -51,8 +51,8 @@ const relationsFields = {
 };
 
 const customQueryFields = {
-  collection_id: `"Event"."values"->>'collectionId'`,
-  token_id: `"Event"."values"->>'tokenId'`,
+  collection_id: `("Event"."values"->>'collectionId')::int`,
+  token_id: `("Event"."values"->>'tokenId')::int`,
   tokens: `
   array(
     select json_build_object(
@@ -187,7 +187,6 @@ export class TokenEventService extends BaseService<Event, EventDTO> {
       [EXTRINSIC_RELATION_ALIAS]: {
         table: 'extrinsic',
         on: `"${EXTRINSIC_RELATION_ALIAS}".block_index = "Event".block_index`,
-        join: JOIN_TYPE.INNER,
       },
       [TOKEN_RELATION_ALIAS]: {
         table: 'tokens',

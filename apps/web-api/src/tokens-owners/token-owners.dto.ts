@@ -23,7 +23,7 @@ export class TokenOwnersDTO implements Partial<TokensOwners> {
   @Field(() => Int)
   token_id?: number;
 
-  @Field(() => Int)
+  @Field(() => String)
   amount?: number;
 
   @Field(() => String)

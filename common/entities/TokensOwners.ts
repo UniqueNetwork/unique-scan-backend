@@ -1,4 +1,11 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { ITokenEntities } from '@entities/Tokens';
+
+export enum TokenType {
+  NFT = 'NFT',
+  RFT = 'RFT',
+  FRACTIONAL = 'FRACTIONAL',
+}
 
 @Entity('tokens_owners', { schema: 'public' })
 export class TokensOwners {
@@ -22,4 +29,28 @@ export class TokensOwners {
 
   @Column('bigint', { name: 'date_created', nullable: true })
   date_created: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: TokenType,
+    default: TokenType.NFT,
+  })
+  type: TokenType;
+
+  @Column('bigint', { name: 'block_number' })
+  block_number: number;
+
+  @Column('text', { name: 'parent_id', nullable: true })
+  parent_id: string;
+
+  @Column({
+    type: 'jsonb',
+    array: false,
+    default: () => "'[]'",
+    nullable: false,
+  })
+  public children?: ITokenEntities[];
+
+  @Column('boolean', { name: 'nested', default: false })
+  nested: boolean;
 }

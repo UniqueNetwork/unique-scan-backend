@@ -1,10 +1,21 @@
 import BigNumber from 'bignumber.js';
 import { Address } from '@unique-nft/utils';
+import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 
+export function getParentCollectionAndToken(address) {
+  if (Address.is.ethereumAddress(address)) {
+    return Address.is.nestingAddress(address)
+      ? Address.nesting.addressToIds(address)
+      : undefined;
+  } else {
+    return undefined;
+  }
+}
 export function normalizeSubstrateAddress(address, ss58Format?: number) {
   return Address.is.ethereumAddress(address)
     ? address
-    : Address.normalize.substrateAddress(address, ss58Format);
+    : encodeAddress(decodeAddress(address, false, ss58Format));
+  // : Address.normalize.substrateAddress(address, ss58Format);
 }
 
 export function normalizeTimestamp(timestamp: number) {

@@ -1,6 +1,6 @@
 import { Tokens, TokenType } from '@entities/Tokens';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import { GraphQLJSONObject, GraphQLJSON } from 'graphql-type-json';
+import { GraphQLJSON, GraphQLJSONObject } from 'graphql-type-json';
 
 export enum TokenDistinctFieldsEnum {
   token_id = 'token_id',
@@ -9,6 +9,7 @@ export enum TokenDistinctFieldsEnum {
   owner_normalized = 'owner_normalized',
   token_prefix = 'token_prefix',
   collection_name = 'collection_name',
+  tokens_owner = 'tokens_owner',
   token_name = 'token_name',
 }
 
@@ -62,8 +63,11 @@ export class SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => TokenType, { nullable: true })
   type?: TokenType;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => String, { nullable: true })
   total_pieces?: number;
+
+  @Field(() => String, { nullable: true })
+  amount?: number;
 
   @Field(() => Boolean)
   nested?: boolean;
@@ -73,6 +77,18 @@ export class SimpleTokenDTO implements Partial<Tokens> {
 export class TokenDTO extends SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => String)
   collection_name?: string;
+
+  @Field(() => String, { nullable: true })
+  tokens_owner?: string;
+
+  @Field(() => String, { nullable: true })
+  tokens_amount?: string;
+
+  @Field(() => String, { nullable: true })
+  tokens_parent?: string;
+
+  @Field(() => String, { nullable: true })
+  tokens_children?: string;
 
   @Field(() => String, { nullable: true })
   collection_description?: string;

@@ -26,6 +26,9 @@ class TokenEventWhereParams implements TWhereParams<Partial<TokenEventDTO>> {
   author?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
+  data?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
   type?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsBoolean, { nullable: true })

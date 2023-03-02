@@ -123,6 +123,7 @@ export enum ExtrinsicMethod {
   TRANSFER_ALL = 'transfer_all',
   TRANSFER_KEEP_ALIVE = 'transfer_keep_alive',
   VESTED_TRANSFER = 'vested_transfer',
+  CREATE_COLLECTION_EX = 'create_collection_ex',
 }
 
 export const STATE_SCHEMA_NAME_BY_MODE = {

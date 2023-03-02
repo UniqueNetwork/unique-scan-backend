@@ -2,9 +2,9 @@ import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  EVENT_ARGS_ACCOUNT_KEYS,
   EventMethod,
   EventSection,
-  EVENT_ARGS_ACCOUNT_KEYS,
   SubscriberName,
 } from '@common/constants';
 import { Event } from '@entities/Event';

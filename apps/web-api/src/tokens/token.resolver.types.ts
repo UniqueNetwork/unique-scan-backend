@@ -20,6 +20,7 @@ import {
 } from '../utils/gql-query-args';
 import { SimpleTokenDTO, TokenDistinctFieldsEnum, TokenDTO } from './token.dto';
 import { CollectionDTO } from '../collection/collection.dto';
+import { TokenOwnersDTO } from '../tokens-owners/token-owners.dto';
 
 registerEnumType(TokenType, { name: 'TokenTypeEnum' });
 registerEnumType(TokenDistinctFieldsEnum, { name: 'TokenEnum' });
@@ -63,6 +64,15 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
   collection_name?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
+  tokens_owner?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  tokens_amount?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  tokens_parent?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
   collection_owner?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
@@ -92,8 +102,8 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
   @Field(() => GQLWhereTokensType, { nullable: true })
   type?: IWhereOperators;
 
-  @Field(() => GQLWhereOpsInt, { nullable: true })
-  total_pieces?: GQLWhereOpsInt;
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  total_pieces?: GQLWhereOpsString;
 
   @Field(() => GQLWhereOpsString, { nullable: true })
   nested?: IWhereOperators;
@@ -109,6 +119,18 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
 export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  tokens_owner?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  tokens_amount?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  tokens_parent?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  tokens_children?: GQLOrderByParamsArgs;
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   owner_normalized?: GQLOrderByParamsArgs;
@@ -145,6 +167,9 @@ export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   total_pieces?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  amount?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
@@ -178,6 +203,9 @@ export class NestingArgs {
 export class TokenEntity extends TokenDTO {
   @Field(() => CollectionDTO, { nullable: true })
   collection?: CollectionDTO;
+
+  @Field(() => TokenOwnersDTO, { nullable: true })
+  tokensOwners?: TokenOwnersDTO;
 }
 
 @ObjectType()

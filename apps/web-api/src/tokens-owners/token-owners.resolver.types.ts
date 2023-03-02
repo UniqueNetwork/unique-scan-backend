@@ -36,8 +36,8 @@ export class TokenOwnersWhereParams implements TWhereParams<TokenOwnersDTO> {
   @Field(() => GQLWhereOpsInt, { nullable: true })
   token_id?: GQLWhereOpsInt;
 
-  @Field(() => GQLWhereOpsInt, { nullable: true })
-  amount?: GQLWhereOpsInt;
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  amount?: GQLWhereOpsString;
 
   @Field(() => [TokenOwnersWhereParams], { nullable: true })
   _and?: TokenOwnersWhereParams[];
