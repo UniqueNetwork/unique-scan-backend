@@ -281,7 +281,7 @@ export class CollectionService {
     blockCommonData,
   }: {
     events: Event[];
-    blockCommonData: IBlockCommonData;
+    blockCommonData: any;
   }): Promise<ItemsBatchProcessingResult> {
     const collectionEvents = this.extractCollectionEvents(events);
 
@@ -299,15 +299,15 @@ export class CollectionService {
             collectionId: number;
           };
 
-          const { blockHash, blockTimestamp } = blockCommonData;
+          const { block_hash, timestamp } = blockCommonData;
           const eventName = `${section}.${method}`;
 
           if (COLLECTION_UPDATE_EVENTS.includes(eventName)) {
             return this.update({
               collectionId,
               eventName,
-              blockTimestamp,
-              blockHash,
+              blockTimestamp: timestamp,
+              blockHash: block_hash,
             });
           } else {
             return this.burn(collectionId);

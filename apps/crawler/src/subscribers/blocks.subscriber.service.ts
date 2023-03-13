@@ -9,6 +9,7 @@ import { Event } from '@entities/Event';
 import { HarvesterStoreService } from './processor/harvester-store.service';
 import * as console from 'console';
 import { Reader } from '@unique-nft/harvester';
+import { magenta, bgGreen, cyan, black, green } from 'cli-color';
 import { capitalize, normalizeTimestamp } from '@common/utils';
 import {
   BlockEntity,
@@ -114,7 +115,8 @@ export class BlocksSubscriberService implements ISubscriberService {
       stateNumber[0],
       stateNumber[1],
     )) {
-      this.upsertHandlerBlock(block, chainProps);
+      await this.upsertHandlerBlock(block, chainProps);
+      //console.dir(block, { depth: 100 });
     }
   }
 
@@ -127,6 +129,7 @@ export class BlocksSubscriberService implements ISubscriberService {
 
     const countEvents = this.collectEventsCount(extrinsics);
     const specDataChain = await this.sdkService.getSpecLastUpgrade(hash);
+    const blockTimestamp = new Date(timestamp).getTime();
 
     const blockCommonData = {
       block_number: +id,
@@ -135,7 +138,7 @@ export class BlocksSubscriberService implements ISubscriberService {
       extrinsics_root: '0x000', // TODO: remove this ???
       state_root: '0x000', // TODO: remove this ???
       ...specDataChain,
-      timestamp: new Date(timestamp).getTime(),
+      timestamp: blockTimestamp,
       total_events: countEvents.totalEvents,
       num_transfers: countEvents.numTransfers,
       new_accounts: countEvents.newAccounts,
@@ -145,102 +148,137 @@ export class BlocksSubscriberService implements ISubscriberService {
     const log = {
       blockNumber: id,
     };
+    extrinsics.map((value) => {
+      if (
+        value.section !== 'parachainSystem' &&
+        value.section !== 'timestamp'
+      ) {
+        console.log(
+          `█ `,
+          blockCommonData.block_number,
+          green(' ▶'),
+          blockCommonData.total_events > 2
+            ? magenta(' extrinsic:')
+            : green(' extrinsic:'),
+          blockCommonData.total_extrinsics,
+          blockCommonData.total_events > 2
+            ? magenta(' events:')
+            : cyan(' events:'),
+          blockCommonData.total_events,
+          extrinsics.map((value) => `${value.section} - ${value.method}`),
+          ' readed!',
+        );
+      }
+    });
+
+    // console.log(
+    //   `█ `,
+    //   blockCommonData.block_number,
+    //   green(' ▶'),
+    //   blockCommonData.total_events > 2
+    //     ? magenta(' extrinsic:')
+    //     : green(' extrinsic:'),
+    //   blockCommonData.total_extrinsics,
+    //   blockCommonData.total_events > 2 ? magenta(' events:') : cyan(' events:'),
+    //   blockCommonData.total_events,
+    //   extrinsics.map((value) => `${value.section} - ${value.method}`),
+    //   ' readed!',
+    // );
+
+    //const { events, collectionsResult, tokensResult } =
+    await this.eventService.processNew(extrinsics, blockCommonData);
 
     const [itemCounts] = await Promise.all([
-      this.blockService.upsertNew(blockCommonData),
-      this.extrinsicService.upsertNew(id, hash, extrinsics, chain),
+      this.blockService.upsert(blockCommonData),
+      this.extrinsicService.upsert(id, hash, extrinsics, blockTimestamp),
     ]);
-    //console.dir(itemCount, { depth: 1 });
 
-    this.logger.verbose({
-      ...log,
-      ...countEvents,
-
-      // Collections service results
-      //totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
-      //totalRejectedCollections: collectionsResult?.rejected.length ?? undefined,
-
-      // Tokens service results
-      //totalTokenEvents: tokensResult?.totalEvents ?? undefined,
-      //totalRejectedTokens: tokensResult?.rejected.length ?? undefined,
-    });
+    // this.logger.verbose({
+    //   ...log,
+    //   ...countEvents,
+    //
+    //   // Collections service results
+    //   //totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
+    //   //totalRejectedCollections: collectionsResult?.rejected.length ?? undefined,
+    //
+    //   // Tokens service results
+    //   //totalTokenEvents: tokensResult?.totalEvents ?? undefined,
+    //   //totalRejectedTokens: tokensResult?.rejected.length ?? undefined,
+    // });
   }
 
-  private async upsertHandler(ctx): Promise<void> {
-    const { block, items } = ctx;
-    const {
-      height: blockNumber,
-      timestamp: blockTimestamp,
-      hash: blockHash,
-    } = block;
-    const blockItems = items as unknown as IBlockItem[];
-
-    const log = {
-      blockNumber,
-    };
-
-    try {
-      const ss58Prefix = ctx._chain?.getConstant(
-        'System',
-        'SS58Prefix',
-      ) as number;
-
-      const blockCommonData = {
-        blockNumber,
-        blockTimestamp,
-        ss58Prefix,
-        blockHash,
-      } as IBlockCommonData;
-
-      // Process events first to get event.values
-      const { events, collectionsResult, tokensResult } =
-        await this.eventService.process({
-          blockCommonData,
-          blockItems,
-        });
-
-      // const [itemCounts] = await Promise.all([
-      //   this.blockService.upsert({
-      //     block,
-      //     blockItems,
-      //   }),
-      //   this.extrinsicService.upsert({
-      //     blockCommonData,
-      //     blockItems,
-      //     events,
-      //   }),
-      // ]);
-
-      this.logger.verbose({
-        ...log,
-        // ...itemCounts,
-
-        // Collections service results
-        totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
-        totalRejectedCollections:
-          collectionsResult?.rejected.length ?? undefined,
-
-        // Tokens service results
-        totalTokenEvents: tokensResult?.totalEvents ?? undefined,
-        totalRejectedTokens: tokensResult?.rejected.length ?? undefined,
-      });
-
-      if (collectionsResult?.rejected.length || tokensResult?.rejected.length) {
-        const { rejected: rejectedCollections } = collectionsResult;
-        const { rejected: rejectedTokens } = tokensResult;
-
-        const sentry = this.sentry.instance();
-        sentry.setContext('block-subscriber', {
-          level: 'warning',
-          extra: { rejectedCollections, rejectedTokens },
-        });
-        sentry.captureMessage('Some collections or tokens were rejected');
-      }
-    } catch (error) {
-      this.logger.error({ ...log, error: error.message || error });
-      this.sentry.instance().captureException({ ...log, error });
-    }
-  }
+  // private async upsertHandler(ctx): Promise<void> {
+  //   const { block, items } = ctx;
+  //   const {
+  //     height: blockNumber,
+  //     timestamp: blockTimestamp,
+  //     hash: blockHash,
+  //   } = block;
+  //   const blockItems = items as unknown as IBlockItem[];
+  //
+  //   const log = {
+  //     blockNumber,
+  //   };
+  //
+  //   try {
+  //     const ss58Prefix = ctx._chain?.getConstant(
+  //       'System',
+  //       'SS58Prefix',
+  //     ) as number;
+  //
+  //     const blockCommonData = {
+  //       blockNumber,
+  //       blockTimestamp,
+  //       ss58Prefix,
+  //       blockHash,
+  //     } as IBlockCommonData;
+  //
+  //     // Process events first to get event.values
+  //     const { events, collectionsResult, tokensResult } =
+  //       await this.eventService.processNew(blockCommonData, blockItems);
+  //
+  //     const [itemCounts] = await Promise.all([
+  //       this.blockService.upsert({
+  //         block,
+  //         blockItems,
+  //       }),
+  //       this.extrinsicService.upsert({
+  //         blockCommonData,
+  //         blockItems,
+  //         events,
+  //       }),
+  //     ]);
+  //
+  //     this.logger.verbose({
+  //       ...log,
+  //       // ...itemCounts,
+  //
+  //       // Collections service results
+  //       totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
+  //       totalRejectedCollections:
+  //         collectionsResult?.rejected.length ?? undefined,
+  //
+  //       // Tokens service results
+  //       totalTokenEvents: tokensResult?.totalEvents ?? undefined,
+  //       totalRejectedTokens: tokensResult?.rejected.length ?? undefined,
+  //     });
+  //
+  //     if (collectionsResult?.rejected.length || tokensResult?.rejected.length) {
+  //       const { rejected: rejectedCollections } = collectionsResult;
+  //       const { rejected: rejectedTokens } = tokensResult;
+  //
+  //       const sentry = this.sentry.instance();
+  //       sentry.setContext('block-subscriber', {
+  //         level: 'warning',
+  //         extra: { rejectedCollections, rejectedTokens },
+  //       });
+  //       sentry.captureMessage('Some collections or tokens were rejected');
+  //     }
+  //   } catch (error) {
+  //     this.logger.error({ ...log, error: error.message || error });
+  //     this.sentry.instance().captureException({ ...log, error });
+  //   }
+  // }
 
   private collectEventsCount(extrinsics) {
     const itemCounts = {

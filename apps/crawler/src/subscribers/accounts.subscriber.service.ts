@@ -65,28 +65,28 @@ export class AccountsSubscriberService implements ISubscriberService {
     ].forEach((eventName) => eventName);
   }
 
-  private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
-    const {
-      event: { name: eventName, args: rawArgs },
-    } = ctx;
-
-    const log = {
-      eventName,
-      processedAccounts: [],
-    };
-
-    try {
-      const accountIds = await this.eventService.processEventWithAccounts(
-        eventName,
-        rawArgs,
-      );
-
-      log.processedAccounts = accountIds;
-
-      this.logger.verbose({ ...log });
-    } catch (error) {
-      this.logger.error({ ...log, error: error.message });
-      this.sentry.instance().captureException({ ...log, error });
-    }
-  }
+  // private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
+  //   const {
+  //     event: { name: eventName, args: rawArgs },
+  //   } = ctx;
+  //
+  //   const log = {
+  //     eventName,
+  //     processedAccounts: [],
+  //   };
+  //
+  //   try {
+  //     const accountIds = await this.eventService.processEventWithAccounts(
+  //       eventName,
+  //       rawArgs,
+  //     );
+  //
+  //     log.processedAccounts = accountIds;
+  //
+  //     this.logger.verbose({ ...log });
+  //   } catch (error) {
+  //     this.logger.error({ ...log, error: error.message });
+  //     this.sentry.instance().captureException({ ...log, error });
+  //   }
+  // }
 }

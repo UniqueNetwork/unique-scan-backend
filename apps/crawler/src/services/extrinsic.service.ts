@@ -61,6 +61,48 @@ export class ExtrinsicService {
     private sdkService: SdkService,
   ) {}
 
+  upsert(
+    blockNumber: number,
+    blockHash: string,
+    extrinsicsEntity: ExtrinsicEntity[],
+    blockTimestamp,
+  ) {
+    const extrinsicsData = this.prepareDataForDbNew(
+      extrinsicsEntity,
+      blockNumber,
+      blockHash,
+      blockTimestamp,
+    );
+
+    return this.extrinsicsRepository.upsert(extrinsicsData, [
+      'block_number',
+      'extrinsic_index',
+    ]);
+  }
+
+  async upsertOld({
+    blockItems,
+    blockCommonData,
+    events,
+  }: {
+    blockItems: IBlockItem[];
+    blockCommonData: IBlockCommonData;
+    events: Event[];
+  }) {
+    const extrinsicItems = this.extractExtrinsicItems(blockItems);
+
+    const extrinsicsData = this.prepareDataForDb({
+      blockCommonData,
+      extrinsicItems,
+      events,
+    });
+
+    return this.extrinsicsRepository.upsert(extrinsicsData, [
+      'block_number',
+      'extrinsic_index',
+    ]);
+  }
+
   private extractExtrinsicItems(items: IBlockItem[]): IExtrinsicExtended[] {
     return items
       .map((item) => {
@@ -109,6 +151,52 @@ export class ExtrinsicService {
       );
   }
 
+  private prepareDataForDbNew(
+    extrinsicItems,
+    blockNumber,
+    blockHash,
+    blockTimestamp,
+  ): Extrinsic[] {
+    return extrinsicItems.map((extrinsic) => {
+      const { signer, index, events } = extrinsic;
+      const blockIndex = `${blockNumber}-${index}`;
+      const amountValues = this.getAmountValues(index, events);
+      const section = capitalize(extrinsic.section);
+      const method = capitalize(extrinsic.method);
+
+      // Don't need to use AccountService for signer and to_owner addresses,
+      // // because all addresses are already processed in EventService.
+
+      // let toOwner = null;
+      // if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
+      //   const recipientAddress = args as IExtrinsicRecipient;
+      //   const rawToOwner =
+      //     recipientAddress?.recipient?.value || recipientAddress?.dest?.value;
+      //   toOwner = normalizeSubstrateAddress(rawToOwner, ss58Prefix);
+      // }
+
+      //
+      const { amount, fee } = amountValues;
+
+      return {
+        timestamp: String(normalizeTimestamp(blockTimestamp)),
+        block_number: String(blockNumber),
+        block_index: blockIndex,
+        extrinsic_index: extrinsic.index,
+        section,
+        method,
+        hash: blockHash,
+        success: !!signer,
+        is_signed: !!signer,
+        signer,
+        signer_normalized: signer,
+        to_owner: null, //,toOwner,
+        to_owner_normalized: null, //toOwner && normalizeSubstrateAddress(toOwner),
+        amount,
+        fee,
+      };
+    });
+  }
   private prepareDataForDb({
     blockCommonData,
     extrinsicItems,
@@ -177,123 +265,5 @@ export class ExtrinsicService {
         fee,
       };
     });
-  }
-
-  private prepareTokenForDb(
-    blockCommonData: IBlockCommonData,
-    events: Event[],
-  ): any {
-    const { blockTimestamp } = blockCommonData;
-    const substrateAddress = [];
-    events.map(async (event) => {
-      const extrinsicsEventName = `${event.section}.${event.method}`;
-      if (extrinsicsEventName !== 'Common.Transfer') {
-        return;
-      }
-
-      const { to, from, tokenId, collectionId } = event?.values as any;
-
-      substrateAddress.push({
-        owner: to.value,
-        owner_normalized: normalizeSubstrateAddress(to.value),
-        collection_id: collectionId,
-        token_id: tokenId,
-        date_created: String(normalizeTimestamp(blockTimestamp)),
-      });
-      substrateAddress.push({
-        owner: from.value,
-        owner_normalized: normalizeSubstrateAddress(from.value),
-        collection_id: collectionId,
-        token_id: tokenId,
-        date_created: String(normalizeTimestamp(blockTimestamp)),
-      });
-    });
-
-    return substrateAddress;
-  }
-
-  async upsert({
-    blockItems,
-    blockCommonData,
-    events,
-  }: {
-    blockItems: IBlockItem[];
-    blockCommonData: IBlockCommonData;
-    events: Event[];
-  }) {
-    const extrinsicItems = this.extractExtrinsicItems(blockItems);
-
-    const extrinsicTokenTransfer = this.prepareTokenForDb(
-      blockCommonData,
-      events,
-    );
-
-    for (const extrinsic of extrinsicTokenTransfer) {
-      const pieceToken = await this.sdkService.getRFTBalances({
-        address: extrinsic.owner,
-        collectionId: extrinsic.collection_id,
-        tokenId: extrinsic.token_id,
-      });
-      const updateTokenTransfer = { ...extrinsic, ...pieceToken };
-
-      await this.updateOrSaveTokenOwnerPart(extrinsic, updateTokenTransfer);
-    }
-
-    const extrinsicsData = this.prepareDataForDb({
-      blockCommonData,
-      extrinsicItems,
-      events,
-    });
-
-    return this.extrinsicsRepository.upsert(extrinsicsData, [
-      'block_number',
-      'extrinsic_index',
-    ]);
-  }
-
-  private async updateOrSaveTokenOwnerPart(ext: any, updateData: any) {
-    const ownerToken = await this.tokensOwnersRepository.findOne({
-      where: {
-        owner: ext.owner,
-        collection_id: ext.collection_id,
-        token_id: ext.token_id,
-      },
-    });
-    if (ownerToken) {
-      await this.tokensOwnersRepository.update(
-        {
-          owner: ext.owner,
-          collection_id: ext.collection_id,
-          token_id: ext.token_id,
-        },
-        {
-          amount: updateData.amount,
-        },
-      );
-    } else {
-      await this.tokensOwnersRepository.save(updateData);
-    }
-  }
-
-  upsertNew(
-    blockNumber: number,
-    blockHash: string,
-    extrinsicsEntity: ExtrinsicEntity[],
-    chain: ChainProperties,
-  ) {
-    for (const extrinsic of extrinsicsEntity) {
-      const extrinsicName = `${capitalize(extrinsic.section)}.${capitalize(
-        extrinsic.method,
-      )}`;
-      console.log(blockNumber, extrinsicName, extrinsic);
-
-      const extrinsicStoreData = {
-        blockNumber: blockNumber,
-        extrinsic_index: extrinsic.index,
-        is_signed: !!extrinsic.signer,
-      } as unknown as Extrinsic;
-      console.dir(extrinsicStoreData);
-    }
-    return { blockNumber, blockHash };
   }
 }

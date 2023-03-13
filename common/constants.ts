@@ -1,3 +1,9 @@
+export enum EventModeCollection {
+  NFT = 1,
+  Fungible = 2,
+  ReFungible = 3,
+}
+
 export enum EventSection {
   BALANCES = 'Balances',
   COMMON = 'Common',

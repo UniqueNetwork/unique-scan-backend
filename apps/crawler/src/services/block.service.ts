@@ -91,7 +91,7 @@ export class BlockService {
     };
   }
 
-  async upsertNew(blockData): Promise<IBlockDataContainer> {
+  async upsert(blockData): Promise<IBlockDataContainer> {
     await this.blocksRepository.upsert(blockData, ['block_number']);
     return blockData;
   }

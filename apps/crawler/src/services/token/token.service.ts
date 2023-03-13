@@ -23,6 +23,7 @@ import {
 import { TokenNestingService } from './nesting.service';
 import { TokenData, TokenOwnerData } from './token.types';
 import { chunk } from 'lodash';
+import { red } from 'cli-color';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
@@ -124,7 +125,7 @@ export class TokenService {
     blockCommonData,
   }: {
     events: Event[];
-    blockCommonData: IBlockCommonData;
+    blockCommonData: any;
   }): Promise<ItemsBatchProcessingResult> {
     const tokenEvents = this.extractTokenEvents(events);
 
@@ -143,9 +144,9 @@ export class TokenService {
             tokenId: number;
           };
 
-          const { blockHash, blockTimestamp, blockNumber } = blockCommonData;
+          const { block_hash, timestamp, block_number } = blockCommonData;
           const eventName = `${section}.${method}`;
-
+          console.log(red(`<<<<<<- ${block_number}.${eventName} ->>>>>>>`));
           if (eventName === 'Common.ItemCreated') {
             data = JSON.parse(event.data);
           }
@@ -154,12 +155,12 @@ export class TokenService {
             data = JSON.parse(event.data);
 
             return this.update({
-              blockNumber,
+              blockNumber: block_number,
               collectionId,
               tokenId,
               eventName,
-              blockTimestamp,
-              blockHash,
+              blockTimestamp: timestamp,
+              blockHash: block_hash,
               data,
             });
           }
@@ -169,12 +170,12 @@ export class TokenService {
               data = JSON.parse(event.data);
             }
             return this.update({
-              blockNumber,
+              blockNumber: block_number,
               collectionId,
               tokenId,
               eventName,
-              blockTimestamp,
-              blockHash,
+              blockTimestamp: timestamp,
+              blockHash: block_hash,
               data,
             });
           } else {
