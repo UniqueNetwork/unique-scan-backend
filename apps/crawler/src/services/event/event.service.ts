@@ -75,7 +75,6 @@ export class EventService {
         const section = capitalize(event.section);
         const method = capitalize(event.method);
         const eventName = `${section}.${method}`;
-
         const eventValues =
           await this.eventArgumentsService.processEventArgumentsNew(
             eventName,
