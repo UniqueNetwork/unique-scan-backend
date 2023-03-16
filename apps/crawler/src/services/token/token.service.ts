@@ -215,6 +215,9 @@ export class TokenService {
     blockHash: string;
     data: any;
   }): Promise<SubscriberAction> {
+    if (tokenId === 0) {
+      return;
+    }
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
 
     let result;
@@ -549,15 +552,6 @@ export class TokenService {
     });
 
     if (ownerToken) {
-      // await this.tokensOwnersRepository.update(
-      //   {
-      //     id: ownerToken.id,
-      //   },
-      //   {
-      //     amount: 0,
-      //     block_number: tokenOwner.block_number,
-      //   },
-      // );
       await this.tokensOwnersRepository.delete({
         id: ownerToken.id,
       });
