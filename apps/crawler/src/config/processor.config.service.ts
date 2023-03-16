@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DataSource as SubscquidDataSource } from '@subsquid/substrate-processor';
-import { Range } from '@subsquid/substrate-processor/lib/util/range';
 import { Config } from './config.module';
+
+export type Range = {
+  from: number;
+  to: number;
+};
 
 @Injectable()
 export class ProcessorConfigService {
   constructor(private configService: ConfigService<Config>) {}
 
-  public getDataSource(): SubscquidDataSource {
+  public getDataSource() {
     return {
       archive: this.configService.get('archiveGqlUrl'),
       chain: this.configService.get('chainWsUrl'),

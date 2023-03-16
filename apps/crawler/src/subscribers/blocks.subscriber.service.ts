@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { SubstrateExtrinsic } from '@subsquid/substrate-processor';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ISubscriberService } from './subscribers.service';
 import { BlockService } from '../services/block.service';
@@ -9,36 +8,13 @@ import { Event } from '@entities/Event';
 import { HarvesterStoreService } from './processor/harvester-store.service';
 import * as console from 'console';
 import { Reader } from '@unique-nft/harvester';
-import { magenta, bgGreen, cyan, black, green } from 'cli-color';
-import { capitalize, normalizeTimestamp } from '@common/utils';
-import {
-  BlockEntity,
-  ExtrinsicEntity,
-} from '@unique-nft/harvester/src/database/entities';
+import { cyan, green, magenta, yellow } from 'cli-color';
+import { capitalize } from '@common/utils';
+import { BlockEntity } from '@unique-nft/harvester/src/database/entities';
 import { SdkService } from '../sdk/sdk.service';
 import { ChainProperties } from '@unique-nft/substrate-client/types';
 import { EventName } from '@common/constants';
 import { Block } from '@entities/Block';
-
-export interface IEvent {
-  name: string;
-  extrinsic: SubstrateExtrinsic;
-  indexInBlock: number;
-  phase: string;
-  args: { value?: string; amount?: string };
-}
-
-export type IBlockItem =
-  | {
-      kind: 'event';
-      name: string;
-      event: IEvent;
-    }
-  | {
-      kind: 'call';
-      name: string;
-      extrinsic: SubstrateExtrinsic;
-    };
 
 export interface IBlockCommonData {
   blockNumber: number;
@@ -108,7 +84,7 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   async subscribe() {
     const chainProps = await this.sdkService.getChainProperties();
-    const stateNumber = await this.harvesterStore.getState(true);
+    const stateNumber = await this.harvesterStore.getState();
 
     console.dir(stateNumber);
     for await (const block of this.reader.readBlocks(
@@ -124,11 +100,12 @@ export class BlocksSubscriberService implements ISubscriberService {
     blockData: BlockEntity,
     chain: ChainProperties,
   ): Promise<void> {
+    console.time(`█  ${yellow(blockData.id)} `);
     const { SS58Prefix } = chain;
     const { id, timestamp, hash, parentHash, extrinsics } = blockData;
 
     const countEvents = this.collectEventsCount(extrinsics);
-    const specDataChain = await this.sdkService.getSpecLastUpgrade(hash);
+    //const specDataChain = await this.sdkService.getSpecLastUpgrade(hash);
     const blockTimestamp = new Date(timestamp).getTime();
 
     const blockCommonData = {
@@ -137,7 +114,9 @@ export class BlocksSubscriberService implements ISubscriberService {
       parent_hash: parentHash,
       extrinsics_root: '0x000', // TODO: remove this ???
       state_root: '0x000', // TODO: remove this ???
-      ...specDataChain,
+      //...specDataChain,
+      spec_version: 900,
+      spec_name: 'opal',
       timestamp: blockTimestamp,
       total_events: countEvents.totalEvents,
       num_transfers: countEvents.numTransfers,
@@ -148,14 +127,24 @@ export class BlocksSubscriberService implements ISubscriberService {
     const log = {
       blockNumber: id,
     };
+    const { events, collectionsResult, tokensResult } =
+      await this.eventService.processNew(extrinsics, blockCommonData);
+
+    await Promise.all([
+      this.blockService.upsert(blockCommonData),
+      this.extrinsicService.upsert(id, hash, extrinsics, blockTimestamp),
+    ]);
+
+    await this.harvesterStore.updateState(id);
+
+    // Logger
     extrinsics.map((value) => {
       if (
         value.section !== 'parachainSystem' &&
         value.section !== 'timestamp'
       ) {
-        console.log(
-          `█ `,
-          blockCommonData.block_number,
+        console.timeLog(
+          `█  ${yellow(blockData.id)} `,
           green(' ▶'),
           blockCommonData.total_events > 2
             ? magenta(' extrinsic:')
@@ -165,46 +154,22 @@ export class BlocksSubscriberService implements ISubscriberService {
             ? magenta(' events:')
             : cyan(' events:'),
           blockCommonData.total_events,
-          extrinsics.map((value) => `${value.section} - ${value.method}`),
+          extrinsics
+            .map((value) => {
+              if (
+                value.section !== 'parachainSystem' &&
+                value.section !== 'timestamp'
+              ) {
+                return `${capitalize(value.section)}.${capitalize(
+                  value.method,
+                )}`;
+              }
+            })
+            .filter((value) => !!value),
           ' readed!',
         );
       }
     });
-
-    // console.log(
-    //   `█ `,
-    //   blockCommonData.block_number,
-    //   green(' ▶'),
-    //   blockCommonData.total_events > 2
-    //     ? magenta(' extrinsic:')
-    //     : green(' extrinsic:'),
-    //   blockCommonData.total_extrinsics,
-    //   blockCommonData.total_events > 2 ? magenta(' events:') : cyan(' events:'),
-    //   blockCommonData.total_events,
-    //   extrinsics.map((value) => `${value.section} - ${value.method}`),
-    //   ' readed!',
-    // );
-
-    //const { events, collectionsResult, tokensResult } =
-    await this.eventService.processNew(extrinsics, blockCommonData);
-
-    const [itemCounts] = await Promise.all([
-      this.blockService.upsert(blockCommonData),
-      this.extrinsicService.upsert(id, hash, extrinsics, blockTimestamp),
-    ]);
-
-    // this.logger.verbose({
-    //   ...log,
-    //   ...countEvents,
-    //
-    //   // Collections service results
-    //   //totalCollectionEvents: collectionsResult?.totalEvents ?? undefined,
-    //   //totalRejectedCollections: collectionsResult?.rejected.length ?? undefined,
-    //
-    //   // Tokens service results
-    //   //totalTokenEvents: tokensResult?.totalEvents ?? undefined,
-    //   //totalRejectedTokens: tokensResult?.rejected.length ?? undefined,
-    // });
   }
 
   // private async upsertHandler(ctx): Promise<void> {
@@ -289,7 +254,7 @@ export class BlocksSubscriberService implements ISubscriberService {
 
     extrinsics.map((ext) => {
       ext.events.forEach((event) => {
-        const name = `${capitalize(event.section)}.${event.method}`;
+        const name = `${capitalize(event.section)}.${capitalize(event.method)}`;
         itemCounts.totalEvents += 1;
         if (name === EventName.BALANCES_TRANSFER) {
           itemCounts.numTransfers += 1;

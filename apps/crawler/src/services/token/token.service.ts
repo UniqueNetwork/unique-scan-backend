@@ -135,6 +135,7 @@ export class TokenService {
     );
     let rejected = [];
     let data = [];
+
     for (const chunk of eventChunks) {
       const result = await Promise.allSettled(
         chunk.map((event) => {
@@ -146,7 +147,7 @@ export class TokenService {
 
           const { block_hash, timestamp, block_number } = blockCommonData;
           const eventName = `${section}.${method}`;
-          console.log(red(`<<<<<<- ${block_number}.${eventName} ->>>>>>>`));
+
           if (eventName === 'Common.ItemCreated') {
             data = JSON.parse(event.data);
           }
@@ -340,7 +341,7 @@ export class TokenService {
   ) {
     const arrayToken = [];
 
-    const testToken = await this.tokensRepository.update(
+    await this.tokensRepository.update(
       {
         collection_id: collectionId,
         token_id: tokenId,
@@ -350,7 +351,6 @@ export class TokenService {
       },
     );
 
-    console.log(collectionId, tokenId, testToken);
     const pieceFrom = await this.sdkService.getRFTBalances(
       {
         address: normalizeSubstrateAddress(data[2].value),

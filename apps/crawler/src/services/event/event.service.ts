@@ -1,33 +1,16 @@
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  EVENT_ARGS_ACCOUNT_KEYS,
-  EventMethod,
-  EventSection,
-  SubscriberName,
-} from '@common/constants';
+import { EventMethod, EventSection, SubscriberName } from '@common/constants';
 import { Event } from '@entities/Event';
-import { capitalize, normalizeTimestamp } from '@common/utils';
-import {
-  EventsProcessingResult,
-  IBlockCommonData,
-  IBlockItem,
-  IEvent,
-} from '../../subscribers/blocks.subscriber.service';
+import { capitalize } from '@common/utils';
 import { EventArgumentsService } from './event.arguments.service';
-import { EventArgs } from './event.types';
-import { AccountRecord } from '../account/account.types';
 import { EvmService } from '../evm/evm.service';
 import { TokenService } from '../token/token.service';
 import { CollectionService } from '../collection.service';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
-import * as console from 'console';
-import {
-  EventEntity,
-  ExtrinsicEntity,
-} from '@unique-nft/harvester/src/database/entities';
+import { EventEntity } from '@unique-nft/harvester/src/database/entities';
 
 @Injectable()
 export class EventService {
@@ -45,24 +28,13 @@ export class EventService {
     private eventsRepository: Repository<Event>,
   ) {}
 
-  private extractEventItemsNew(blockItems: any): any {
+  private extractEventItemsNew(blockItems: any): EventEntity[] {
     return blockItems
       .map((item) => {
         return item.events as EventEntity;
       })
       .filter((v) => !!v)
       .flatMap((num) => num);
-  }
-
-  private extractEventItems(blockItems: any): IEvent[] {
-    return blockItems
-      .map((item) => {
-        if (item.kind === 'event') {
-          return item.event as IEvent;
-        }
-        return null;
-      })
-      .filter((v) => !!v);
   }
 
   private async prepareDataForDbNew(

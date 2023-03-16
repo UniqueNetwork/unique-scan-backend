@@ -1,11 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Store } from '@subsquid/typeorm-store';
-import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { EventName } from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { ISubscriberService } from './subscribers.service';
 import { EventService } from '../services/event/event.service';
-import { logger } from 'ethers';
 
 @Injectable()
 export class AccountsSubscriberService implements ISubscriberService {
