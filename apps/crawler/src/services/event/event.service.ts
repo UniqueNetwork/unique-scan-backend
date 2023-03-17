@@ -70,75 +70,19 @@ export class EventService {
     );
   }
 
-  // private async prepareDataForDb({
-  //   eventItems,
-  //   blockCommonData,
-  // }: {
-  //   eventItems: IEvent[];
-  //   blockCommonData: IBlockCommonData;
-  // }): Promise<Event[]> {
-  //   return Promise.all(
-  //     eventItems.map(async (event) => {
-  //       const {
-  //         name: eventName,
-  //         indexInBlock,
-  //         phase,
-  //         extrinsic,
-  //         args: rawArgs,
-  //       } = event;
-  //       const { blockNumber, blockTimestamp } = blockCommonData;
-  //
-  //       const [section, method] = eventName.split('.') as [
-  //         EventSection,
-  //         EventMethod,
-  //       ];
-  //
-  //       const eventValues =
-  //         await this.eventArgumentsService.processEventArgumentsNew(
-  //           eventName,
-  //           rawArgs,
-  //         );
-  //
-  //       // todo: Remove when triggers start using event values
-  //       const rawArgsObj = typeof rawArgs === 'object' ? rawArgs : [rawArgs];
-  //
-  //       const amount = eventValues?.amount || null;
-  //
-  //       return {
-  //         timestamp: String(normalizeTimestamp(blockTimestamp)),
-  //         block_number: String(blockNumber),
-  //         event_index: indexInBlock,
-  //         block_index: `${blockNumber}-${
-  //           extrinsic ? extrinsic.indexInBlock : ''
-  //         }`,
-  //         section,
-  //         method,
-  //         // todo: Make more clean connect to extrinsic
-  //         phase:
-  //           phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
-  //         data: JSON.stringify(rawArgsObj),
-  //         values: eventValues,
-  //         amount, // todo: Remove this field and use from values?
-  //       };
-  //     }),
-  //   );
-  // }
-
-  async processNew(blockItems, blockCommonData): Promise<any> {
+  async process(blockItems, blockCommonData): Promise<any> {
     const eventItems = this.extractEventItemsNew(blockItems);
-    //
-    // console.dir(BigInt('0x000000000000000001f1c604462f8b34').toString(), {
-    //   depth: 3,
-    // });
-    // console.dir(eventItems, { depth: 3 });
+
     const events = await this.prepareDataForDbNew(eventItems, blockCommonData);
-    //console.dir(events, { depth: 3 });
-    //
+
     const ethereumEvents = events.filter(
       ({ section, method }) =>
         section === EventSection.ETHEREUM && method === EventMethod.EXECUTED,
     );
-
+    const speckEvents = events.filter(
+      ({ section, method }) =>
+        section === 'ParachainSystem' && method === 'ValidationFunctionApplied',
+    );
     await this.evmService.parseEvents(
       ethereumEvents,
       blockCommonData.timestamp,
@@ -165,9 +109,10 @@ export class EventService {
     }
 
     return {
-      events,
+      speckHash: speckEvents.length === 1 ? blockCommonData.block_hash : null,
       collectionsResult,
       tokensResult,
+      events,
     };
   }
 

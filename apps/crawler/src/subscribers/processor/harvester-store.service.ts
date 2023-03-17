@@ -8,7 +8,6 @@ import { STATE_SCHEMA_NAME_BY_MODE } from '@common/constants';
 @Injectable()
 export class HarvesterStoreService {
   private stateSchema;
-
   private readonly logger = new Logger(HarvesterStoreService.name);
 
   constructor(

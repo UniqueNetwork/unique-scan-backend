@@ -57,6 +57,7 @@ export enum EventMethod {
   WITHDRAW = 'Withdraw',
 
   EXECUTED = 'Executed',
+  VALIDATION_FUNCTION_APPLIED = 'ValidationFunctionApplied',
 }
 
 export const EventName = {

@@ -64,7 +64,7 @@ export interface ItemsBatchProcessingResult {
 @Injectable()
 export class BlocksSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(BlocksSubscriberService.name);
-
+  private isStartBlockService: boolean = false;
   constructor(
     private blockService: BlockService,
 
@@ -92,21 +92,33 @@ export class BlocksSubscriberService implements ISubscriberService {
       stateNumber[0],
       stateNumber[1],
     )) {
-      await this.upsertHandlerBlock(block, chainProps);
-      //console.dir(block, { depth: 100 });
+      await this.upsertHandlerBlock(block);
     }
   }
 
-  private async upsertHandlerBlock(
-    blockData: BlockEntity,
-    chain: ChainProperties,
-  ): Promise<void> {
+  private async upsertHandlerBlock(blockData: BlockEntity): Promise<void> {
+    let specHashData = null;
+    let specDataChain = null;
+    let specLastUpgrade = null;
+
     console.time(`█  ${yellow(blockData.id)} `);
-    const { SS58Prefix } = chain;
     const { id, timestamp, hash, parentHash, extrinsics } = blockData;
 
     const countEvents = this.collectEventsCount(extrinsics);
-    //const specDataChain = await this.sdkService.getSpecLastUpgrade(hash);
+
+    // First start
+    if (specLastUpgrade === null) {
+      specDataChain = await this.sdkService.getSpecLastUpgrade(hash);
+      this.isStartBlockService = true;
+      specLastUpgrade = specDataChain;
+    }
+
+    // New spec chain
+    if (specHashData !== null && this.isStartBlockService) {
+      specDataChain = await this.sdkService.getSpecLastUpgrade(specHashData);
+      specLastUpgrade = specDataChain;
+    }
+
     const blockTimestamp = new Date(timestamp).getTime();
 
     const blockCommonData = {
@@ -115,9 +127,7 @@ export class BlocksSubscriberService implements ISubscriberService {
       parent_hash: parentHash,
       extrinsics_root: '0x000', // TODO: remove this ???
       state_root: '0x000', // TODO: remove this ???
-      //...specDataChain,
-      spec_version: 900,
-      spec_name: 'opal',
+      ...specLastUpgrade,
       timestamp: blockTimestamp,
       total_events: countEvents.totalEvents,
       num_transfers: countEvents.numTransfers,
@@ -128,9 +138,11 @@ export class BlocksSubscriberService implements ISubscriberService {
     const log = {
       blockNumber: id,
     };
-    const { events, collectionsResult, tokensResult } =
-      await this.eventService.processNew(extrinsics, blockCommonData);
-
+    const { speckHash } = await this.eventService.process(
+      extrinsics,
+      blockCommonData,
+    );
+    specHashData = speckHash;
     await Promise.all([
       this.blockService.upsert(blockCommonData),
       this.extrinsicService.upsert(id, hash, extrinsics, blockTimestamp),
@@ -167,6 +179,7 @@ export class BlocksSubscriberService implements ISubscriberService {
               }
             })
             .filter((value) => !!value),
+          specLastUpgrade,
           ' readed!',
         );
       }
