@@ -83,6 +83,7 @@ export class BlocksSubscriberService implements ISubscriberService {
   }
 
   async subscribe() {
+    await this.harvesterStore.connect();
     const chainProps = await this.sdkService.getChainProperties();
     const stateNumber = await this.harvesterStore.getState();
 

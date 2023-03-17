@@ -70,4 +70,34 @@ export class HarvesterStoreService {
       `UPDATE ${this.stateSchema}.status SET height = ${block_number} WHERE id = 0`,
     );
   }
+
+  async connect(): Promise<void> {
+    try {
+      await this.connection.transaction('SERIALIZABLE', async (em) => {
+        await em.query(`CREATE SCHEMA IF NOT EXISTS ${this.stateSchema}`);
+        await em.query(`
+                    CREATE TABLE IF NOT EXISTS ${this.stateSchema}.status (
+                        id int primary key,
+                        height int not null
+                    )
+                `);
+        const status: { height: number }[] = await em.query(
+          `SELECT height FROM ${this.stateSchema}.status WHERE id = 0`,
+        );
+        if (status.length == 0) {
+          await em.query(
+            `INSERT INTO ${this.stateSchema}.status (id, height) VALUES (0, -1)`,
+          );
+          return -1;
+        } else {
+          return status[0].height;
+        }
+      });
+    } catch (e: any) {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      await this.connection.destroy().catch(() => {}); // ignore error
+      this.sentry.instance().captureException(e);
+      throw e;
+    }
+  }
 }
