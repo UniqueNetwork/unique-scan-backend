@@ -23,6 +23,7 @@ import {
 import { TokenNestingService } from './nesting.service';
 import { TokenData, TokenOwnerData } from './token.types';
 import { chunk } from 'lodash';
+import { red } from 'cli-color';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
@@ -124,7 +125,7 @@ export class TokenService {
     blockCommonData,
   }: {
     events: Event[];
-    blockCommonData: IBlockCommonData;
+    blockCommonData: any;
   }): Promise<ItemsBatchProcessingResult> {
     const tokenEvents = this.extractTokenEvents(events);
 
@@ -134,6 +135,7 @@ export class TokenService {
     );
     let rejected = [];
     let data = [];
+
     for (const chunk of eventChunks) {
       const result = await Promise.allSettled(
         chunk.map((event) => {
@@ -143,7 +145,7 @@ export class TokenService {
             tokenId: number;
           };
 
-          const { blockHash, blockTimestamp, blockNumber } = blockCommonData;
+          const { block_hash, timestamp, block_number } = blockCommonData;
           const eventName = `${section}.${method}`;
 
           if (eventName === 'Common.ItemCreated') {
@@ -154,12 +156,12 @@ export class TokenService {
             data = JSON.parse(event.data);
 
             return this.update({
-              blockNumber,
+              blockNumber: block_number,
               collectionId,
               tokenId,
               eventName,
-              blockTimestamp,
-              blockHash,
+              blockTimestamp: timestamp,
+              blockHash: block_hash,
               data,
             });
           }
@@ -169,12 +171,12 @@ export class TokenService {
               data = JSON.parse(event.data);
             }
             return this.update({
-              blockNumber,
+              blockNumber: block_number,
               collectionId,
               tokenId,
               eventName,
-              blockTimestamp,
-              blockHash,
+              blockTimestamp: timestamp,
+              blockHash: block_hash,
               data,
             });
           } else {
@@ -213,6 +215,9 @@ export class TokenService {
     blockHash: string;
     data: any;
   }): Promise<SubscriberAction> {
+    if (tokenId === 0) {
+      return;
+    }
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
 
     let result;
@@ -339,7 +344,7 @@ export class TokenService {
   ) {
     const arrayToken = [];
 
-    const testToken = await this.tokensRepository.update(
+    await this.tokensRepository.update(
       {
         collection_id: collectionId,
         token_id: tokenId,
@@ -349,7 +354,6 @@ export class TokenService {
       },
     );
 
-    console.log(collectionId, tokenId, testToken);
     const pieceFrom = await this.sdkService.getRFTBalances(
       {
         address: normalizeSubstrateAddress(data[2].value),
@@ -548,15 +552,6 @@ export class TokenService {
     });
 
     if (ownerToken) {
-      // await this.tokensOwnersRepository.update(
-      //   {
-      //     id: ownerToken.id,
-      //   },
-      //   {
-      //     amount: 0,
-      //     block_number: tokenOwner.block_number,
-      //   },
-      // );
       await this.tokensOwnersRepository.delete({
         id: ownerToken.id,
       });

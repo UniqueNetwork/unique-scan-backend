@@ -11,6 +11,8 @@ import {
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
+import { ChainProperties } from '@unique-nft/substrate-client/types';
+import { ISpecSystemVersion } from '../subscribers/blocks.subscriber.service';
 
 @Injectable()
 export class SdkService {
@@ -32,6 +34,23 @@ export class SdkService {
     at?: string,
   ): Promise<CollectionInfoWithSchema | null> {
     return this.sdk.collections.get({ collectionId, at });
+  }
+
+  @SdkCache('getSpecLastUpgrade')
+  async getSpecLastUpgrade(hash: string): Promise<ISpecSystemVersion> {
+    const optionUpgrade = await this.sdk.api.query.system.lastRuntimeUpgrade.at(
+      hash,
+    );
+    const specLastUpgrade = optionUpgrade.toJSON() as any;
+    return {
+      spec_version: specLastUpgrade.specVersion,
+      spec_name: specLastUpgrade.specName,
+    };
+  }
+
+  @SdkCache('getChainProperties')
+  async getChainProperties(): Promise<ChainProperties> {
+    return this.sdk.common.chainProperties();
   }
 
   @SdkCache('getCollectionLimits')

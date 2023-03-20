@@ -1,9 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Store } from '@subsquid/typeorm-store';
-import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { EventName } from '@common/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
-import { ProcessorService } from './processor/processor.service';
 import { ISubscriberService } from './subscribers.service';
 import { EventService } from '../services/event/event.service';
 
@@ -20,7 +17,7 @@ export class AccountsSubscriberService implements ISubscriberService {
     this.sentry.setContext(AccountsSubscriberService.name);
   }
 
-  subscribe(processorService: ProcessorService) {
+  subscribe() {
     [
       // Balances
       EventName.BALANCES_BALANCE_SET,
@@ -62,36 +59,31 @@ export class AccountsSubscriberService implements ISubscriberService {
       EventName.COLLECTION_SPONSOR_SET,
       EventName.COLLECTION_SPONSOR_REMOVED,
       EventName.SPONSORSHIP_CONFIRMED,
-    ].forEach((eventName) =>
-      processorService.processor.addEventHandler(
-        eventName,
-        this.upsertHandler.bind(this),
-      ),
-    );
+    ].forEach((eventName) => eventName);
   }
 
-  private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
-    const {
-      event: { name: eventName, args: rawArgs },
-    } = ctx;
-
-    const log = {
-      eventName,
-      processedAccounts: [],
-    };
-
-    try {
-      const accountIds = await this.eventService.processEventWithAccounts(
-        eventName,
-        rawArgs,
-      );
-
-      log.processedAccounts = accountIds;
-
-      this.logger.verbose({ ...log });
-    } catch (error) {
-      this.logger.error({ ...log, error: error.message });
-      this.sentry.instance().captureException({ ...log, error });
-    }
-  }
+  // private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {
+  //   const {
+  //     event: { name: eventName, args: rawArgs },
+  //   } = ctx;
+  //
+  //   const log = {
+  //     eventName,
+  //     processedAccounts: [],
+  //   };
+  //
+  //   try {
+  //     const accountIds = await this.eventService.processEventWithAccounts(
+  //       eventName,
+  //       rawArgs,
+  //     );
+  //
+  //     log.processedAccounts = accountIds;
+  //
+  //     this.logger.verbose({ ...log });
+  //   } catch (error) {
+  //     this.logger.error({ ...log, error: error.message });
+  //     this.sentry.instance().captureException({ ...log, error });
+  //   }
+  // }
 }

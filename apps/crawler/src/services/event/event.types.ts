@@ -5,6 +5,7 @@ type AccountKey = typeof EVENT_ARGS_ACCOUNT_KEYS[number];
 export type EventArgs =
   | null
   | number
+  | bigint
   | string
   | object
   | (string | number | object)[];
