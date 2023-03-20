@@ -1,3 +1,4 @@
+import { startMetricsServer } from '@common/monitoring';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -13,7 +14,7 @@ async function bootstrap() {
   const logLevels = configService.get('logLevels');
 
   Logger.overrideLogger(logLevels);
-
+  await startMetricsServer(app);
   await app.init();
 
   try {
