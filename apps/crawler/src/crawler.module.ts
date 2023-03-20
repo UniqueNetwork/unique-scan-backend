@@ -8,11 +8,13 @@ import { SubscribersModule } from './subscribers/subscribers.module';
 import { Config, GlobalConfigModule } from './config/config.module';
 import { CacheProviderModule } from './cache/cache-provider.module';
 import { HarvesterModule, HarvesterModuleOptions } from '@unique-nft/harvester';
+import { MonitoringModule } from '@common/monitoring';
 
 @Module({
   imports: [
     GlobalConfigModule,
     CacheProviderModule,
+    MonitoringModule,
     TypeOrmModule.forRoot(typeormConfig),
     HarvesterModule.registerAsync({
       useFactory: (config: ConfigService<Config>) =>

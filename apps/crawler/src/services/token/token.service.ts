@@ -557,28 +557,4 @@ export class TokenService {
       });
     }
   }
-
-  private async checkAndSaveOrUpdateTokenOwnerPart(tokenOwner: TokenOwnerData) {
-    const ownerToken = await this.tokensOwnersRepository.findOne({
-      where: {
-        owner: tokenOwner.owner,
-        collection_id: tokenOwner.collection_id,
-        token_id: tokenOwner.token_id,
-      },
-    });
-    if (ownerToken != null) {
-      await this.tokensOwnersRepository.update(
-        {
-          id: ownerToken.id,
-        },
-        {
-          amount: tokenOwner.amount,
-          block_number: tokenOwner.block_number,
-          type: tokenOwner.type,
-        },
-      );
-    } else {
-      await this.tokensOwnersRepository.save(tokenOwner);
-    }
-  }
 }
