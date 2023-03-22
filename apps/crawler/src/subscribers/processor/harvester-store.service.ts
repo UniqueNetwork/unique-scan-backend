@@ -85,9 +85,9 @@ export class HarvesterStoreService {
         );
         if (status.length == 0) {
           await em.query(
-            `INSERT INTO ${this.stateSchema}.status (id, height) VALUES (0, -1)`,
+            `INSERT INTO ${this.stateSchema}.status (id, height) VALUES (0, 1)`,
           );
-          return -1;
+          return 1;
         } else {
           return status[0].height;
         }
