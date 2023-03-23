@@ -6,11 +6,10 @@ import { SdkService } from './sdk.service';
 import { Config } from '../config/config.module';
 import '@unique-nft/substrate-client/tokens';
 import '@unique-nft/substrate-client/balance';
-import { CacheProviderModule } from '../cache/cache-provider.module';
 
 @Global()
 @Module({
-  imports: [ConfigModule, CacheProviderModule],
+  imports: [ConfigModule],
   providers: [
     {
       provide: Client,

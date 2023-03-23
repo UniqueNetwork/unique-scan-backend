@@ -192,3 +192,13 @@ export enum JOIN_TYPE {
   INNER = 'inner',
   LEFT = 'left',
 }
+
+export interface ITotalIssuance {
+  rawType: string;
+  isEmpty: boolean;
+  hash: string;
+  human: string;
+  json: string;
+  hex: string;
+  timestamp: number;
+}
