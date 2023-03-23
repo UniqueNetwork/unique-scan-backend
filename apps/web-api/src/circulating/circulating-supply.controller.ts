@@ -5,7 +5,7 @@ import { CirculatingSupplyService } from './circulating-supply.service';
 export class CirculatingSupplyController {
   constructor(private circulatingService: CirculatingSupplyService) {}
 
-  @Get('/circulating-supply')
+  @Get('/supply')
   async readCirculatingSupply() {
     return await this.circulatingService.readCirculatingSupply();
   }
