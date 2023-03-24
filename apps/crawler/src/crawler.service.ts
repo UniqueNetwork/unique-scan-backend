@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Scope } from '@nestjs/common';
 import { SubscribersService } from './subscribers/subscribers.service';
 
 @Injectable()
