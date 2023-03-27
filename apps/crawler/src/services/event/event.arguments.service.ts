@@ -1,22 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import {
-  EventName,
   EVENT_ARGS_ACCOUNT_KEYS,
-  EVENT_ARGS_ACCOUNT_KEY_DEFAULT,
-  EVENT_ARGS_AMOUNT_KEYS,
   EVENT_ARGS_AMOUNT_KEY_DEFAULT,
+  EVENT_ARGS_AMOUNT_KEYS,
   EVENT_ARGS_COLLECTION_ID_KEY_DEFAULT,
   EVENT_ARGS_TOKEN_ID_KEY_DEFAULT,
-  EventModeCollection,
+  EventName,
 } from '@common/constants';
-import { EventValues, EventArgs } from './event.types';
+import { EventArgs, EventValues } from './event.types';
 import { AccountService } from '../account/account.service';
-import { getAmount } from '@common/utils';
+import { capitalize, getAmount } from '@common/utils';
 import { AccountRecord } from '../account/account.types';
 import { nesting } from '@unique-nft/utils/address';
 import * as console from 'console';
-import { red } from 'cli-color';
-
 type EventArgsValueNormalizer = (
   rawValue: string | number | object,
 ) => Promise<unknown>;
@@ -30,7 +26,7 @@ type EventArgsDescriptor = {
 
 const EVENT_ARGS_DESCRIPTORS = {
   // System
-  [EventName.NEW_ACCOUNT]: { accounts: 0 },
+  [EventName.NEW_ACCOUNT]: { account: 0 },
 
   // Common
   [EventName.APPROVED]: { collectionId: 0, tokenId: 1, sender: 2, spender: 3 },
@@ -115,23 +111,19 @@ export class EventArgumentsService {
     }
 
     const argsDescriptor = EVENT_ARGS_DESCRIPTORS[eventName];
-    //console.log(red(`<<<<<<- ${eventName} ->>>>>>>`));
+    //console.log(`<<<<<<- ${eventName} ->>>>>>>`);
     //console.dir({ rawArgs, argsDescriptor }, { depth: 10 });
-    const [accountsValues, amountValues, otherValues] = await Promise.all([
-      this.normalizeAccountArgs(rawArgs, argsDescriptor),
+    const [amountValues] = await Promise.all([
       this.normalizeAmountArgs(rawArgs, argsDescriptor),
-      this.normalizeOtherArgs(rawArgs, argsDescriptor),
     ]);
-    //console.dir({ accountsValues, amountValues, otherValues }, { depth: 10 });
+
     const nestedTo = this.normalizeNestedTokenAddr(eventName, rawArgs);
 
     const result: EventValues = {
-      ...accountsValues,
       ...amountValues,
-      ...otherValues,
       ...nestedTo,
     };
-    //console.log('RESULT: ', result);
+
     return Object.keys(result).length ? result : null;
   }
 
@@ -182,13 +174,21 @@ export class EventArgumentsService {
     argsDescriptor: EventArgsDescriptor | null,
   ): Promise<EventValues> {
     const result = {} as EventValues;
-
+    return {};
     if (argsDescriptor) {
       // Add event specific keys map.
       for (const [key, val] of Object.entries(argsDescriptor)) {
-        if (key === 'from' || (key === 'to' && rawArgs.length === 5)) {
+        if (
+          (key === 'from' && rawArgs.length === 5) ||
+          (key === 'to' && rawArgs.length === 5)
+        ) {
           const getAccountData = Object.entries(rawArgs[`${val}`]).map(
             (v) => `{ "value": "${v[1]}", "__kind": "${v[0]}" }`,
+          );
+          //this.accountNormalizer(JSON.parse(getAccountData[0]));
+          console.dir(
+            { normalizeAccountArgs: JSON.parse(getAccountData[0]) },
+            { depth: 10 },
           );
           result[key] = JSON.parse(getAccountData[0]);
         } else {
@@ -210,24 +210,38 @@ export class EventArgumentsService {
         if (key === 'amount') {
           const amNumber = BigInt(rawArgs[`${val}`]).toString();
           result[key] = this.amountNormalizer(amNumber);
-        } else if (key === 'account' && rawArgs.length === 4) {
-          const getAccountData = Object.entries(rawArgs[`${val}`]).map(
-            (v) => `{ "value": "${v[1]}", "__kind": "${v[0]}" }`,
-          );
-          result[key] = <any>JSON.parse(getAccountData[0]);
-        } else if (key === 'from' || (key === 'to' && rawArgs.length === 5)) {
-          const getAccountData = Object.entries(rawArgs[`${val}`]).map(
-            (v) => `{ "value": "${v[1]}", "__kind": "${v[0]}" }`,
-          );
-          result[key] = JSON.parse(getAccountData[0]);
+        } else if (key === 'account') {
+          if (rawArgs.length === 4) {
+            const getAccountData = Object.entries(rawArgs[`${val}`]).map(
+              (v) => `{ "value": "${v[1]}", "__kind": "${capitalize(v[0])}" }`,
+            );
+            result[key] = <any>JSON.parse(getAccountData[0]);
+            this.accountNormalizer(JSON.parse(getAccountData[0]));
+          }
+          if (rawArgs.length === 1) {
+            result[key] = rawArgs[`${val}`];
+          }
+        } else if (key === 'from' || key === 'to') {
+          if (rawArgs.length === 5) {
+            const getAccountData = Object.entries(rawArgs[`${val}`]).map(
+              (v) => `{ "value": "${v[1]}", "__kind": "${capitalize(v[0])}" }`,
+            );
+            result[key] = JSON.parse(getAccountData[0]);
+            this.accountNormalizer(JSON.parse(getAccountData[0]));
+          }
+          if (rawArgs.length === 3) {
+            result[key] = rawArgs[`${val}`];
+            this.accountNormalizer(rawArgs[`${val}`]);
+          }
         } else if (
           key === 'sender' ||
           (key === 'spender' && rawArgs.length === 5)
         ) {
           const getAccountData = Object.entries(rawArgs[`${val}`]).map(
-            (v) => `{ "value": "${v[1]}", "__kind": "${v[0]}" }`,
+            (v) => `{ "value": "${v[1]}", "__kind": "${capitalize(v[0])}" }`,
           );
           result[key] = JSON.parse(getAccountData[0]);
+          this.accountNormalizer(JSON.parse(getAccountData[0]));
         } else {
           result[key] = rawArgs[`${val}`];
         }
@@ -242,7 +256,7 @@ export class EventArgumentsService {
     argsDescriptor: EventArgsDescriptor | null,
   ): Promise<EventValues> {
     const keysMap = {};
-
+    return {};
     if (argsDescriptor) {
       // Add event specific keys map.
       const {

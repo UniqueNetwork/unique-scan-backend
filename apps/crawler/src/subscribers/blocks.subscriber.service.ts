@@ -104,94 +104,94 @@ export class BlocksSubscriberService implements ISubscriberService {
     let specDataChain = null;
     let specLastUpgrade = null;
 
-    try {
-      console.time(`█  ${yellow(blockData.id)} `);
-      const { id, timestamp, hash, parentHash, extrinsics } = blockData;
+    // try {
+    console.time(`█  ${yellow(blockData.id)} `);
+    const { id, timestamp, hash, parentHash, extrinsics } = blockData;
 
-      const countEvents = this.collectEventsCount(extrinsics);
+    const countEvents = this.collectEventsCount(extrinsics);
 
-      // First start
-      if (specLastUpgrade === null) {
-        specDataChain = await this.sdkService.getSpecLastUpgrade(hash);
-        this.isStartBlockService = true;
-        specLastUpgrade = specDataChain;
-      }
-
-      // New spec chain
-      if (specHashData !== null && this.isStartBlockService) {
-        specDataChain = await this.sdkService.getSpecLastUpgrade(specHashData);
-        specLastUpgrade = specDataChain;
-      }
-
-      const blockTimestamp = new Date(timestamp).getTime();
-
-      const blockCommonData = {
-        block_number: +id,
-        block_hash: hash,
-        parent_hash: parentHash,
-        extrinsics_root: '0x000', // TODO: remove this ???
-        state_root: '0x000', // TODO: remove this ???
-        ...specLastUpgrade,
-        timestamp: blockTimestamp,
-        total_events: countEvents.totalEvents,
-        num_transfers: countEvents.numTransfers,
-        new_accounts: countEvents.newAccounts,
-        total_extrinsics: extrinsics.length,
-      } as unknown as Block;
-
-      const log = {
-        blockNumber: id,
-      };
-      const { speckHash } = await this.eventService.process(
-        extrinsics,
-        blockCommonData,
-      );
-      specHashData = speckHash;
-      await Promise.all([
-        this.blockService.upsert(blockCommonData),
-        this.extrinsicService.upsert(id, hash, extrinsics, blockTimestamp),
-      ]);
-
-      await this.harvesterStore.updateState(id);
-
-      // Logger
-      extrinsics.map((value) => {
-        if (
-          value.section !== 'parachainSystem' &&
-          value.section !== 'timestamp'
-        ) {
-          console.timeLog(
-            `█  ${yellow(blockData.id)} `,
-            green(' ▶'),
-            blockCommonData.total_events > 2
-              ? magenta(' extrinsic:')
-              : green(' extrinsic:'),
-            blockCommonData.total_extrinsics,
-            blockCommonData.total_events > 2
-              ? magenta(' events:')
-              : cyan(' events:'),
-            blockCommonData.total_events,
-            extrinsics
-              .map((value) => {
-                if (
-                  value.section !== 'parachainSystem' &&
-                  value.section !== 'timestamp'
-                ) {
-                  return `${capitalize(value.section)}.${capitalize(
-                    value.method,
-                  )}`;
-                }
-              })
-              .filter((value) => !!value),
-            specLastUpgrade.spec_version,
-            ' readed!',
-          );
-        }
-      });
-    } catch (error) {
-      this.logger.error({ block: blockData.id, error: error.message || error });
-      this.sentry.instance().captureException({ block: blockData.id, error });
+    // First start
+    if (specLastUpgrade === null) {
+      specDataChain = await this.sdkService.getSpecLastUpgrade(hash);
+      this.isStartBlockService = true;
+      specLastUpgrade = specDataChain;
     }
+
+    // New spec chain
+    if (specHashData !== null && this.isStartBlockService) {
+      specDataChain = await this.sdkService.getSpecLastUpgrade(specHashData);
+      specLastUpgrade = specDataChain;
+    }
+
+    const blockTimestamp = new Date(timestamp).getTime();
+
+    const blockCommonData = {
+      block_number: +id,
+      block_hash: hash,
+      parent_hash: parentHash,
+      extrinsics_root: '0x000', // TODO: remove this ???
+      state_root: '0x000', // TODO: remove this ???
+      ...specLastUpgrade,
+      timestamp: blockTimestamp,
+      total_events: countEvents.totalEvents,
+      num_transfers: countEvents.numTransfers,
+      new_accounts: countEvents.newAccounts,
+      total_extrinsics: extrinsics.length,
+    } as unknown as Block;
+
+    const log = {
+      blockNumber: id,
+    };
+    const { speckHash } = await this.eventService.process(
+      extrinsics,
+      blockCommonData,
+    );
+    specHashData = speckHash;
+    await Promise.all([
+      this.blockService.upsert(blockCommonData),
+      this.extrinsicService.upsert(id, hash, extrinsics, blockTimestamp),
+    ]);
+
+    await this.harvesterStore.updateState(id);
+
+    // Logger
+    extrinsics.map((value) => {
+      if (
+        value.section !== 'parachainSystem' &&
+        value.section !== 'timestamp'
+      ) {
+        console.timeLog(
+          `█  ${yellow(blockData.id)} `,
+          green(' ▶'),
+          blockCommonData.total_events > 2
+            ? magenta(' extrinsic:')
+            : green(' extrinsic:'),
+          blockCommonData.total_extrinsics,
+          blockCommonData.total_events > 2
+            ? magenta(' events:')
+            : cyan(' events:'),
+          blockCommonData.total_events,
+          extrinsics
+            .map((value) => {
+              if (
+                value.section !== 'parachainSystem' &&
+                value.section !== 'timestamp'
+              ) {
+                return `${capitalize(value.section)}.${capitalize(
+                  value.method,
+                )}`;
+              }
+            })
+            .filter((value) => !!value),
+          specLastUpgrade.spec_version,
+          ' readed!',
+        );
+      }
+    });
+    // } catch (error) {
+    //   this.logger.error({ block: blockData.id, error: error.message || error });
+    //   this.sentry.instance().captureException({ block: blockData.id, error });
+    // }
   }
 
   // private async upsertHandler(ctx): Promise<void> {

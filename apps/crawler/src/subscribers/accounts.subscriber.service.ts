@@ -59,7 +59,13 @@ export class AccountsSubscriberService implements ISubscriberService {
       EventName.COLLECTION_SPONSOR_SET,
       EventName.COLLECTION_SPONSOR_REMOVED,
       EventName.SPONSORSHIP_CONFIRMED,
-    ].forEach((eventName) => eventName);
+    ].forEach(async (eventName) => {
+      await this.upsertHandler(eventName);
+    });
+  }
+
+  private async upsertHandler(ctx: any): Promise<void> {
+    console.log(ctx);
   }
 
   // private async upsertHandler(ctx: EventHandlerContext<Store>): Promise<void> {

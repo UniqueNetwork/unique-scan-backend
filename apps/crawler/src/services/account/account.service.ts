@@ -41,10 +41,8 @@ export class AccountService {
     );
 
     const normalizedAddress = await this.upsert({
-      // todo: Решить с пустыми blockTimestamp & blockNumber
       blockTimestamp,
       blockNumber,
-
       balances: balancesExtended,
     });
 
