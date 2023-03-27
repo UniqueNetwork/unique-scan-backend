@@ -21,10 +21,6 @@ export class SubscribersService {
   run() {
     const subscribersConfig = this.configService.get('subscribers');
 
-    if (subscribersConfig[SubscriberName.ACCOUNTS]) {
-      this.accountsSubscriberService.subscribe();
-    }
-
     if (subscribersConfig[SubscriberName.BLOCKS]) {
       this.blocksSubscriberService.subscribe();
     }
