@@ -12,26 +12,23 @@ import {
 } from '@common/utils';
 import { Event } from '@entities/Event';
 import { ITokenEntities, Tokens, TokenType } from '@entities/Tokens';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SdkService } from '../../sdk/sdk.service';
-import {
-  IBlockCommonData,
-  ItemsBatchProcessingResult,
-} from '../../subscribers/blocks.subscriber.service';
 import { TokenNestingService } from './nesting.service';
 import { TokenData, TokenOwnerData } from './token.types';
 import { chunk } from 'lodash';
-import { red } from 'cli-color';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
 import * as console from 'console';
+import { yellow } from '@nestjs/common/utils/cli-colors.util';
 
 @Injectable()
 export class TokenService {
+  private logger = new Logger(TokenService.name);
   constructor(
     private sdkService: SdkService,
     private nestingService: TokenNestingService,
@@ -68,8 +65,6 @@ export class TokenService {
       collection_id,
       token_id,
     });
-
-    //const tokenBalance = await this.sdkService.getRFTBalances();
 
     let tokenType =
       tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
@@ -126,7 +121,7 @@ export class TokenService {
   }: {
     events: Event[];
     blockCommonData: any;
-  }): Promise<ItemsBatchProcessingResult> {
+  }): Promise<any> {
     const tokenEvents = this.extractTokenEvents(events);
 
     const eventChunks = chunk(
@@ -194,6 +189,8 @@ export class TokenService {
 
     return {
       totalEvents: tokenEvents.length,
+      collection: data.length >= 4 ? data[0] : null,
+      token: data.length >= 4 ? data[1] : null,
       rejected,
     };
   }
@@ -302,7 +299,8 @@ export class TokenService {
       }
       result = SubscriberAction.UPSERT;
     } else {
-      const ownerToken = normalizeSubstrateAddress(data[2].value);
+      const tokenOwnSelect = data[2].substrate || data[2].ethereum;
+      const ownerToken = normalizeSubstrateAddress(tokenOwnSelect);
 
       await this.burnTokenOwnerPart({
         collection_id: collectionId,
@@ -319,7 +317,7 @@ export class TokenService {
       });
 
       if (pieceToken.amount === 0) {
-        console.error(
+        this.logger.error(
           `Destroy token full amount: ${pieceToken.amount} / collection: ${collectionId} / token: ${tokenId}`,
         );
         // No entity returned from sdk. Most likely it was destroyed in a future block.
@@ -354,17 +352,19 @@ export class TokenService {
       },
     );
 
+    const ownerAddress = data[2].substrate || data[2].ethereum;
+
     const pieceFrom = await this.sdkService.getRFTBalances(
       {
-        address: normalizeSubstrateAddress(data[2].value),
+        address: normalizeSubstrateAddress(ownerAddress),
         collectionId: collectionId,
         tokenId: tokenId,
       },
       blockHash,
     );
     arrayToken.push({
-      owner: normalizeSubstrateAddress(data[2].value),
-      owner_normalized: normalizeSubstrateAddress(data[2].value),
+      owner: normalizeSubstrateAddress(ownerAddress),
+      owner_normalized: normalizeSubstrateAddress(ownerAddress),
       collection_id: collectionId,
       token_id: tokenId,
       date_created: String(normalizeTimestamp(blockTimestamp)),
@@ -374,18 +374,9 @@ export class TokenService {
       parent_id: preparedData.parent_id,
       children: preparedData.children,
     });
-    console.log(
-      blockNumber,
-      eventName,
-      typeMode,
-      collectionId,
-      tokenId,
-      data.length === 4 ? data[3] : null,
-      pieceFrom.amount,
-      normalizeSubstrateAddress(data[2].value),
-    );
     if (data.length === 5) {
-      const owner = normalizeSubstrateAddress(data[3].value);
+      const ownerAddressTo = data[3].substrate || data[3].ethereum;
+      const owner = normalizeSubstrateAddress(ownerAddressTo);
       const pieceTo = await this.sdkService.getRFTBalances(
         {
           address: owner,
@@ -403,7 +394,7 @@ export class TokenService {
       }
       arrayToken.push({
         owner: owner,
-        owner_normalized: normalizeSubstrateAddress(data[3].value),
+        owner_normalized: normalizeSubstrateAddress(ownerAddressTo),
         collection_id: collectionId,
         token_id: tokenId,
         date_created: String(normalizeTimestamp(blockTimestamp)),
@@ -414,18 +405,6 @@ export class TokenService {
         children: preparedData.children,
         nested: nested,
       });
-      console.log(
-        blockNumber,
-        eventName,
-        typeMode,
-        collectionId,
-        tokenId,
-        data.length === 5 ? data[4] : null,
-        '-',
-        pieceTo.amount,
-        normalizeSubstrateAddress(data[2].value),
-        normalizeSubstrateAddress(data[3].value),
-      );
     }
 
     for (const tokenOwnerData of arrayToken) {
@@ -441,6 +420,9 @@ export class TokenService {
           'token_id',
           'owner',
         ]);
+        this.logger.log(
+          `${eventName} token: ${tokenOwnerData.token_id} collection: ${tokenOwnerData.collection_id} in ${tokenOwnerData.block_number}`,
+        );
       }
     }
   }
@@ -478,13 +460,12 @@ export class TokenService {
       'token_id',
       'owner',
     ]);
-    console.log(
-      blockNumber,
-      eventName,
-      typeMode,
-      collectionId,
-      tokenId,
-      tokenDecoded.owner || tokenDecoded.collection.owner,
+    this.logger.log(
+      `${eventName} token: ${yellow(
+        String(tokenOwner.token_id),
+      )} collection: ${yellow(String(tokenOwner.collection_id))} in ${
+        tokenOwner.block_number
+      }`,
     );
   }
 

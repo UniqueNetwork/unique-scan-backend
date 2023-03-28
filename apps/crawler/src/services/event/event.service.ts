@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventMethod, EventSection, SubscriberName } from '@common/constants';
 import { Event } from '@entities/Event';
@@ -14,16 +14,14 @@ import { EventEntity } from '@unique-nft/harvester/src/database/entities';
 
 @Injectable()
 export class EventService {
+  private logCollection = new Logger('EventService_Collection');
+  private logToken = new Logger('EventService_Token');
   constructor(
     private eventArgumentsService: EventArgumentsService,
     private evmService: EvmService,
-
     private tokenService: TokenService,
-
     private collectionService: CollectionService,
-
     private configService: ConfigService<Config>,
-
     @InjectRepository(Event)
     private eventsRepository: Repository<Event>,
   ) {}
@@ -98,6 +96,14 @@ export class EventService {
         events,
         blockCommonData,
       });
+      if (
+        collectionsResult.totalEvents >= 1 &&
+        collectionsResult.rejected.length === 0
+      ) {
+        this.logCollection.log(
+          `Save event collection: ${collectionsResult.collection.collectionId}`,
+        );
+      }
     }
 
     let tokensResult = null;
@@ -106,6 +112,11 @@ export class EventService {
         events,
         blockCommonData,
       });
+      if (tokensResult.totalEvents >= 4) {
+        this.logToken.log(
+          `Save event in collection: ${tokensResult.collection} token: ${tokensResult.token}`,
+        );
+      }
     }
 
     return {
@@ -115,78 +126,4 @@ export class EventService {
       events,
     };
   }
-
-  // async process({
-  //   blockItems,
-  //   blockCommonData,
-  // }: {
-  //   blockItems: any;
-  //   blockCommonData: IBlockCommonData;
-  // }): Promise<any> {
-  //   const eventItems = this.extractEventItems(blockItems);
-  //   //
-  //   // console.dir(eventItems, { depth: 2 });
-  //
-  //   const events = await this.prepareDataForDb({
-  //     blockCommonData,
-  //     eventItems,
-  //   });
-  //
-  //   const ethereumEvents = events.filter(
-  //     ({ section, method }) =>
-  //       section === EventSection.ETHEREUM && method === EventMethod.EXECUTED,
-  //   );
-  //
-  //   await this.evmService.parseEvents(
-  //     ethereumEvents,
-  //     blockCommonData.blockTimestamp,
-  //   );
-  //
-  //   await this.eventsRepository.upsert(events, ['block_number', 'event_index']);
-  //
-  //   const subscribersConfig = this.configService.get('subscribers');
-  //
-  //   let collectionsResult = null;
-  //   if (subscribersConfig[SubscriberName.COLLECTIONS]) {
-  //     collectionsResult = await this.collectionService.batchProcess({
-  //       events,
-  //       blockCommonData,
-  //     });
-  //   }
-  //
-  //   let tokensResult = null;
-  //   if (subscribersConfig[SubscriberName.TOKENS]) {
-  //     tokensResult = await this.tokenService.batchProcess({
-  //       events,
-  //       blockCommonData,
-  //     });
-  //   }
-  //
-  //   return {
-  //     events,
-  //     collectionsResult,
-  //     tokensResult,
-  //   };
-  // }
-
-  // async processEventWithAccounts(
-  //   eventName: string,
-  //   rawArgs: EventArgs,
-  // ): Promise<AccountRecord[]> {
-  //   const eventValues = await this.eventArgumentsService.processEventArguments(
-  //     eventName,
-  //     rawArgs,
-  //   );
-  //
-  //   const result = [];
-  //
-  //   // Extract only accounts values.
-  //   EVENT_ARGS_ACCOUNT_KEYS.forEach((k) => {
-  //     if (eventValues[k]) {
-  //       result.push(eventValues[k]);
-  //     }
-  //   });
-  //
-  //   return result;
-  // }
 }

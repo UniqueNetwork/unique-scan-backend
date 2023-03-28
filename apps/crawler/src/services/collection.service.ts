@@ -282,9 +282,8 @@ export class CollectionService {
   }: {
     events: Event[];
     blockCommonData: any;
-  }): Promise<ItemsBatchProcessingResult> {
+  }): Promise<any> {
     const collectionEvents = this.extractCollectionEvents(events);
-
     const eventChunks = chunk(
       collectionEvents,
       this.configService.get('scanCollectionsBatchSize'),
@@ -324,6 +323,8 @@ export class CollectionService {
 
     return {
       totalEvents: collectionEvents.length,
+      collection:
+        collectionEvents.length === 1 ? collectionEvents[0].values : null,
       rejected,
     };
   }
