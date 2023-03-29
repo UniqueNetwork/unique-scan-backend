@@ -138,6 +138,16 @@ export const STATE_SCHEMA_NAME_BY_MODE = {
   RESCAN: 'rescan_status',
 };
 
+export interface ITotalIssuance {
+  rawType: string;
+  isEmpty: boolean;
+  hash: string;
+  human: string;
+  json: string;
+  hex: string;
+  timestamp: number;
+}
+
 export enum SubscriberName {
   ACCOUNTS = 'account',
   BLOCKS = 'blocks',
