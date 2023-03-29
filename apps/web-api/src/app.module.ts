@@ -23,8 +23,6 @@ import { EvmTransactionModule } from './evm-transactions/evm-transaction.module'
 import { TokenOwnersModule } from './tokens-owners/token-owners.module';
 import { CirculatingModule } from './circulating/circulating.module';
 import { GlobalConfigModule } from '@common/config/config.module';
-import { SdkModule } from '../../crawler/src/sdk/sdk.module';
-import { SdkService } from '@common/sdk/sdk.service';
 
 @Module({
   imports: [
