@@ -10,7 +10,10 @@ import { TokenService } from '../token/token.service';
 import { CollectionService } from '../collection.service';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
-import { EventEntity } from '@unique-nft/harvester/src/database/entities';
+import {
+  BlockEntity,
+  EventEntity,
+} from '@unique-nft/harvester/src/database/entities';
 
 @Injectable()
 export class EventService {
@@ -37,11 +40,10 @@ export class EventService {
 
   private async prepareDataForDbNew(
     eventItems,
-    blockCommonData,
+    block: BlockEntity,
   ): Promise<Event[]> {
     return Promise.all(
       eventItems.map(async (event, num) => {
-        const { block_number, timestamp } = blockCommonData;
         const section = capitalize(event.section);
         const method = capitalize(event.method);
         const eventName = `${section}.${method}`;
@@ -53,25 +55,33 @@ export class EventService {
 
         const amount = eventValues?.amount || null;
         return {
-          block_number: String(block_number),
+          block_number: String(block.id),
           event_index: num,
           section,
           method,
           phase: String(num),
           data: JSON.stringify(event.dataJson),
           values: eventValues,
-          timestamp,
+          timestamp: block.timestamp.getTime(),
           amount, // todo: Remove this field and use from values?
-          block_index: `${block_number}-${num}`,
+          block_index: `${block.id}-${num}`,
         };
       }),
     );
   }
 
-  async process(blockItems, blockCommonData): Promise<any> {
-    const eventItems = this.extractEventItemsNew(blockItems);
+  async extractEventsFromBlock(block: BlockEntity): Promise<Event[]> {
+    const eventItems = this.extractEventItemsNew(block.extrinsics);
 
-    const events = await this.prepareDataForDbNew(eventItems, blockCommonData);
+    return await this.prepareDataForDbNew(eventItems, block);
+  }
+
+  async upsert(events: Event[]): Promise<void> {
+    await this.eventsRepository.upsert(events, ['block_number', 'event_index']);
+  }
+
+  async process(block: BlockEntity): Promise<any> {
+    const events = await this.extractEventsFromBlock(block);
 
     const ethereumEvents = events.filter(
       ({ section, method }) =>
@@ -81,12 +91,13 @@ export class EventService {
       ({ section, method }) =>
         section === 'ParachainSystem' && method === 'ValidationFunctionApplied',
     );
-    await this.evmService.parseEvents(
-      ethereumEvents,
-      blockCommonData.timestamp,
-    );
 
-    await this.eventsRepository.upsert(events, ['block_number', 'event_index']);
+    // this.evmService.parseEvents(
+    //   ethereumEvents,
+    //   block.timestamp.getTime(),
+    // ).then(); // todo понять нужны ли вообще. оооочень долго отрабатывает (2 минуты)
+
+    await this.upsert(events);
 
     const subscribersConfig = this.configService.get('subscribers');
 
@@ -94,11 +105,15 @@ export class EventService {
     if (subscribersConfig[SubscriberName.COLLECTIONS]) {
       collectionsResult = await this.collectionService.batchProcess({
         events,
-        blockCommonData,
+        blockCommonData: {
+          block_hash: block.hash,
+          timestamp: block.timestamp.getTime(),
+        },
       });
       if (
         collectionsResult.totalEvents >= 1 &&
-        collectionsResult.rejected.length === 0
+        collectionsResult.rejected.length === 0 &&
+        collectionsResult.collection.collectionId === undefined
       ) {
         this.logCollection.log(
           `Save event collection: ${collectionsResult.collection.collectionId}`,
@@ -110,7 +125,11 @@ export class EventService {
     if (subscribersConfig[SubscriberName.TOKENS]) {
       tokensResult = await this.tokenService.batchProcess({
         events,
-        blockCommonData,
+        blockCommonData: {
+          block_hash: block.hash,
+          block_number: block.id,
+          timestamp: block.timestamp.getTime(),
+        },
       });
       if (tokensResult.totalEvents >= 4) {
         this.logToken.log(
@@ -120,7 +139,7 @@ export class EventService {
     }
 
     return {
-      speckHash: speckEvents.length === 1 ? blockCommonData.block_hash : null,
+      speckHash: speckEvents.length === 1 ? block.hash : null,
       collectionsResult,
       tokensResult,
       events,

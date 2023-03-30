@@ -51,7 +51,7 @@ export class HarvesterStoreService {
       );
       if (status[0].height <= 0) {
         await this.dataSource.query(
-          `UPDATE ${this.stateSchema}.status SET height = 1 WHERE id = 0`,
+          `UPDATE ${this.stateSchema}.status SET height = 0 WHERE id = 0`,
         );
       }
 
@@ -85,9 +85,9 @@ export class HarvesterStoreService {
         );
         if (status.length == 0) {
           await em.query(
-            `INSERT INTO ${this.stateSchema}.status (id, height) VALUES (0, 1)`,
+            `INSERT INTO ${this.stateSchema}.status (id, height) VALUES (0, 0)`,
           );
-          return 1;
+          return 0;
         } else {
           return status[0].height;
         }
