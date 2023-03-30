@@ -89,10 +89,11 @@ export class EventService {
       ({ section, method }) =>
         section === 'ParachainSystem' && method === 'ValidationFunctionApplied',
     );
-    await this.evmService.parseEvents(
-      ethereumEvents,
-      block.timestamp.getTime(),
-    );
+
+    // this.evmService.parseEvents(
+    //   ethereumEvents,
+    //   block.timestamp.getTime(),
+    // ).then(); // todo понять нужны ли вообще. оооочень долго отрабатывает (2 минуты)
 
     await this.upsert(events);
 

@@ -122,7 +122,22 @@ export class TokenService {
     events: Event[];
     blockCommonData: any;
   }): Promise<any> {
-    const tokenEvents = this.extractTokenEvents(events);
+    const tokenEventsRaw = this.extractTokenEvents(events);
+
+    const same = {};
+    const tokenEvents = [];
+    tokenEventsRaw.forEach((event) => {
+      const { section, method, values } = event;
+      const { collectionId, tokenId } = values as unknown as {
+        collectionId: number;
+        tokenId: number;
+      };
+      const hash = `${section}${method}${collectionId}${tokenId}`;
+      if (!same[hash]) {
+        tokenEvents.push(event);
+      }
+      same[hash] = true;
+    });
 
     const eventChunks = chunk(
       tokenEvents,
@@ -215,6 +230,7 @@ export class TokenService {
     if (tokenId === 0) {
       return;
     }
+    const rand = Math.random();
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
 
     let result;
@@ -492,6 +508,7 @@ export class TokenService {
     tokenId: number,
     blockHash: string,
   ): Promise<TokenData | null> {
+    const rand = Math.random();
     const tokenDecoded = await this.sdkService.getToken(
       collectionId,
       tokenId,

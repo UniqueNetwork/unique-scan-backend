@@ -100,7 +100,7 @@ export class BlocksSubscriberService implements ISubscriberService {
         this.spec = await this.sdkService.getSpecLastUpgrade(block.parentHash);
       }
       const { isBlank } = this.collectEventsCount(block.extrinsics);
-      if (!isBlank) {
+      if (!isBlank || this.blankBlocks.length >= 1000) {
         if (this.blankBlocks.length) {
           this.logger.log(`Write ${this.blankBlocks.length} blank blocks`);
           await this.handleBlankBlocks(this.blankBlocks);
