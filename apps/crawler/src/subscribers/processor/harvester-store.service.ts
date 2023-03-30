@@ -51,7 +51,7 @@ export class HarvesterStoreService {
       );
       if (status[0].height <= 0) {
         await this.dataSource.query(
-          `UPDATE ${this.stateSchema}.status SET height = 1 WHERE id = 0`,
+          `UPDATE ${this.stateSchema}.status SET height = 0 WHERE id = 0`,
         );
       }
 

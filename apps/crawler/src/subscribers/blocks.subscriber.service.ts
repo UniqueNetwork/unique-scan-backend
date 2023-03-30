@@ -65,7 +65,9 @@ export class BlocksSubscriberService implements ISubscriberService {
   private readonly logger = new Logger(BlocksSubscriberService.name, {
     timestamp: true,
   });
-  private isStartBlockService: boolean = false;
+
+  private spec: ISpecSystemVersion | null = null;
+  private blankBlocks: BlockEntity[] = [];
   constructor(
     private blockService: BlockService,
 
@@ -94,63 +96,89 @@ export class BlocksSubscriberService implements ISubscriberService {
       stateNumber[1],
     )) {
       this.logger.log(`Read block: # ${cyan(block.id)}`);
-      await this.upsertHandlerBlock(block);
+      if (!this.spec) {
+        this.spec = await this.sdkService.getSpecLastUpgrade(block.parentHash);
+      }
+      const { isBlank } = this.collectEventsCount(block.extrinsics);
+      if (!isBlank) {
+        if (this.blankBlocks.length) {
+          this.logger.log(`Write ${this.blankBlocks.length} blank blocks`);
+          await this.handleBlankBlocks(this.blankBlocks);
+          this.blankBlocks = [];
+        }
+        await this.upsertHandlerBlock(block);
+        await this.harvesterStore.updateState(block.id);
+      } else {
+        this.blankBlocks.push(block);
+      }
     }
   }
 
+  private getBlockCommonData(block: BlockEntity): Block {
+
+    const { id, hash, parentHash, extrinsics } = block;
+    const countEvents = this.collectEventsCount(extrinsics);
+
+    const blockCommonData = {
+      block_number: +id,
+      block_hash: hash,
+      parent_hash: parentHash,
+      extrinsics_root: '0x000', // TODO: remove this ???
+      state_root: '0x000', // TODO: remove this ???
+      ...this.spec,
+      timestamp: block.timestamp.getTime(),
+      total_events: countEvents.totalEvents,
+      num_transfers: countEvents.numTransfers,
+      new_accounts: countEvents.newAccounts,
+      total_extrinsics: extrinsics.length,
+    } as unknown as Block;
+    return blockCommonData;
+  }
+
+  private async handleBlankBlocks(blocks: BlockEntity[]): Promise<void> {
+    const eventsArrays = await Promise.all(
+      blocks.map((b) => this.eventService.extractEventsFromBlock(b)),
+    );
+
+    await Promise.all([
+      this.blockService.upsert(blocks.map((b) => this.getBlockCommonData(b))),
+      this.extrinsicService.upsert(
+        blocks.reduce((acc, next) => {
+          next.extrinsics.forEach((e) => {
+            e.block = next;
+          });
+          acc.push(...next.extrinsics);
+          return acc;
+      }, [])),
+      this.eventService.upsert(
+        eventsArrays.reduce((acc, next) => {
+          acc.push(...next);
+          return acc;
+        }, []),
+      ),
+    ]);
+  }
+
   private async upsertHandlerBlock(blockData: BlockEntity): Promise<void> {
-    let specHashData = null;
-    let specDataChain = null;
-    let specLastUpgrade = null;
 
     try {
-      const { id, timestamp, hash, parentHash, extrinsics } = blockData;
+      const { extrinsics } = blockData;
+      extrinsics.forEach((e) => {
+        e.block = blockData;
+      });
 
-      const countEvents = this.collectEventsCount(extrinsics);
+      const blockCommonData = this.getBlockCommonData(blockData);
 
-      // First start
-      if (specLastUpgrade === null) {
-        specDataChain = await this.sdkService.getSpecLastUpgrade(hash);
-        this.isStartBlockService = true;
-        specLastUpgrade = specDataChain;
+      const { speckHash } = await this.eventService.process(blockData);
+
+      if (speckHash) {
+        this.spec = null;
       }
 
-      // New spec chain
-      if (specHashData !== null && this.isStartBlockService) {
-        specDataChain = await this.sdkService.getSpecLastUpgrade(specHashData);
-        specLastUpgrade = specDataChain;
-      }
-
-      const blockTimestamp = new Date(timestamp).getTime();
-
-      const blockCommonData = {
-        block_number: +id,
-        block_hash: hash,
-        parent_hash: parentHash,
-        extrinsics_root: '0x000', // TODO: remove this ???
-        state_root: '0x000', // TODO: remove this ???
-        ...specLastUpgrade,
-        timestamp: blockTimestamp,
-        total_events: countEvents.totalEvents,
-        num_transfers: countEvents.numTransfers,
-        new_accounts: countEvents.newAccounts,
-        total_extrinsics: extrinsics.length,
-      } as unknown as Block;
-
-      const log = {
-        blockNumber: id,
-      };
-      const { speckHash } = await this.eventService.process(
-        extrinsics,
-        blockCommonData,
-      );
-      specHashData = speckHash;
       await Promise.all([
         this.blockService.upsert(blockCommonData),
-        this.extrinsicService.upsert(id, hash, extrinsics, blockTimestamp),
+        this.extrinsicService.upsert(extrinsics),
       ]);
-
-      await this.harvesterStore.updateState(id);
 
       // Logger
       extrinsics.map((value) => {
@@ -187,6 +215,15 @@ export class BlocksSubscriberService implements ISubscriberService {
       totalEvents: 0,
       numTransfers: 0,
       newAccounts: 0,
+      isBlank:
+        extrinsics
+          .map((e) => {
+            return e.events.filter(
+              (e) =>
+                !(e.section === 'system' && e.method === 'ExtrinsicSuccess'),
+            ).length;
+          })
+          .filter((count) => count > 0).length === 0,
     };
 
     extrinsics.map((ext) => {

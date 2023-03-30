@@ -42,18 +42,8 @@ export class ExtrinsicService {
     private sdkService: SdkService,
   ) {}
 
-  upsert(
-    blockNumber: number,
-    blockHash: string,
-    extrinsicsEntity: ExtrinsicEntity[],
-    blockTimestamp,
-  ) {
-    const extrinsicsData = this.prepareDataForDbNew(
-      extrinsicsEntity,
-      blockNumber,
-      blockHash,
-      blockTimestamp,
-    );
+  upsert(extrinsicsEntity: ExtrinsicEntity[]) {
+    const extrinsicsData = this.prepareDataForDbNew(extrinsicsEntity);
 
     return this.extrinsicsRepository.upsert(extrinsicsData, [
       'block_number',
@@ -96,15 +86,10 @@ export class ExtrinsicService {
       );
   }
 
-  private prepareDataForDbNew(
-    extrinsicItems,
-    blockNumber,
-    blockHash,
-    blockTimestamp,
-  ): Extrinsic[] {
+  private prepareDataForDbNew(extrinsicItems): Extrinsic[] {
     return extrinsicItems.map((extrinsic) => {
       const { signer, index, events } = extrinsic;
-      const blockIndex = `${blockNumber}-${index}`;
+      const blockIndex = `${extrinsic.block.id}-${index}`;
       const amountValues = this.getAmountValues(index, events);
       const section = capitalize(extrinsic.section);
       const method = capitalize(extrinsic.method);
@@ -124,13 +109,13 @@ export class ExtrinsicService {
       const { amount, fee } = amountValues;
 
       return {
-        timestamp: String(normalizeTimestamp(blockTimestamp)),
-        block_number: String(blockNumber),
+        timestamp: String(normalizeTimestamp(new Date(extrinsic.block.timestamp).getTime())),
+        block_number: String(extrinsic.block.id),
         block_index: blockIndex,
         extrinsic_index: extrinsic.index,
         section,
         method,
-        hash: blockHash,
+        hash: extrinsic.block.hash,
         success: !!signer,
         is_signed: !!signer,
         signer,
