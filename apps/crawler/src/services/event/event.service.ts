@@ -10,8 +10,10 @@ import { TokenService } from '../token/token.service';
 import { CollectionService } from '../collection.service';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
-import { BlockEntity, EventEntity, ExtrinsicEntity } from '@unique-nft/harvester/src/database/entities';
-import { timestamp } from 'rxjs';
+import {
+  BlockEntity,
+  EventEntity,
+} from '@unique-nft/harvester/src/database/entities';
 
 @Injectable()
 export class EventService {
@@ -110,7 +112,8 @@ export class EventService {
       });
       if (
         collectionsResult.totalEvents >= 1 &&
-        collectionsResult.rejected.length === 0
+        collectionsResult.rejected.length === 0 &&
+        collectionsResult.collection.collectionId === undefined
       ) {
         this.logCollection.log(
           `Save event collection: ${collectionsResult.collection.collectionId}`,
