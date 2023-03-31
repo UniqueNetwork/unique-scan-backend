@@ -68,6 +68,7 @@ export class CollectionService {
     collectionId: number,
     at: string,
   ): Promise<CollectionData | null> {
+    debugger;
     let collectionDecoded = await this.sdkService.getCollection(collectionId);
     let checkAt = false; // for burned collections
 
@@ -75,7 +76,7 @@ export class CollectionService {
       collectionDecoded = await this.sdkService.getCollection(collectionId, at);
       checkAt = true;
     }
-
+    debugger;
     if (!collectionDecoded) {
       return null;
     }
@@ -84,7 +85,7 @@ export class CollectionService {
     // if (collectionDecoded.mode === CollectionMode.ReFungible) {
     //   return null;
     // }
-
+    debugger;
     const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
       this.sdkService.getCollectionLimits(
         collectionId,

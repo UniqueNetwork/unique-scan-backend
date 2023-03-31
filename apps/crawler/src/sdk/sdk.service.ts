@@ -33,7 +33,13 @@ export class SdkService {
     collectionId: number,
     at?: string,
   ): Promise<CollectionInfoWithSchema | null> {
-    return this.sdk.collections.get({ collectionId, at });
+    if (at) {
+      debugger;
+      return this.sdk.collections.get({ collectionId, at });
+    } else {
+      debugger;
+      return this.sdk.collections.get({ collectionId });
+    }
   }
 
   @SdkCache('getSpecLastUpgrade')

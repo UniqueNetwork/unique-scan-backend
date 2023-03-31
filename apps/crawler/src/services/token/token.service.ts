@@ -509,19 +509,38 @@ export class TokenService {
     blockHash: string,
   ): Promise<TokenData | null> {
     const rand = Math.random();
-    const tokenDecoded = await this.sdkService.getToken(
-      collectionId,
-      tokenId,
-      blockHash,
-    );
+    let tokenDecoded = null;
+    let tokenProperties = null;
+    let isBundle = false;
+    try {
+      tokenDecoded = await this.sdkService.getToken(
+        collectionId,
+        tokenId,
+        blockHash,
+      );
 
-    if (!tokenDecoded) {
-      return null;
+      if (!tokenDecoded) {
+        return null;
+      }
+      const [tokenPropertiesRaw, isBundleRaw] = await Promise.all([
+        this.sdkService.getTokenProperties(collectionId, tokenId),
+        this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
+      ]);
+      tokenProperties = tokenPropertiesRaw;
+      isBundle = isBundleRaw;
+    } catch (e) {
+      tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+
+      if (!tokenDecoded) {
+        return null;
+      }
+      const [tokenPropertiesRaw, isBundleRaw] = await Promise.all([
+        this.sdkService.getTokenProperties(collectionId, tokenId),
+        this.sdkService.isTokenBundle(collectionId, tokenId),
+      ]);
+      tokenProperties = tokenPropertiesRaw;
+      isBundle = isBundleRaw;
     }
-    const [tokenProperties, isBundle] = await Promise.all([
-      this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
-    ]);
 
     return {
       tokenDecoded,
