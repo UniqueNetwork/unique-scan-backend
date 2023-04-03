@@ -9,8 +9,9 @@ import { Repository } from 'typeorm';
 import { EventValues } from './event/event.types';
 
 import { TokensOwners } from '@entities/TokensOwners';
-import { SdkService } from '../sdk/sdk.service';
+
 import { ExtrinsicEntity } from '@unique-nft/harvester/src/database/entities';
+import { SdkService } from '@common/sdk/sdk.service';
 
 const EXTRINSICS_TRANSFER_METHODS = [
   ExtrinsicMethod.TRANSFER,
@@ -97,7 +98,7 @@ export class ExtrinsicService {
       // Don't need to use AccountService for signer and to_owner addresses,
       // // because all addresses are already processed in EventService.
 
-      // let toOwner = null;
+      //   let toOwner = null;
       // if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
       //   const recipientAddress = args as IExtrinsicRecipient;
       //   const rawToOwner =
@@ -109,7 +110,9 @@ export class ExtrinsicService {
       const { amount, fee } = amountValues;
 
       return {
-        timestamp: String(normalizeTimestamp(new Date(extrinsic.block.timestamp).getTime())),
+        timestamp: String(
+          normalizeTimestamp(new Date(extrinsic.block.timestamp).getTime()),
+        ),
         block_number: String(extrinsic.block.id),
         block_index: blockIndex,
         extrinsic_index: extrinsic.index,

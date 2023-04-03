@@ -11,10 +11,10 @@ import { Reader } from '@unique-nft/harvester';
 import { cyan, green, blue, magenta, yellow } from 'cli-color';
 import { capitalize } from '@common/utils';
 import { BlockEntity } from '@unique-nft/harvester/src/database/entities';
-import { SdkService } from '../sdk/sdk.service';
+
 import { EventName } from '@common/constants';
 import { Block } from '@entities/Block';
-import { setIntervalAsync } from 'set-interval-async';
+import { ISpecSystemVersion, SdkService } from '@common/sdk/sdk.service';
 
 export interface IBlockCommonData {
   blockNumber: number;
@@ -36,11 +36,6 @@ export interface IBlockDataContainer {
   num_transfers: number;
   new_accounts: number;
   total_extrinsics: number;
-}
-
-export interface ISpecSystemVersion {
-  spec_version: number;
-  spec_name: string;
 }
 
 export interface IItemCounts {
@@ -95,7 +90,6 @@ export class BlocksSubscriberService implements ISubscriberService {
     const chainProps = await this.sdkService.getChainProperties();
     const stateNumber = await this.harvesterStore.getState();
 
-
     this.readFromHeadInterval = setInterval(async () => {
       if (
         (await this.sdkService.getLastBlockHash()) === this.lastHandledBlockHash
@@ -135,11 +129,9 @@ export class BlocksSubscriberService implements ISubscriberService {
         this.blankBlocks.push(block);
       }
     }
-
   }
 
   private getBlockCommonData(block: BlockEntity): Block {
-
     const { id, hash, parentHash, extrinsics } = block;
     const countEvents = this.collectEventsCount(extrinsics);
 
@@ -173,7 +165,8 @@ export class BlocksSubscriberService implements ISubscriberService {
           });
           acc.push(...next.extrinsics);
           return acc;
-      }, [])),
+        }, []),
+      ),
       this.eventService.upsert(
         eventsArrays.reduce((acc, next) => {
           acc.push(...next);
@@ -184,7 +177,6 @@ export class BlocksSubscriberService implements ISubscriberService {
   }
 
   private async upsertHandlerBlock(blockData: BlockEntity): Promise<void> {
-
     try {
       const { extrinsics } = blockData;
       extrinsics.forEach((e) => {

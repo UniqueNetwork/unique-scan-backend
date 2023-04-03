@@ -22,14 +22,11 @@ import {
   UniqueCollectionSchemaDecoded,
 } from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
-import { SdkService } from '../sdk/sdk.service';
-import {
-  IBlockCommonData,
-  ItemsBatchProcessingResult,
-} from '../subscribers/blocks.subscriber.service';
+
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../config/config.module';
 import { Event } from '@entities/Event';
+import { SdkService } from '@common/sdk/sdk.service';
 
 type ParsedSchemaFields = {
   collectionCover?: string;
@@ -69,7 +66,10 @@ export class CollectionService {
     at: string,
   ): Promise<CollectionData | null> {
     debugger;
-    let collectionDecoded = await this.sdkService.getCollection(collectionId);
+    let collectionDecoded = await this.sdkService.getCollection(
+      collectionId,
+      at,
+    );
     let checkAt = false; // for burned collections
 
     if (!collectionDecoded) {

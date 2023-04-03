@@ -15,7 +15,7 @@ import { ITokenEntities, Tokens, TokenType } from '@entities/Tokens';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SdkService } from '../../sdk/sdk.service';
+
 import { TokenNestingService } from './nesting.service';
 import { TokenData, TokenOwnerData } from './token.types';
 import { chunk } from 'lodash';
@@ -25,6 +25,7 @@ import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
 import * as console from 'console';
 import { yellow } from '@nestjs/common/utils/cli-colors.util';
+import { SdkService } from '@common/sdk/sdk.service';
 
 @Injectable()
 export class TokenService {
