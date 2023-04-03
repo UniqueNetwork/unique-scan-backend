@@ -22,6 +22,10 @@ export class SdkService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
+  getLastBlockHash(): Promise<string> {
+    return this.sdk.api.rpc.chain.getHeader().then(header => header.hash.toString());
+  }
+
   @SdkCache('getApi')
   async getApi(hash) {
     const optionUpgrade = await this.sdk.api.query.system.events.at(hash);

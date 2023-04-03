@@ -14,6 +14,7 @@ import { BlockEntity } from '@unique-nft/harvester/src/database/entities';
 import { SdkService } from '../sdk/sdk.service';
 import { EventName } from '@common/constants';
 import { Block } from '@entities/Block';
+import { setIntervalAsync } from 'set-interval-async';
 
 export interface IBlockCommonData {
   blockNumber: number;
@@ -68,6 +69,10 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   private spec: ISpecSystemVersion | null = null;
   private blankBlocks: BlockEntity[] = [];
+  private readFromHead = false;
+  private cutOff = false;
+  private readFromHeadInterval;
+  private lastHandledBlockHash = '';
   constructor(
     private blockService: BlockService,
 
@@ -90,6 +95,17 @@ export class BlocksSubscriberService implements ISubscriberService {
     const chainProps = await this.sdkService.getChainProperties();
     const stateNumber = await this.harvesterStore.getState();
 
+
+    this.readFromHeadInterval = setInterval(async () => {
+      if (
+        (await this.sdkService.getLastBlockHash()) === this.lastHandledBlockHash
+      ) {
+        clearInterval(this.readFromHeadInterval);
+        this.readFromHead = true;
+      }
+      this.cutOff = true;
+    }, 60_000);
+
     console.dir(stateNumber);
     for await (const block of this.reader.readBlocks(
       stateNumber[0],
@@ -99,8 +115,15 @@ export class BlocksSubscriberService implements ISubscriberService {
       if (!this.spec) {
         this.spec = await this.sdkService.getSpecLastUpgrade(block.parentHash);
       }
+      this.lastHandledBlockHash = block.hash;
       const { isBlank } = this.collectEventsCount(block.extrinsics);
-      if (!isBlank || this.blankBlocks.length >= 1000) {
+      if (
+        this.readFromHead ||
+        this.cutOff ||
+        !isBlank ||
+        this.blankBlocks.length >= 1000
+      ) {
+        this.cutOff = false;
         if (this.blankBlocks.length) {
           this.logger.log(`Write ${this.blankBlocks.length} blank blocks`);
           await this.handleBlankBlocks(this.blankBlocks);
@@ -112,6 +135,7 @@ export class BlocksSubscriberService implements ISubscriberService {
         this.blankBlocks.push(block);
       }
     }
+
   }
 
   private getBlockCommonData(block: BlockEntity): Block {
