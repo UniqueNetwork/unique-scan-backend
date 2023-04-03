@@ -15,7 +15,7 @@ import { ITokenEntities, Tokens, TokenType } from '@entities/Tokens';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SdkService } from '../../sdk/sdk.service';
+
 import { TokenNestingService } from './nesting.service';
 import { TokenData, TokenOwnerData } from './token.types';
 import { chunk } from 'lodash';
@@ -25,6 +25,7 @@ import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
 import * as console from 'console';
 import { yellow } from '@nestjs/common/utils/cli-colors.util';
+import { SdkService } from '@common/sdk/sdk.service';
 
 @Injectable()
 export class TokenService {
@@ -509,19 +510,38 @@ export class TokenService {
     blockHash: string,
   ): Promise<TokenData | null> {
     const rand = Math.random();
-    const tokenDecoded = await this.sdkService.getToken(
-      collectionId,
-      tokenId,
-      blockHash,
-    );
+    let tokenDecoded = null;
+    let tokenProperties = null;
+    let isBundle = false;
+    try {
+      tokenDecoded = await this.sdkService.getToken(
+        collectionId,
+        tokenId,
+        blockHash,
+      );
 
-    if (!tokenDecoded) {
-      return null;
+      if (!tokenDecoded) {
+        return null;
+      }
+      const [tokenPropertiesRaw, isBundleRaw] = await Promise.all([
+        this.sdkService.getTokenProperties(collectionId, tokenId),
+        this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
+      ]);
+      tokenProperties = tokenPropertiesRaw;
+      isBundle = isBundleRaw;
+    } catch (e) {
+      tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+
+      if (!tokenDecoded) {
+        return null;
+      }
+      const [tokenPropertiesRaw, isBundleRaw] = await Promise.all([
+        this.sdkService.getTokenProperties(collectionId, tokenId),
+        this.sdkService.isTokenBundle(collectionId, tokenId),
+      ]);
+      tokenProperties = tokenPropertiesRaw;
+      isBundle = isBundleRaw;
     }
-    const [tokenProperties, isBundle] = await Promise.all([
-      this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
-    ]);
 
     return {
       tokenDecoded,

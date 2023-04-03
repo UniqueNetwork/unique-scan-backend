@@ -11,9 +11,10 @@ import { Reader } from '@unique-nft/harvester';
 import { cyan, green, blue, magenta, yellow } from 'cli-color';
 import { capitalize } from '@common/utils';
 import { BlockEntity } from '@unique-nft/harvester/src/database/entities';
-import { SdkService } from '../sdk/sdk.service';
+
 import { EventName } from '@common/constants';
 import { Block } from '@entities/Block';
+import { ISpecSystemVersion, SdkService } from '@common/sdk/sdk.service';
 
 export interface IBlockCommonData {
   blockNumber: number;
@@ -35,11 +36,6 @@ export interface IBlockDataContainer {
   num_transfers: number;
   new_accounts: number;
   total_extrinsics: number;
-}
-
-export interface ISpecSystemVersion {
-  spec_version: number;
-  spec_name: string;
 }
 
 export interface IItemCounts {
@@ -68,6 +64,10 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   private spec: ISpecSystemVersion | null = null;
   private blankBlocks: BlockEntity[] = [];
+  private readFromHead = false;
+  private cutOff = false;
+  private readFromHeadInterval;
+  private lastHandledBlockHash = '';
   constructor(
     private blockService: BlockService,
 
@@ -90,6 +90,16 @@ export class BlocksSubscriberService implements ISubscriberService {
     const chainProps = await this.sdkService.getChainProperties();
     const stateNumber = await this.harvesterStore.getState();
 
+    this.readFromHeadInterval = setInterval(async () => {
+      if (
+        (await this.sdkService.getLastBlockHash()) === this.lastHandledBlockHash
+      ) {
+        clearInterval(this.readFromHeadInterval);
+        this.readFromHead = true;
+      }
+      this.cutOff = true;
+    }, 60_000);
+
     console.dir(stateNumber);
     for await (const block of this.reader.readBlocks(
       stateNumber[0],
@@ -99,8 +109,15 @@ export class BlocksSubscriberService implements ISubscriberService {
       if (!this.spec) {
         this.spec = await this.sdkService.getSpecLastUpgrade(block.parentHash);
       }
+      this.lastHandledBlockHash = block.hash;
       const { isBlank } = this.collectEventsCount(block.extrinsics);
-      if (!isBlank || this.blankBlocks.length >= 1000) {
+      if (
+        this.readFromHead ||
+        this.cutOff ||
+        !isBlank ||
+        this.blankBlocks.length >= 1000
+      ) {
+        this.cutOff = false;
         if (this.blankBlocks.length) {
           this.logger.log(`Write ${this.blankBlocks.length} blank blocks`);
           await this.handleBlankBlocks(this.blankBlocks);
@@ -115,7 +132,6 @@ export class BlocksSubscriberService implements ISubscriberService {
   }
 
   private getBlockCommonData(block: BlockEntity): Block {
-
     const { id, hash, parentHash, extrinsics } = block;
     const countEvents = this.collectEventsCount(extrinsics);
 
@@ -149,7 +165,8 @@ export class BlocksSubscriberService implements ISubscriberService {
           });
           acc.push(...next.extrinsics);
           return acc;
-      }, [])),
+        }, []),
+      ),
       this.eventService.upsert(
         eventsArrays.reduce((acc, next) => {
           acc.push(...next);
@@ -160,7 +177,6 @@ export class BlocksSubscriberService implements ISubscriberService {
   }
 
   private async upsertHandlerBlock(blockData: BlockEntity): Promise<void> {
-
     try {
       const { extrinsics } = blockData;
       extrinsics.forEach((e) => {
