@@ -11,7 +11,7 @@ export class TokenEventDTO {
     | EventMethod.TRANSFER
     | EventMethod.ITEM_DESTROYED;
 
-  @Field(() => Int)
+  @Field(() => Float)
   timestamp?: string;
 
   @Field(() => Float, { nullable: true })
