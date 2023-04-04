@@ -1,7 +1,12 @@
 import { Repository } from 'typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EventMethod, EventSection, SubscriberName } from '@common/constants';
+import {
+  EVENT_ARGS_ACCOUNT_KEYS,
+  EventMethod,
+  EventSection,
+  SubscriberName,
+} from '@common/constants';
 import { Event } from '@entities/Event';
 import { capitalize } from '@common/utils';
 import { EventArgumentsService } from './event.arguments.service';
@@ -32,7 +37,14 @@ export class EventService {
   private extractEventItemsNew(blockItems: any): EventEntity[] {
     return blockItems
       .map((item) => {
-        return item.events as EventEntity;
+        return item as EventEntity;
+      })
+      .reduce((acc, item) => {
+        acc = item.events.map((event) => {
+          event['indexExtrinsics'] = item.index;
+          return event;
+        });
+        return acc;
       })
       .filter((v) => !!v)
       .flatMap((num) => num);
@@ -52,6 +64,11 @@ export class EventService {
             eventName,
             event.dataJson,
           );
+        const eventValueNew = this.eventArgumentsService.eventDataConverter(
+          event.dataJson,
+          eventName,
+        );
+        console.dir({ eventValues, eventValueNew }, { depth: 10 });
 
         const amount = eventValues?.amount || null;
         return {
@@ -64,7 +81,7 @@ export class EventService {
           values: eventValues,
           timestamp: block.timestamp.getTime(),
           amount, // todo: Remove this field and use from values?
-          block_index: `${block.id}-${num}`,
+          block_index: `${block.id}-${event.indexExtrinsics}`,
         };
       }),
     );
@@ -72,7 +89,7 @@ export class EventService {
 
   async extractEventsFromBlock(block: BlockEntity): Promise<Event[]> {
     const eventItems = this.extractEventItemsNew(block.extrinsics);
-
+    //console.dir({ ext: block.extrinsics, eventItems }, { depth: 3 });
     return await this.prepareDataForDbNew(eventItems, block);
   }
 
