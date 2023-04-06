@@ -35,16 +35,14 @@ export class EventService {
   ) {}
 
   private extractEventItemsNew(blockItems: any): EventEntity[] {
+    const arr = [];
     return blockItems
       .map((item) => {
-        return item as EventEntity;
-      })
-      .reduce((acc, item) => {
-        acc = item.events.map((event) => {
-          event['indexExtrinsics'] = item.index;
-          return event;
-        });
-        return acc;
+        const event = [];
+        for (const eva of item.events) {
+          event.push({ ...eva, indexExtrinsics: item.index });
+        }
+        return event;
       })
       .filter((v) => !!v)
       .flatMap((num) => num);
@@ -59,26 +57,23 @@ export class EventService {
         const section = capitalize(event.section);
         const method = capitalize(event.method);
         const eventName = `${section}.${method}`;
-        const eventValues =
-          await this.eventArgumentsService.processEventArgumentsNew(
-            eventName,
-            event.dataJson,
-          );
-        const eventValueNew = this.eventArgumentsService.eventDataConverter(
+
+        const evenData = await this.eventArgumentsService.eventDataConverter(
           event.dataJson,
           eventName,
         );
-        console.dir({ eventValues, eventValueNew }, { depth: 10 });
 
-        const amount = eventValues?.amount || null;
+        //console.dir({ eventName, evenData }, { depth: 3 });
+
+        const amount = evenData?.values?.amount || null;
         return {
           block_number: String(block.id),
           event_index: num,
           section,
           method,
           phase: String(num),
-          data: JSON.stringify(event.dataJson),
-          values: eventValues,
+          data: JSON.stringify(evenData.data) || JSON.stringify(event.dataJson),
+          values: evenData.values || null,
           timestamp: block.timestamp.getTime(),
           amount, // todo: Remove this field and use from values?
           block_index: `${block.id}-${event.indexExtrinsics}`,
@@ -89,7 +84,6 @@ export class EventService {
 
   async extractEventsFromBlock(block: BlockEntity): Promise<Event[]> {
     const eventItems = this.extractEventItemsNew(block.extrinsics);
-    //console.dir({ ext: block.extrinsics, eventItems }, { depth: 3 });
     return await this.prepareDataForDbNew(eventItems, block);
   }
 
