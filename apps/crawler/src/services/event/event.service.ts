@@ -1,7 +1,12 @@
 import { Repository } from 'typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EventMethod, EventSection, SubscriberName } from '@common/constants';
+import {
+  EVENT_ARGS_ACCOUNT_KEYS,
+  EventMethod,
+  EventSection,
+  SubscriberName,
+} from '@common/constants';
 import { Event } from '@entities/Event';
 import { capitalize } from '@common/utils';
 import { EventArgumentsService } from './event.arguments.service';
@@ -30,9 +35,14 @@ export class EventService {
   ) {}
 
   private extractEventItemsNew(blockItems: any): EventEntity[] {
+    const arr = [];
     return blockItems
       .map((item) => {
-        return item.events as EventEntity;
+        const event = [];
+        for (const eva of item.events) {
+          event.push({ ...eva, indexExtrinsics: item.index });
+        }
+        return event;
       })
       .filter((v) => !!v)
       .flatMap((num) => num);
@@ -47,24 +57,26 @@ export class EventService {
         const section = capitalize(event.section);
         const method = capitalize(event.method);
         const eventName = `${section}.${method}`;
-        const eventValues =
-          await this.eventArgumentsService.processEventArgumentsNew(
-            eventName,
-            event.dataJson,
-          );
 
-        const amount = eventValues?.amount || null;
+        const evenData = await this.eventArgumentsService.eventDataConverter(
+          event.dataJson,
+          eventName,
+        );
+
+        //console.dir({ eventName, evenData }, { depth: 3 });
+
+        const amount = evenData?.values?.amount || null;
         return {
           block_number: String(block.id),
           event_index: num,
           section,
           method,
           phase: String(num),
-          data: JSON.stringify(event.dataJson),
-          values: eventValues,
+          data: JSON.stringify(evenData.data) || JSON.stringify(event.dataJson),
+          values: evenData.values || null,
           timestamp: block.timestamp.getTime(),
           amount, // todo: Remove this field and use from values?
-          block_index: `${block.id}-${num}`,
+          block_index: `${block.id}-${event.indexExtrinsics}`,
         };
       }),
     );
@@ -72,7 +84,6 @@ export class EventService {
 
   async extractEventsFromBlock(block: BlockEntity): Promise<Event[]> {
     const eventItems = this.extractEventItemsNew(block.extrinsics);
-
     return await this.prepareDataForDbNew(eventItems, block);
   }
 
