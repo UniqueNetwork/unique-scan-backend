@@ -9,7 +9,7 @@ export class CollectionEventDTO {
   @Field(() => String)
   action: EventMethod;
 
-  @Field(() => Int)
+  @Field(() => Float)
   timestamp?: string;
 
   @Field(() => Float, { nullable: true })
