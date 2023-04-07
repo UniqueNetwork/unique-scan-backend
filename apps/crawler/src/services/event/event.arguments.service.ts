@@ -361,7 +361,7 @@ export class EventArgumentsService {
             `{ "value": "${address.substrate}" , "__king": "Substrate"}`,
           )
         : JSON.parse(
-            `{ "value": "${address.etherium}" , "__king": "Etherium"}`,
+            `{ "value": "${address.ethereum}" , "__king": "Ethereum"}`,
           );
     }
   }
