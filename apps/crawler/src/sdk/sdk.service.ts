@@ -61,7 +61,12 @@ export class SdkService {
     at?: string,
   ): Promise<TokenByIdResult | null> {
     if (at) {
-      return await this.sdk.tokens.get({ collectionId, tokenId, at });
+      try {
+        // todo связано с багой чейна получения токена по at
+        return await this.sdk.tokens.get({ collectionId, tokenId, at });
+      } catch (e) {
+        return await this.sdk.tokens.get({ collectionId, tokenId });
+      }
     } else {
       return await this.sdk.tokens.get({ collectionId, tokenId });
     }
