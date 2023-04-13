@@ -269,7 +269,7 @@ export class CollectionService {
       token_prefix,
       mode: mode === 'ReFungible' ? 'RFT' : mode,
       mint_mode: mintMode,
-      nesting_enabled: (nesting?.collectionAdmin && nesting?.tokenOwner) ? true : false, // todo wat?
+      nesting_enabled: nesting?.collectionAdmin && nesting?.tokenOwner,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
       burned: collection?.burned ?? false,
