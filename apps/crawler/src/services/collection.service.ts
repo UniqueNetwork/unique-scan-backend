@@ -246,6 +246,13 @@ export class CollectionService {
       collection_id,
     });
 
+    const { collectionAdmin, tokenOwner } = nesting || {};
+
+    const nesting_enabled =
+      typeof collectionAdmin === 'boolean' && typeof tokenOwner === 'boolean'
+        ? collectionAdmin || tokenOwner
+        : true;
+
     return {
       collection_id,
       owner,
@@ -269,7 +276,7 @@ export class CollectionService {
       token_prefix,
       mode: mode === 'ReFungible' ? 'RFT' : mode,
       mint_mode: mintMode,
-      nesting_enabled: nesting?.collectionAdmin && nesting?.tokenOwner,
+      nesting_enabled,
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
       burned: collection?.burned ?? false,
