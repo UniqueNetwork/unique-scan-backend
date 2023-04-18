@@ -25,7 +25,7 @@ export enum EventMethod {
   COLLECTION_CREATED = 'CollectionCreated',
   COLLECTION_DESTROYED = 'CollectionDestroyed',
   COLLECTION_PROPERTY_DELETED = 'CollectionPropertyDeleted',
-  COLLECTION_PROPERTY_SET = 'CollectionPropertySet',
+  COLLECTION_PROPERTY_SET = 'CollectionPropertySet', //CollectionPermissionSet
   ITEM_CREATED = 'ItemCreated',
   ITEM_DESTROYED = 'ItemDestroyed',
   PROPERTY_PERMISSION_SET = 'PropertyPermissionSet',
@@ -161,6 +161,7 @@ export const COLLECTION_UPDATE_EVENTS = [
   EventName.COLLECTION_PROPERTY_SET,
   EventName.COLLECTION_PROPERTY_DELETED,
   EventName.PROPERTY_PERMISSION_SET,
+  EventName.COLLECTION_PERMISSION_SET,
   EventName.COLLECTION_SPONSOR_REMOVED,
   EventName.COLLECTION_OWNED_CHANGED,
   EventName.SPONSORSHIP_CONFIRMED,
