@@ -279,21 +279,26 @@ export class TokenService {
             ? normalizeTimestamp(blockTimestamp)
             : undefined,
       };
+
       const already = await this.tokensRepository.findOne({
         where: {
           token_id: preparedData.token_id,
           collection_id: preparedData.collection_id,
         },
       });
-      if (already) {
+
+      if (already === null) {
+        await this.tokensRepository.upsert(entity, [
+          'token_id',
+          'collection_id',
+        ]);
+      } else {
         await this.tokensRepository.update(
           {
             id: already.id,
           },
           entity,
         );
-      } else {
-        await this.tokensRepository.insert(entity);
       }
       result = SubscriberAction.UPSERT;
     } else {
