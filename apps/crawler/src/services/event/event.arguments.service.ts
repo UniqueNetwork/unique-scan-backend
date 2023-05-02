@@ -351,23 +351,25 @@ export class EventArgumentsService {
   }
 
   private accountConverter(address: AccountAddressData): AccountRecord {
+    let resultAddress;
     if (typeof address === 'string') {
-      return JSON.parse(
+      resultAddress = JSON.parse(
         `{ "value": "${address}" , "__king": "${checkoutAddress(address)}" }`,
       );
     } else {
-      return address.substrate
+      resultAddress = address.substrate
         ? JSON.parse(
-            `{ "value": "${address.substrate}" , "__king": "Substrate"}`,
+            `{ "value": "${address.substrate}" , "__king": "Substrate" }`,
           )
         : JSON.parse(
-            `{ "value": "${address.ethereum}" , "__king": "Ethereum"}`,
+            `{ "value": "${address.ethereum}" , "__king": "Ethereum" }`,
           );
     }
+    return JSON.parse(JSON.stringify(resultAddress));
   }
 
   private async accountNormalizer(account: AccountRecord) {
-    return this.accountService.processRawAccountRecord({ account });
+    return await this.accountService.processRawAccountRecord({ account });
   }
 
   private amountNormalizer(amount: string) {
@@ -380,12 +382,12 @@ export class EventArgumentsService {
   ): Promise<EventData> {
     const values = {} as EventValues;
     const data = [];
-    Object.entries(argsRaw).map((key, val) => {
+    Object.entries(argsRaw).map(async (key, val) => {
       if (key[0] == 'props') {
         return;
       }
       if (key[0] === 'owner') {
-        this.accountNormalizer(this.accountConverter(items[`${key[1]}`]));
+        await this.accountNormalizer(this.accountConverter(items[`${key[1]}`]));
         return;
       }
       if (key[0] === 'sender' || key[0] === 'from') {
@@ -410,25 +412,25 @@ export class EventArgumentsService {
   private async parserItemCreated(items, argsRaw): Promise<EventData> {
     const values = {} as EventValues;
     const data = [];
-    Object.entries(argsRaw).map((key, val) => {
+    Object.entries(argsRaw).map(async (key, val) => {
       if (key[0] == 'props') {
         return;
       }
       if (key[0] === 'owner') {
-        this.accountNormalizer(this.accountConverter(items[`${key[1]}`]));
+        await this.accountNormalizer(this.accountConverter(items[`${key[1]}`]));
         return;
       }
       if (key[0] === 'account') {
-        values[`${key[0]}`] = this.accountConverter(
-          items[`${key[1]}`],
-        ).toString();
-        data.push(values[`${key[0]}`]);
+        const accountValue = this.accountConverter(items[`${key[1]}`]);
+
+        // @ts-ignore
+        values[`${key[0]}`] = accountValue;
+        data.push(accountValue);
       } else {
         data.push(items[`${val}`]);
         values[`${key[0]}`] = items[`${val}`];
       }
     });
-
     return { data, values };
   }
 
@@ -515,8 +517,6 @@ export class EventArgumentsService {
     return { data, values };
   }
 
-  private newAccountNormalizer(items, argsRaw) {}
-
   private async parserTokenProperty(items, argsRaw): Promise<EventData> {
     //delete argsRaw['props'];
     const values = {} as EventValues;
@@ -551,6 +551,7 @@ export class EventArgumentsService {
     const [convertDescriptor] = await Promise.all([
       props(dataArray, argsDescriptor),
     ]);
+
     const { values, data } = convertDescriptor;
     const nestedTo = this.normalizeNestedTokenAddr(eventName, dataArray);
 
