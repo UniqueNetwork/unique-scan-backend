@@ -66,7 +66,8 @@ export class EventService {
         //console.dir({ eventName, evenData }, { depth: 3 });
 
         const amount = evenData?.values?.amount || null;
-        return {
+
+        const result = {
           block_number: String(block.id),
           event_index: num,
           section,
@@ -78,6 +79,7 @@ export class EventService {
           amount, // todo: Remove this field and use from values?
           block_index: `${block.id}-${event.indexExtrinsics}`,
         };
+        return result;
       }),
     );
   }
