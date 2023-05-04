@@ -85,22 +85,22 @@ export class CollectionService {
     // if (collectionDecoded.mode === CollectionMode.ReFungible) {
     //   return null;
     // }
-    debugger;
-    const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
-      this.sdkService.getCollectionLimits(
-        collectionId,
-        checkAt ? at : undefined,
-      ),
-      this.sdkService.getTokenPropertyPermissions(
-        collectionId,
-        checkAt ? at : undefined,
-      ),
-    ]);
+    // debugger;
+    // const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
+    //   this.sdkService.getCollectionLimits(
+    //     collectionId,
+    //     checkAt ? at : undefined,
+    //   ),
+    //   this.sdkService.getTokenPropertyPermissions(
+    //     collectionId,
+    //     checkAt ? at : undefined,
+    //   ),
+    // ]);
 
     return {
       collectionDecoded,
-      collectionLimits,
-      tokenPropertyPermissions,
+      collectionLimits: collectionDecoded.limits,
+      tokenPropertyPermissions: collectionDecoded.tokenPropertyPermissions,
     };
   }
 
@@ -198,6 +198,7 @@ export class CollectionService {
   private async prepareDataForDb(
     collectionData: CollectionData,
   ): Promise<Collections> {
+
     const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
       collectionData;
     const {

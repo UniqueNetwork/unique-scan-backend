@@ -125,11 +125,15 @@ export class EventService {
       });
       if (
         collectionsResult.totalEvents >= 1 &&
-        collectionsResult.rejected.length === 0 &&
-        collectionsResult.collection.collectionId === undefined
+        collectionsResult.rejected.length === 0
       ) {
         this.logCollection.log(
           `Save event collection: ${collectionsResult.collection.collectionId}`,
+        );
+      }
+      if (collectionsResult.rejected.length > 0) {
+        this.logCollection.error(
+          collectionsResult.rejected.map(({ reason }) => reason.toString()),
         );
       }
     }
@@ -147,6 +151,11 @@ export class EventService {
       if (tokensResult.totalEvents >= 4) {
         this.logToken.log(
           `Save event in collection: ${tokensResult.collection} token: ${tokensResult.token}`,
+        );
+      }
+      if (tokensResult.rejected.length > 0) {
+        this.logToken.error(
+          tokensResult.rejected.map(({ reason }) => reason.toString()),
         );
       }
     }
