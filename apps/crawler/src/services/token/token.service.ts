@@ -231,7 +231,6 @@ export class TokenService {
     if (tokenId === 0) {
       return;
     }
-    const rand = Math.random();
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
 
     let result;
@@ -316,7 +315,8 @@ export class TokenService {
       }
       result = SubscriberAction.UPSERT;
     } else {
-      const tokenOwnSelect = data[2].substrate || data[2].ethereum;
+      const tokenOwnSelect =
+        data[2].substrate || data[2].ethereum || data[2].value;
       const ownerToken = normalizeSubstrateAddress(tokenOwnSelect);
 
       await this.burnTokenOwnerPart({
@@ -438,7 +438,8 @@ export class TokenService {
           'owner',
         ]);
         this.logger.log(
-          `${eventName} token: ${tokenOwnerData.token_id} collection: ${tokenOwnerData.collection_id} in ${tokenOwnerData.block_number}`,
+          `${eventName} token: ${tokenOwnerData.token_id} collection:
+          ${tokenOwnerData.collection_id} in ${tokenOwnerData.block_number}`,
         );
       }
     }
