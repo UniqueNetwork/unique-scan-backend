@@ -57,10 +57,10 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => Float, { nullable: true })
   limits_sponsore_data_rate?: number;
 
-  @Field(() => Boolean)
+  @Field(() => Boolean, { nullable: true }) // todo remove nullable
   owner_can_transfer?: boolean;
 
-  @Field(() => Boolean)
+  @Field(() => Boolean, { nullable: true }) // todo remove nullable
   owner_can_destroy?: boolean;
 
   @Field(() => String, { nullable: true })

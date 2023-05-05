@@ -86,21 +86,22 @@ export class CollectionService {
     //   return null;
     // }
     // debugger;
-    // const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
-    //   this.sdkService.getCollectionLimits(
-    //     collectionId,
-    //     checkAt ? at : undefined,
-    //   ),
-    //   this.sdkService.getTokenPropertyPermissions(
-    //     collectionId,
-    //     checkAt ? at : undefined,
-    //   ),
-    // ]);
+    const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
+      this.sdkService.getCollectionLimits(
+        collectionId,
+        checkAt ? at : undefined,
+      ),
+      this.sdkService.getTokenPropertyPermissions(
+        collectionId,
+        checkAt ? at : undefined,
+      ),
+    ]);
 
     return {
       collectionDecoded,
-      collectionLimits: collectionDecoded.limits,
-      tokenPropertyPermissions: collectionDecoded.tokenPropertyPermissions,
+      collectionLimits: collectionLimits || collectionDecoded.limits,
+      tokenPropertyPermissions:
+        tokenPropertyPermissions || collectionDecoded.tokenPropertyPermissions,
     };
   }
 
@@ -198,7 +199,6 @@ export class CollectionService {
   private async prepareDataForDb(
     collectionData: CollectionData,
   ): Promise<Collections> {
-
     const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
       collectionData;
     const {
