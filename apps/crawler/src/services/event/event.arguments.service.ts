@@ -391,21 +391,18 @@ export class EventArgumentsService {
         return;
       }
       if (key[0] === 'sender' || key[0] === 'from') {
-        values[`${key[0]}`] = this.accountConverter(
-          items[`${key[1]}`],
-        ).toString();
+        // @ts-ignore
+        values[`${key[0]}`] = this.accountConverter(items[`${key[1]}`]);
         data.push(values[`${key[0]}`]);
       } else if (key[0] === 'spender' || key[0] === 'to') {
-        values[`${key[0]}`] = this.accountConverter(
-          items[`${key[1]}`],
-        ).toString();
+        // @ts-ignore
+        values[`${key[0]}`] = this.accountConverter(items[`${key[1]}`]);
         data.push(values[`${key[0]}`]);
       } else {
         data.push(items[`${val}`]);
         values[`${key[0]}`] = items[`${val}`];
       }
     });
-
     return { data, values };
   }
 
@@ -452,7 +449,6 @@ export class EventArgumentsService {
         ? (data[`${key[0]}`] = String(BigInt(items[`${key[1]}`])))
         : (data[`${key[0]}`] = items[`${key[1]}`]);
     });
-
     return { data, values };
   }
 
