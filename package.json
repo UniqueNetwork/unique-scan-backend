@@ -1,6 +1,6 @@
 {
   "name": "polkastats-backend-uniquenetwork",
-  "version": "2.0.39",
+  "version": "2.0.40",
   "description": "",
   "author": "Unique Network Team",
   "private": true,
@@ -53,7 +53,7 @@
     "@nestjs/typeorm": "^9.0.1",
     "@ntegral/nestjs-sentry": "^4.0.0",
     "@sentry/node": "^7.27.0",
-    "@unique-nft/harvester": "^0.0.18",
+    "@unique-nft/harvester": "^0.0.19",
     "@unique-nft/opal-testnet-types": "937.52.0",
     "@unique-nft/quartz-mainnet-types": "936.50.4",
     "@unique-nft/substrate-client": "^0.8.2",
