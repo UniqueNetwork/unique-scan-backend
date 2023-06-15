@@ -61,10 +61,13 @@ export class ExtrinsicService {
         ({ block_index: eventBlockIndex }) => eventBlockIndex === blockIndex,
       )
       .reduce(
-        (acc: { amount: string; fee: string, toOwner: string | null }, curr: Event) => {
+        (
+          acc: { amount: string; fee: string; toOwner: string | null },
+          curr: Event,
+        ) => {
           const { section, method } = curr;
+          const values = curr.values as unknown as EventValues;
 
-          const values = curr as unknown as EventValues;
           if (!values?.amount) {
             return acc;
           }
@@ -130,7 +133,9 @@ export class ExtrinsicService {
         signer,
         signer_normalized: signer,
         to_owner: toOwner,
-        to_owner_normalized: toOwner ? normalizeSubstrateAddress(toOwner) : null,
+        to_owner_normalized: toOwner
+          ? normalizeSubstrateAddress(toOwner)
+          : null,
         amount,
         fee,
       };
