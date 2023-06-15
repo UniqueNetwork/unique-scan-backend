@@ -130,7 +130,7 @@ export class ExtrinsicService {
         signer,
         signer_normalized: signer,
         to_owner: toOwner,
-        to_owner_normalized: normalizeSubstrateAddress(toOwner),
+        to_owner_normalized: toOwner ? normalizeSubstrateAddress(toOwner) : null,
         amount,
         fee,
       };
