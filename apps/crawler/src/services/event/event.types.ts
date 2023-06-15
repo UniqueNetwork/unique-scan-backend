@@ -21,4 +21,7 @@ export type EventValues = {
   to?: {
     value: string;
   };
+  who?: {
+    value: string;
+  };
 } & { [key in AccountKey]: string };
