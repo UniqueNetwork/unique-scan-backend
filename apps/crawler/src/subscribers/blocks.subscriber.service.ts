@@ -142,7 +142,9 @@ export class BlocksSubscriberService implements ISubscriberService {
       extrinsics_root: '0x000', // TODO: remove this ???
       state_root: '0x000', // TODO: remove this ???
       ...this.spec,
-      timestamp: block.timestamp.getTime(),
+      timestamp: Math.floor(
+        new Date(block.timestamp.getTime()).getTime() / 1000,
+      ),
       total_events: countEvents.totalEvents,
       num_transfers: countEvents.numTransfers,
       new_accounts: countEvents.newAccounts,

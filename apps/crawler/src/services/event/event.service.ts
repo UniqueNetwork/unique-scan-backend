@@ -75,7 +75,9 @@ export class EventService {
           phase: String(num),
           data: JSON.stringify(evenData.data) || JSON.stringify(event.dataJson),
           values: evenData.values || null,
-          timestamp: block.timestamp.getTime(),
+          timestamp: Math.floor(
+            new Date(block.timestamp.getTime()).getTime() / 1000,
+          ),
           amount, // todo: Remove this field and use from values?
           block_index: `${block.id}-${event.indexExtrinsics}`,
         };
@@ -120,7 +122,9 @@ export class EventService {
         events,
         blockCommonData: {
           block_hash: block.hash,
-          timestamp: block.timestamp.getTime(),
+          timestamp: Math.floor(
+            new Date(block.timestamp.getTime()).getTime() / 1000,
+          ),
         },
       });
       if (
@@ -145,7 +149,9 @@ export class EventService {
         blockCommonData: {
           block_hash: block.hash,
           block_number: block.id,
-          timestamp: block.timestamp.getTime(),
+          timestamp: Math.floor(
+            new Date(block.timestamp.getTime()).getTime() / 1000,
+          ),
         },
       });
       if (tokensResult.totalEvents >= 4) {
