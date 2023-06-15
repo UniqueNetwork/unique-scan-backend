@@ -1,5 +1,5 @@
 import { EventMethod, EventSection, ExtrinsicMethod } from '@common/constants';
-import { capitalize, normalizeTimestamp } from '@common/utils';
+import { capitalize, normalizeSubstrateAddress, normalizeTimestamp } from '@common/utils';
 import { Event } from '@entities/Event';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Injectable } from '@nestjs/common';
@@ -61,7 +61,7 @@ export class ExtrinsicService {
         ({ block_index: eventBlockIndex }) => eventBlockIndex === blockIndex,
       )
       .reduce(
-        (acc: { amount: string; fee: string }, curr: Event) => {
+        (acc: { amount: string; fee: string, toOwner: string | null }, curr: Event) => {
           const { section, method } = curr;
 
           const values = curr as unknown as EventValues;
@@ -79,11 +79,17 @@ export class ExtrinsicService {
             method == EventMethod.DEPOSIT
           ) {
             acc.fee = values.amount;
+          } else if (
+            (section === EventSection.COMMON ||
+              section === EventSection.UNIQUE) &&
+            method === EventMethod.TRANSFER
+          ) {
+            acc.toOwner = values.to?.value || null;
           }
 
           return { ...acc };
         },
-        { amount: '0', fee: '0' },
+        { amount: '0', fee: '0', toOwner: null },
       );
   }
 
@@ -91,14 +97,14 @@ export class ExtrinsicService {
     return extrinsicItems.map((extrinsic) => {
       const { signer, index, events } = extrinsic;
       const blockIndex = `${extrinsic.block.id}-${index}`;
-      const amountValues = this.getAmountValues(index, events);
+      const amountValues = this.getAmountValues(blockIndex, events);
       const section = capitalize(extrinsic.section);
       const method = capitalize(extrinsic.method);
 
       // Don't need to use AccountService for signer and to_owner addresses,
       // // because all addresses are already processed in EventService.
-
-      //   let toOwner = null;
+      //
+      // let toOwner = null;
       // if (EXTRINSICS_TRANSFER_METHODS.includes(method)) {
       //   const recipientAddress = args as IExtrinsicRecipient;
       //   const rawToOwner =
@@ -107,7 +113,7 @@ export class ExtrinsicService {
       // }
 
       //
-      const { amount, fee } = amountValues;
+      const { amount, fee, toOwner } = amountValues;
 
       return {
         timestamp: String(
@@ -123,8 +129,8 @@ export class ExtrinsicService {
         is_signed: !!signer,
         signer,
         signer_normalized: signer,
-        to_owner: null, //,toOwner,
-        to_owner_normalized: null, //toOwner && normalizeSubstrateAddress(toOwner),
+        to_owner: toOwner,
+        to_owner_normalized: normalizeSubstrateAddress(toOwner),
         amount,
         fee,
       };

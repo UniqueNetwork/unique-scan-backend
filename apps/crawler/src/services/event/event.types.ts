@@ -18,4 +18,7 @@ export type EventValues = {
     collectionId?: number;
     tokenId?: number;
   };
+  to?: {
+    value: string;
+  };
 } & { [key in AccountKey]: string };
