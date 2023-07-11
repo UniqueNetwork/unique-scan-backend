@@ -7,8 +7,8 @@ import { EventService } from '../services/event/event.service';
 import { Event } from '@entities/Event';
 import { HarvesterStoreService } from './processor/harvester-store.service';
 import * as console from 'console';
-import { Reader } from '@unique-nft/harvester';
-import { cyan, green, blue, magenta, yellow } from 'cli-color';
+import { Chain, Reader } from '@unique-nft/harvester';
+import { cyan, blue } from 'cli-color';
 import { capitalize } from '@common/utils';
 import { BlockEntity } from '@unique-nft/harvester/src/database/entities';
 
@@ -79,6 +79,8 @@ export class BlocksSubscriberService implements ISubscriberService {
 
     private reader: Reader,
 
+    private chain: Chain,
+
     @InjectSentry()
     private readonly sentry: SentryService,
   ) {
@@ -87,7 +89,6 @@ export class BlocksSubscriberService implements ISubscriberService {
 
   async subscribe() {
     await this.harvesterStore.connect();
-    const chainProps = await this.sdkService.getChainProperties();
     const stateNumber = await this.harvesterStore.getState();
 
     this.readFromHeadInterval = setInterval(async () => {
@@ -105,29 +106,53 @@ export class BlocksSubscriberService implements ISubscriberService {
       stateNumber[0],
       stateNumber[1],
     )) {
-      this.logger.log(`Read block: # ${cyan(block.id)}`);
-      if (!this.spec) {
-        this.spec = await this.sdkService.getSpecLastUpgrade(block.parentHash);
+      await this.handleBlock(block);
+    }
+  }
+
+  async processBlockByNumber(blockNumber: number) {
+    const block =
+      (await this.reader.getBlock(blockNumber)) ||
+      (await this.chain.getBlockByNumber(blockNumber));
+
+    await this.handleBlock(block as any, false);
+  }
+
+  private async handleBlock(
+    block: BlockEntity,
+    isUpdateState = true,
+  ): Promise<void> {
+    this.logger.log(`Read block: # ${cyan(block.id)}`);
+
+    if (!this.spec) {
+      this.spec = await this.sdkService.getSpecLastUpgrade(block.parentHash);
+    }
+
+    this.lastHandledBlockHash = block.hash;
+
+    const { isBlank } = this.collectEventsCount(block.extrinsics);
+
+    if (
+      this.readFromHead ||
+      this.cutOff ||
+      !isBlank ||
+      this.blankBlocks.length >= 1000
+    ) {
+      this.cutOff = false;
+
+      if (this.blankBlocks.length) {
+        this.logger.log(`Write ${this.blankBlocks.length} blank blocks`);
+        await this.handleBlankBlocks(this.blankBlocks);
+        this.blankBlocks = [];
       }
-      this.lastHandledBlockHash = block.hash;
-      const { isBlank } = this.collectEventsCount(block.extrinsics);
-      if (
-        this.readFromHead ||
-        this.cutOff ||
-        !isBlank ||
-        this.blankBlocks.length >= 1000
-      ) {
-        this.cutOff = false;
-        if (this.blankBlocks.length) {
-          this.logger.log(`Write ${this.blankBlocks.length} blank blocks`);
-          await this.handleBlankBlocks(this.blankBlocks);
-          this.blankBlocks = [];
-        }
-        await this.upsertHandlerBlock(block);
+
+      await this.upsertHandlerBlock(block);
+
+      if (isUpdateState) {
         await this.harvesterStore.updateState(block.id);
-      } else {
-        this.blankBlocks.push(block);
       }
+    } else {
+      this.blankBlocks.push(block);
     }
   }
 
@@ -135,7 +160,7 @@ export class BlocksSubscriberService implements ISubscriberService {
     const { id, hash, parentHash, extrinsics } = block;
     const countEvents = this.collectEventsCount(extrinsics);
 
-    const blockCommonData = {
+    return {
       block_number: +id,
       block_hash: hash,
       parent_hash: parentHash,
@@ -150,7 +175,6 @@ export class BlocksSubscriberService implements ISubscriberService {
       new_accounts: countEvents.newAccounts,
       total_extrinsics: extrinsics.length,
     } as unknown as Block;
-    return blockCommonData;
   }
 
   private async handleBlankBlocks(blocks: BlockEntity[]): Promise<void> {
@@ -223,7 +247,11 @@ export class BlocksSubscriberService implements ISubscriberService {
         }
       });
     } catch (error) {
-      this.logger.error({ block: blockData.id, error: error.message || error });
+      this.logger.error({
+        block: blockData.id,
+        error: error.message || error,
+        stack: error.stack,
+      });
       this.sentry.instance().captureException({ block: blockData.id, error });
     }
   }
