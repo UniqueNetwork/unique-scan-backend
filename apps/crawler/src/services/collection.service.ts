@@ -22,14 +22,11 @@ import {
   UniqueCollectionSchemaDecoded,
 } from '@unique-nft/substrate-client/tokens';
 import { Repository } from 'typeorm';
-import { SdkService } from '../sdk/sdk.service';
-import {
-  IBlockCommonData,
-  ItemsBatchProcessingResult,
-} from '../subscribers/blocks.subscriber.service';
+
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../config/config.module';
 import { Event } from '@entities/Event';
+import { SdkService } from '@common/sdk/sdk.service';
 
 type ParsedSchemaFields = {
   collectionCover?: string;
@@ -68,14 +65,18 @@ export class CollectionService {
     collectionId: number,
     at: string,
   ): Promise<CollectionData | null> {
-    let collectionDecoded = await this.sdkService.getCollection(collectionId);
+    debugger;
+    let collectionDecoded = await this.sdkService.getCollection(
+      collectionId,
+      at,
+    );
     let checkAt = false; // for burned collections
 
     if (!collectionDecoded) {
       collectionDecoded = await this.sdkService.getCollection(collectionId, at);
       checkAt = true;
     }
-
+    debugger;
     if (!collectionDecoded) {
       return null;
     }
@@ -84,7 +85,7 @@ export class CollectionService {
     // if (collectionDecoded.mode === CollectionMode.ReFungible) {
     //   return null;
     // }
-
+    // debugger;
     const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
       this.sdkService.getCollectionLimits(
         collectionId,
@@ -98,8 +99,9 @@ export class CollectionService {
 
     return {
       collectionDecoded,
-      collectionLimits,
-      tokenPropertyPermissions,
+      collectionLimits: collectionLimits || collectionDecoded.limits,
+      tokenPropertyPermissions:
+        tokenPropertyPermissions || collectionDecoded.tokenPropertyPermissions,
     };
   }
 
@@ -281,10 +283,9 @@ export class CollectionService {
     blockCommonData,
   }: {
     events: Event[];
-    blockCommonData: IBlockCommonData;
-  }): Promise<ItemsBatchProcessingResult> {
+    blockCommonData: any;
+  }): Promise<any> {
     const collectionEvents = this.extractCollectionEvents(events);
-
     const eventChunks = chunk(
       collectionEvents,
       this.configService.get('scanCollectionsBatchSize'),
@@ -299,15 +300,15 @@ export class CollectionService {
             collectionId: number;
           };
 
-          const { blockHash, blockTimestamp } = blockCommonData;
+          const { block_hash, timestamp } = blockCommonData;
           const eventName = `${section}.${method}`;
 
           if (COLLECTION_UPDATE_EVENTS.includes(eventName)) {
             return this.update({
               collectionId,
               eventName,
-              blockTimestamp,
-              blockHash,
+              blockTimestamp: timestamp,
+              blockHash: block_hash,
             });
           } else {
             return this.burn(collectionId);
@@ -324,6 +325,8 @@ export class CollectionService {
 
     return {
       totalEvents: collectionEvents.length,
+      collection:
+        collectionEvents.length === 1 ? collectionEvents[0].values : null,
       rejected,
     };
   }

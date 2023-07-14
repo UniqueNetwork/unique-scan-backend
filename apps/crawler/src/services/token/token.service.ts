@@ -12,14 +12,10 @@ import {
 } from '@common/utils';
 import { Event } from '@entities/Event';
 import { ITokenEntities, Tokens, TokenType } from '@entities/Tokens';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SdkService } from '../../sdk/sdk.service';
-import {
-  IBlockCommonData,
-  ItemsBatchProcessingResult,
-} from '../../subscribers/blocks.subscriber.service';
+
 import { TokenNestingService } from './nesting.service';
 import { TokenData, TokenOwnerData } from './token.types';
 import { chunk } from 'lodash';
@@ -28,9 +24,12 @@ import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
 import * as console from 'console';
+import { yellow } from '@nestjs/common/utils/cli-colors.util';
+import { SdkService } from '@common/sdk/sdk.service';
 
 @Injectable()
 export class TokenService {
+  private logger = new Logger(TokenService.name);
   constructor(
     private sdkService: SdkService,
     private nestingService: TokenNestingService,
@@ -67,8 +66,6 @@ export class TokenService {
       collection_id,
       token_id,
     });
-
-    //const tokenBalance = await this.sdkService.getRFTBalances();
 
     let tokenType =
       tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
@@ -124,9 +121,24 @@ export class TokenService {
     blockCommonData,
   }: {
     events: Event[];
-    blockCommonData: IBlockCommonData;
-  }): Promise<ItemsBatchProcessingResult> {
-    const tokenEvents = this.extractTokenEvents(events);
+    blockCommonData: any;
+  }): Promise<any> {
+    const tokenEventsRaw = this.extractTokenEvents(events);
+
+    const same = {};
+    const tokenEvents = [];
+    tokenEventsRaw.forEach((event) => {
+      const { section, method, values } = event;
+      const { collectionId, tokenId } = values as unknown as {
+        collectionId: number;
+        tokenId: number;
+      };
+      const hash = `${section}${method}${collectionId}${tokenId}`;
+      if (!same[hash]) {
+        tokenEvents.push(event);
+      }
+      same[hash] = true;
+    });
 
     const eventChunks = chunk(
       tokenEvents,
@@ -134,6 +146,7 @@ export class TokenService {
     );
     let rejected = [];
     let data = [];
+
     for (const chunk of eventChunks) {
       const result = await Promise.allSettled(
         chunk.map((event) => {
@@ -143,7 +156,7 @@ export class TokenService {
             tokenId: number;
           };
 
-          const { blockHash, blockTimestamp, blockNumber } = blockCommonData;
+          const { block_hash, timestamp, block_number } = blockCommonData;
           const eventName = `${section}.${method}`;
 
           if (eventName === 'Common.ItemCreated') {
@@ -154,12 +167,12 @@ export class TokenService {
             data = JSON.parse(event.data);
 
             return this.update({
-              blockNumber,
+              blockNumber: block_number,
               collectionId,
               tokenId,
               eventName,
-              blockTimestamp,
-              blockHash,
+              blockTimestamp: timestamp,
+              blockHash: block_hash,
               data,
             });
           }
@@ -169,12 +182,12 @@ export class TokenService {
               data = JSON.parse(event.data);
             }
             return this.update({
-              blockNumber,
+              blockNumber: block_number,
               collectionId,
               tokenId,
               eventName,
-              blockTimestamp,
-              blockHash,
+              blockTimestamp: timestamp,
+              blockHash: block_hash,
               data,
             });
           } else {
@@ -192,6 +205,8 @@ export class TokenService {
 
     return {
       totalEvents: tokenEvents.length,
+      collection: data.length >= 4 ? data[0] : null,
+      token: data.length >= 4 ? data[1] : null,
       rejected,
     };
   }
@@ -213,6 +228,9 @@ export class TokenService {
     blockHash: string;
     data: any;
   }): Promise<SubscriberAction> {
+    if (tokenId === 0) {
+      return;
+    }
     const tokenData = await this.getTokenData(collectionId, tokenId, blockHash);
 
     let result;
@@ -297,7 +315,9 @@ export class TokenService {
       }
       result = SubscriberAction.UPSERT;
     } else {
-      const ownerToken = normalizeSubstrateAddress(data[2].value);
+      const tokenOwnSelect =
+        data[2].substrate || data[2].ethereum || data[2].value;
+      const ownerToken = normalizeSubstrateAddress(tokenOwnSelect);
 
       await this.burnTokenOwnerPart({
         collection_id: collectionId,
@@ -314,7 +334,7 @@ export class TokenService {
       });
 
       if (pieceToken.amount === 0) {
-        console.error(
+        this.logger.error(
           `Destroy token full amount: ${pieceToken.amount} / collection: ${collectionId} / token: ${tokenId}`,
         );
         // No entity returned from sdk. Most likely it was destroyed in a future block.
@@ -339,7 +359,7 @@ export class TokenService {
   ) {
     const arrayToken = [];
 
-    const testToken = await this.tokensRepository.update(
+    await this.tokensRepository.update(
       {
         collection_id: collectionId,
         token_id: tokenId,
@@ -349,18 +369,19 @@ export class TokenService {
       },
     );
 
-    console.log(collectionId, tokenId, testToken);
+    const ownerAddress = data[2].substrate || data[2].ethereum;
+
     const pieceFrom = await this.sdkService.getRFTBalances(
       {
-        address: normalizeSubstrateAddress(data[2].value),
+        address: normalizeSubstrateAddress(ownerAddress),
         collectionId: collectionId,
         tokenId: tokenId,
       },
       blockHash,
     );
     arrayToken.push({
-      owner: normalizeSubstrateAddress(data[2].value),
-      owner_normalized: normalizeSubstrateAddress(data[2].value),
+      owner: normalizeSubstrateAddress(ownerAddress),
+      owner_normalized: normalizeSubstrateAddress(ownerAddress),
       collection_id: collectionId,
       token_id: tokenId,
       date_created: String(normalizeTimestamp(blockTimestamp)),
@@ -370,18 +391,9 @@ export class TokenService {
       parent_id: preparedData.parent_id,
       children: preparedData.children,
     });
-    console.log(
-      blockNumber,
-      eventName,
-      typeMode,
-      collectionId,
-      tokenId,
-      data.length === 4 ? data[3] : null,
-      pieceFrom.amount,
-      normalizeSubstrateAddress(data[2].value),
-    );
     if (data.length === 5) {
-      const owner = normalizeSubstrateAddress(data[3].value);
+      const ownerAddressTo = data[3].substrate || data[3].ethereum;
+      const owner = normalizeSubstrateAddress(ownerAddressTo);
       const pieceTo = await this.sdkService.getRFTBalances(
         {
           address: owner,
@@ -399,7 +411,7 @@ export class TokenService {
       }
       arrayToken.push({
         owner: owner,
-        owner_normalized: normalizeSubstrateAddress(data[3].value),
+        owner_normalized: normalizeSubstrateAddress(ownerAddressTo),
         collection_id: collectionId,
         token_id: tokenId,
         date_created: String(normalizeTimestamp(blockTimestamp)),
@@ -410,18 +422,6 @@ export class TokenService {
         children: preparedData.children,
         nested: nested,
       });
-      console.log(
-        blockNumber,
-        eventName,
-        typeMode,
-        collectionId,
-        tokenId,
-        data.length === 5 ? data[4] : null,
-        '-',
-        pieceTo.amount,
-        normalizeSubstrateAddress(data[2].value),
-        normalizeSubstrateAddress(data[3].value),
-      );
     }
 
     for (const tokenOwnerData of arrayToken) {
@@ -437,6 +437,10 @@ export class TokenService {
           'token_id',
           'owner',
         ]);
+        this.logger.log(
+          `${eventName} token: ${tokenOwnerData.token_id} collection:
+          ${tokenOwnerData.collection_id} in ${tokenOwnerData.block_number}`,
+        );
       }
     }
   }
@@ -474,13 +478,12 @@ export class TokenService {
       'token_id',
       'owner',
     ]);
-    console.log(
-      blockNumber,
-      eventName,
-      typeMode,
-      collectionId,
-      tokenId,
-      tokenDecoded.owner || tokenDecoded.collection.owner,
+    this.logger.log(
+      `${eventName} token: ${yellow(
+        String(tokenOwner.token_id),
+      )} collection: ${yellow(String(tokenOwner.collection_id))} in ${
+        tokenOwner.block_number
+      }`,
     );
   }
 
@@ -507,19 +510,39 @@ export class TokenService {
     tokenId: number,
     blockHash: string,
   ): Promise<TokenData | null> {
-    const tokenDecoded = await this.sdkService.getToken(
-      collectionId,
-      tokenId,
-      blockHash,
-    );
+    const rand = Math.random();
+    let tokenDecoded = null;
+    let tokenProperties = null;
+    let isBundle = false;
+    try {
+      tokenDecoded = await this.sdkService.getToken(
+        collectionId,
+        tokenId,
+        blockHash,
+      );
 
-    if (!tokenDecoded) {
-      return null;
+      if (!tokenDecoded) {
+        return null;
+      }
+      const [tokenPropertiesRaw, isBundleRaw] = await Promise.all([
+        this.sdkService.getTokenProperties(collectionId, tokenId),
+        this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
+      ]);
+      tokenProperties = tokenPropertiesRaw;
+      isBundle = isBundleRaw;
+    } catch (e) {
+      tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
+
+      if (!tokenDecoded) {
+        return null;
+      }
+      const [tokenPropertiesRaw, isBundleRaw] = await Promise.all([
+        this.sdkService.getTokenProperties(collectionId, tokenId),
+        this.sdkService.isTokenBundle(collectionId, tokenId),
+      ]);
+      tokenProperties = tokenPropertiesRaw;
+      isBundle = isBundleRaw;
     }
-    const [tokenProperties, isBundle] = await Promise.all([
-      this.sdkService.getTokenProperties(collectionId, tokenId),
-      this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
-    ]);
 
     return {
       tokenDecoded,
@@ -548,42 +571,9 @@ export class TokenService {
     });
 
     if (ownerToken) {
-      // await this.tokensOwnersRepository.update(
-      //   {
-      //     id: ownerToken.id,
-      //   },
-      //   {
-      //     amount: 0,
-      //     block_number: tokenOwner.block_number,
-      //   },
-      // );
       await this.tokensOwnersRepository.delete({
         id: ownerToken.id,
       });
-    }
-  }
-
-  private async checkAndSaveOrUpdateTokenOwnerPart(tokenOwner: TokenOwnerData) {
-    const ownerToken = await this.tokensOwnersRepository.findOne({
-      where: {
-        owner: tokenOwner.owner,
-        collection_id: tokenOwner.collection_id,
-        token_id: tokenOwner.token_id,
-      },
-    });
-    if (ownerToken != null) {
-      await this.tokensOwnersRepository.update(
-        {
-          id: ownerToken.id,
-        },
-        {
-          amount: tokenOwner.amount,
-          block_number: tokenOwner.block_number,
-          type: tokenOwner.type,
-        },
-      );
-    } else {
-      await this.tokensOwnersRepository.save(tokenOwner);
     }
   }
 }

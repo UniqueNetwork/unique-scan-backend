@@ -56,6 +56,25 @@ const customQueryFields = {
     'COALESCE("Tokens".bundle_created, "Tokens".date_of_creation)',
 };
 
+const tokensTableRelations = {
+  [COLLECTION_RELATION_ALIAS]: {
+    table: 'collections',
+    on: `"Tokens".collection_id = "${COLLECTION_RELATION_ALIAS}".collection_id`,
+    join: JOIN_TYPE.INNER,
+  },
+  [TOKENSOWNERS_RELATION_ALIAS]: {
+    table: 'tokens_owners',
+    on: `"Tokens".collection_id = "${TOKENSOWNERS_RELATION_ALIAS}".collection_id
+     AND  "Tokens".token_id = "${TOKENSOWNERS_RELATION_ALIAS}".token_id`,
+    join: JOIN_TYPE.INNER,
+  },
+  [STATISTICS_RELATION_ALIAS]: {
+    table: 'tokens_stats',
+    on: `"Tokens".token_id = "${STATISTICS_RELATION_ALIAS}".token_id
+        AND "Tokens".collection_id  = "${STATISTICS_RELATION_ALIAS}".collection_id`,
+  },
+} as IRelations;
+
 @Injectable()
 export class TokenService extends BaseService<Tokens, TokenDTO> {
   constructor(@InjectRepository(Tokens) private repo: Repository<Tokens>) {
@@ -129,12 +148,12 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   ) {
     const qb = this.repo.createQueryBuilder();
 
-    qb.where('collection_id = :id', { id });
+    qb.where('"Tokens".collection_id = :id', { id });
     this.applyWhereCondition(qb, queryArgs);
 
     const queryFields = this.getQueryFields(queryInfo, { skip: ['__*'] });
 
-    this.applySelect(qb, {}, queryFields);
+    this.applySelect(qb, {}, queryFields, tokensTableRelations);
 
     return qb.getRawMany();
   }
@@ -256,24 +275,6 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   ): void {
     const queryFields = this.getQueryFields(queryInfo, queryFieldsOptions);
 
-    const relations = {
-      [COLLECTION_RELATION_ALIAS]: {
-        table: 'collections',
-        on: `"Tokens".collection_id = "${COLLECTION_RELATION_ALIAS}".collection_id`,
-        join: JOIN_TYPE.INNER,
-      },
-      [TOKENSOWNERS_RELATION_ALIAS]: {
-        table: 'tokens_owners',
-        on: `"Tokens".collection_id = "${TOKENSOWNERS_RELATION_ALIAS}".collection_id AND  "Tokens".token_id = "${TOKENSOWNERS_RELATION_ALIAS}".token_id`,
-        join: JOIN_TYPE.INNER,
-      },
-      [STATISTICS_RELATION_ALIAS]: {
-        table: 'tokens_stats',
-        on: `"Tokens".token_id = "${STATISTICS_RELATION_ALIAS}".token_id
-        AND "Tokens".collection_id  = "${STATISTICS_RELATION_ALIAS}".collection_id`,
-      },
-    } as IRelations;
-
-    this.applySelect(qb, queryArgs, queryFields, relations);
+    this.applySelect(qb, queryArgs, queryFields, tokensTableRelations);
   }
 }

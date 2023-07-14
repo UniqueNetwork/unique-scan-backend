@@ -1,3 +1,9 @@
+export enum EventModeCollection {
+  NFT = 1,
+  Fungible = 2,
+  ReFungible = 3,
+}
+
 export enum EventSection {
   BALANCES = 'Balances',
   COMMON = 'Common',
@@ -51,6 +57,7 @@ export enum EventMethod {
   WITHDRAW = 'Withdraw',
 
   EXECUTED = 'Executed',
+  VALIDATION_FUNCTION_APPLIED = 'ValidationFunctionApplied',
 }
 
 export const EventName = {
@@ -131,6 +138,16 @@ export const STATE_SCHEMA_NAME_BY_MODE = {
   RESCAN: 'rescan_status',
 };
 
+export interface ITotalIssuance {
+  rawType: string;
+  isEmpty: boolean;
+  hash: string;
+  human: string;
+  json: string;
+  hex: string;
+  timestamp: number;
+}
+
 export enum SubscriberName {
   ACCOUNTS = 'account',
   BLOCKS = 'blocks',
@@ -161,6 +178,7 @@ export const COLLECTION_UPDATE_EVENTS = [
   EventName.COLLECTION_PROPERTY_SET,
   EventName.COLLECTION_PROPERTY_DELETED,
   EventName.PROPERTY_PERMISSION_SET,
+  EventName.COLLECTION_PERMISSION_SET, // change data from collection (nested and more)
   EventName.COLLECTION_SPONSOR_REMOVED,
   EventName.COLLECTION_OWNED_CHANGED,
   EventName.SPONSORSHIP_CONFIRMED,

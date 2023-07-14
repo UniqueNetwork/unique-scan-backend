@@ -6,8 +6,9 @@ import { Address as AddressUtils } from '@unique-nft/utils';
 import { Address } from '@unique-nft/substrate-client/types';
 import { AllBalances } from '@unique-nft/substrate-client/balance';
 import { Repository } from 'typeorm';
-import { SdkService } from '../../sdk/sdk.service';
+
 import { AccountRecord } from './account.types';
+import { SdkService } from '@common/sdk/sdk.service';
 
 type BalancesExtended = AllBalances & {
   etheriumAddress?: string;
@@ -41,10 +42,8 @@ export class AccountService {
     );
 
     const normalizedAddress = await this.upsert({
-      // todo: Решить с пустыми blockTimestamp & blockNumber
       blockTimestamp,
       blockNumber,
-
       balances: balancesExtended,
     });
 

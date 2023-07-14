@@ -5,9 +5,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { NestedToken } from '@unique-nft/substrate-client/tokens';
 import { SentryService } from '@ntegral/nestjs-sentry';
 import { normalizeTimestamp } from '@common/utils';
-import { SdkService } from '../../sdk/sdk.service';
+
 import { TokenData } from './token.types';
 import { TokensOwners } from '@entities/TokensOwners';
+import { SdkService } from '@common/sdk/sdk.service';
 
 @Injectable()
 export class TokenNestingService {

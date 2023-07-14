@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   EVENT_ARGS_ACCOUNT_KEYS,
@@ -8,128 +8,111 @@ import {
   SubscriberName,
 } from '@common/constants';
 import { Event } from '@entities/Event';
-import { normalizeTimestamp } from '@common/utils';
-import {
-  EventsProcessingResult,
-  IBlockCommonData,
-  IBlockItem,
-  IEvent,
-} from '../../subscribers/blocks.subscriber.service';
+import { capitalize } from '@common/utils';
 import { EventArgumentsService } from './event.arguments.service';
-import { EventArgs } from './event.types';
-import { AccountRecord } from '../account/account.types';
 import { EvmService } from '../evm/evm.service';
 import { TokenService } from '../token/token.service';
 import { CollectionService } from '../collection.service';
 import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
+import {
+  BlockEntity,
+  EventEntity,
+} from '@unique-nft/harvester/src/database/entities';
 
 @Injectable()
 export class EventService {
+  private logCollection = new Logger('EventService_Collection');
+  private logToken = new Logger('EventService_Token');
   constructor(
     private eventArgumentsService: EventArgumentsService,
     private evmService: EvmService,
-
     private tokenService: TokenService,
-
     private collectionService: CollectionService,
-
     private configService: ConfigService<Config>,
-
     @InjectRepository(Event)
     private eventsRepository: Repository<Event>,
   ) {}
 
-  private extractEventItems(blockItems: IBlockItem[]): IEvent[] {
+  private extractEventItemsNew(blockItems: any): EventEntity[] {
+    const arr = [];
     return blockItems
       .map((item) => {
-        if (item.kind === 'event') {
-          return item.event as IEvent;
+        const event = [];
+        for (const eva of item.events) {
+          event.push({ ...eva, indexExtrinsics: item.index });
         }
-        return null;
+        return event;
       })
-      .filter((v) => !!v);
+      .filter((v) => !!v)
+      .flatMap((num) => num);
   }
 
-  private async prepareDataForDb({
+  private async prepareDataForDbNew(
     eventItems,
-    blockCommonData,
-  }: {
-    eventItems: IEvent[];
-    blockCommonData: IBlockCommonData;
-  }): Promise<Event[]> {
+    block: BlockEntity,
+  ): Promise<Event[]> {
     return Promise.all(
-      eventItems.map(async (event) => {
-        const {
-          name: eventName,
-          indexInBlock,
-          phase,
-          extrinsic,
-          args: rawArgs,
-        } = event;
-        const { blockNumber, blockTimestamp } = blockCommonData;
+      eventItems.map(async (event, num) => {
+        const section = capitalize(event.section);
+        const method = capitalize(event.method);
+        const eventName = `${section}.${method}`;
 
-        const [section, method] = eventName.split('.') as [
-          EventSection,
-          EventMethod,
-        ];
+        const evenData = await this.eventArgumentsService.eventDataConverter(
+          event.dataJson,
+          eventName,
+        );
 
-        const eventValues =
-          await this.eventArgumentsService.processEventArguments(
-            eventName,
-            rawArgs,
-          );
+        //console.dir({ eventName, evenData }, { depth: 3 });
 
-        // todo: Remove when triggers start using event values
-        const rawArgsObj = typeof rawArgs === 'object' ? rawArgs : [rawArgs];
+        const amount = evenData?.values?.amount || null;
 
-        const amount = eventValues?.amount || null;
-
-        return {
-          timestamp: String(normalizeTimestamp(blockTimestamp)),
-          block_number: String(blockNumber),
-          event_index: indexInBlock,
-          block_index: `${blockNumber}-${
-            extrinsic ? extrinsic.indexInBlock : ''
-          }`,
+        const result = {
+          block_number: String(block.id),
+          event_index: num,
           section,
           method,
-          // todo: Make more clean connect to extrinsic
-          phase:
-            phase === 'ApplyExtrinsic' ? String(extrinsic.indexInBlock) : phase,
-          data: JSON.stringify(rawArgsObj),
-          values: eventValues,
+          phase: String(num),
+          data: JSON.stringify(evenData.data) || JSON.stringify(event.dataJson),
+          values: evenData.values || null,
+          timestamp: Math.floor(
+            new Date(block.timestamp.getTime()).getTime() / 1000,
+          ),
           amount, // todo: Remove this field and use from values?
+          block_index: `${block.id}-${event.indexExtrinsics}`,
         };
+        return result;
       }),
     );
   }
 
-  async process({
-    blockItems,
-    blockCommonData,
-  }: {
-    blockItems: IBlockItem[];
-    blockCommonData: IBlockCommonData;
-  }): Promise<EventsProcessingResult> {
-    const eventItems = this.extractEventItems(blockItems);
+  async extractEventsFromBlock(block: BlockEntity): Promise<Event[]> {
+    const eventItems = this.extractEventItemsNew(block.extrinsics);
+    return await this.prepareDataForDbNew(eventItems, block);
+  }
 
-    const events = await this.prepareDataForDb({
-      blockCommonData,
-      eventItems,
-    });
+  async upsert(events: Event[]): Promise<void> {
+    await this.eventsRepository.upsert(events, ['block_number', 'event_index']);
+  }
+
+  async process(block: BlockEntity): Promise<any> {
+    const events = await this.extractEventsFromBlock(block);
 
     const ethereumEvents = events.filter(
       ({ section, method }) =>
         section === EventSection.ETHEREUM && method === EventMethod.EXECUTED,
     );
-
-    await this.evmService.parseEvents(
-      ethereumEvents,
-      blockCommonData.blockTimestamp,
+    const speckEvents = events.filter(
+      ({ section, method }) =>
+        section === 'ParachainSystem' && method === 'ValidationFunctionApplied',
     );
 
-    await this.eventsRepository.upsert(events, ['block_number', 'event_index']);
+    // this.evmService.parseEvents(
+    //   ethereumEvents,
+    //   block.timestamp.getTime(),
+    // ).then(); // todo понять нужны ли вообще. оооочень долго отрабатывает (2 минуты)
+
+    await this.upsert(events);
 
     const subscribersConfig = this.configService.get('subscribers');
 
@@ -137,43 +120,57 @@ export class EventService {
     if (subscribersConfig[SubscriberName.COLLECTIONS]) {
       collectionsResult = await this.collectionService.batchProcess({
         events,
-        blockCommonData,
+        blockCommonData: {
+          block_hash: block.hash,
+          timestamp: Math.floor(
+            new Date(block.timestamp.getTime()).getTime() / 1000,
+          ),
+        },
       });
+      if (
+        collectionsResult.totalEvents >= 1 &&
+        collectionsResult.rejected.length === 0
+      ) {
+        this.logCollection.log(
+          `Save event collection: ${collectionsResult.collection.collectionId}`,
+        );
+      }
+      if (collectionsResult.rejected.length > 0) {
+        this.logCollection.error(
+          collectionsResult.rejected.map(({ reason }) => reason.toString()),
+        );
+      }
     }
 
     let tokensResult = null;
     if (subscribersConfig[SubscriberName.TOKENS]) {
       tokensResult = await this.tokenService.batchProcess({
         events,
-        blockCommonData,
+        blockCommonData: {
+          block_hash: block.hash,
+          block_number: block.id,
+          timestamp: Math.floor(
+            new Date(block.timestamp.getTime()).getTime() / 1000,
+          ),
+        },
       });
+      if (tokensResult.totalEvents >= 4) {
+        this.logToken.log(
+          `Save event in collection: ${tokensResult.collection} token: ${tokensResult.token}`,
+        );
+      }
+      if (tokensResult.rejected.length > 0) {
+        this.logToken.error(
+          tokensResult.rejected.map(({ reason }) => reason.toString()),
+        );
+      }
     }
 
     return {
-      events,
+      speckHash: speckEvents.length === 1 ? block.hash : null,
       collectionsResult,
       tokensResult,
+      events,
     };
-  }
-
-  async processEventWithAccounts(
-    eventName: string,
-    rawArgs: EventArgs,
-  ): Promise<AccountRecord[]> {
-    const eventValues = await this.eventArgumentsService.processEventArguments(
-      eventName,
-      rawArgs,
-    );
-
-    const result = [];
-
-    // Extract only accounts values.
-    EVENT_ARGS_ACCOUNT_KEYS.forEach((k) => {
-      if (eventValues[k]) {
-        result.push(eventValues[k]);
-      }
-    });
-
-    return result;
   }
 }

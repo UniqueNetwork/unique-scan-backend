@@ -11,6 +11,10 @@ export function getParentCollectionAndToken(address) {
     return undefined;
   }
 }
+export function checkoutAddress(address, ss58Format?: number) {
+  return Address.is.ethereumAddress(address) ? 'Etherium' : 'Substrate';
+}
+
 export function normalizeSubstrateAddress(address, ss58Format?: number) {
   return Address.is.ethereumAddress(address)
     ? address
@@ -60,4 +64,8 @@ export function getObjectKeysDeep(args, result = []) {
     }
   }
   return result;
+}
+
+export function capitalize(s: string): string {
+  return s && s[0].toUpperCase() + s.slice(1);
 }

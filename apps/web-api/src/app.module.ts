@@ -21,10 +21,12 @@ import { ContractModule } from './contract/contract.module';
 import { AttributesModule } from './attributes/attributes.module';
 import { EvmTransactionModule } from './evm-transactions/evm-transaction.module';
 import { TokenOwnersModule } from './tokens-owners/token-owners.module';
+import { CirculatingModule } from './circulating/circulating.module';
+import { GlobalConfigModule } from '@common/config/config.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    GlobalConfigModule,
     TypeOrmModule.forRoot({
       ...typeormConfig,
     }),
@@ -63,6 +65,7 @@ import { TokenOwnersModule } from './tokens-owners/token-owners.module';
     TransactionModule,
     AttributesModule,
     EvmTransactionModule,
+    CirculatingModule,
   ],
   providers: [
     {

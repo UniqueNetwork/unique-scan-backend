@@ -11,6 +11,15 @@ import {
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
 import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
+import { ChainProperties } from '@unique-nft/substrate-client/types';
+
+import { ITotalIssuance } from '@common/constants';
+import * as console from 'console';
+
+export interface ISpecSystemVersion {
+  spec_version: number;
+  spec_name: string;
+}
 
 @Injectable()
 export class SdkService {
@@ -20,6 +29,12 @@ export class SdkService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
+  getLastBlockHash(): Promise<string> {
+    return this.sdk.api.rpc.chain
+      .getHeader()
+      .then((header) => header.hash.toString());
+  }
+
   @SdkCache('getApi')
   async getApi(hash) {
     const optionUpgrade = await this.sdk.api.query.system.events.at(hash);
@@ -27,11 +42,33 @@ export class SdkService {
   }
 
   @SdkCache('getCollection')
-  getCollection(
+  async getCollection(
     collectionId: number,
     at?: string,
   ): Promise<CollectionInfoWithSchema | null> {
-    return this.sdk.collections.get({ collectionId, at });
+    if (at) {
+      return this.sdk.collections.get({ collectionId, at });
+    } else {
+      debugger;
+      return this.sdk.collections.get({ collectionId });
+    }
+  }
+
+  @SdkCache('getSpecLastUpgrade')
+  async getSpecLastUpgrade(hash: string): Promise<ISpecSystemVersion> {
+    const optionUpgrade = await this.sdk.api.query.system.lastRuntimeUpgrade.at(
+      hash,
+    );
+    const specLastUpgrade = optionUpgrade.toJSON() as any;
+    return {
+      spec_version: specLastUpgrade.specVersion,
+      spec_name: specLastUpgrade.specName,
+    };
+  }
+
+  @SdkCache('getChainProperties')
+  async getChainProperties(): Promise<ChainProperties> {
+    return this.sdk.common.chainProperties();
   }
 
   @SdkCache('getCollectionLimits')
@@ -146,5 +183,15 @@ export class SdkService {
         collectionId,
       });
     }
+  }
+
+  @SdkCache('getTotalSupply')
+  async getTotalSupply(): Promise<ITotalIssuance> {
+    //return await this.sdk.api.query.balances.totalIssuance();
+    return await this.sdk.stateQueries.execute({
+      endpoint: 'query',
+      module: 'balances',
+      method: 'totalIssuance',
+    });
   }
 }
