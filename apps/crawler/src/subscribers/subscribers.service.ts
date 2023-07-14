@@ -50,14 +50,14 @@ export class SubscribersService {
     await client.query(`LISTEN ${FORCE_RESCAN_BLOCK}`);
   }
 
-  run() {
+  async run() {
     const subscribersConfig = this.configService.get('subscribers');
 
-    this.listenPgEvents();
-
     if (subscribersConfig[SubscriberName.BLOCKS]) {
-      this.blocksSubscriberService.subscribe();
+      await this.blocksSubscriberService.subscribe();
     }
+
+    await this.listenPgEvents();
 
     //return this.processorService.run(this.configService.get('rescan'));
   }
