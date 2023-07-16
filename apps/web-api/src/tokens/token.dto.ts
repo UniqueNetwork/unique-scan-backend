@@ -87,8 +87,9 @@ export class TokenDTO extends SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => String, { nullable: true })
   tokens_parent?: string;
 
-  @Field(() => String, { nullable: true })
-  tokens_children?: string;
+  // todo - define exact type
+  @Field(() => [GraphQLJSONObject], { nullable: true })
+  tokens_children?: object[];
 
   @Field(() => String, { nullable: true })
   collection_description?: string;
