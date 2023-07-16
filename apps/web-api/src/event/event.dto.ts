@@ -18,7 +18,7 @@ export class EventDTO implements Partial<Event> {
   @Field(() => Float, { nullable: true })
   amount?: string;
 
-  @Field(() => Float)
+  @Field(() => Float, { nullable: true })
   fee?: string;
 
   @Field(() => Int, { nullable: true })

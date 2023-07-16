@@ -9,19 +9,19 @@ import { EventDTO } from './event.dto';
 
 const customQueryFields = {
   amount: `
-    sum(CASE
-      WHEN "Event".method = 'Transfer' THEN "Event".amount::double precision
+    (CASE
+      WHEN "Event".method = 'Transfer' THEN "Event".amount::numeric
       ELSE 0
     END)
   `,
   fee: `
-    sum(CASE
-      WHEN "Event".method = 'Deposit' THEN "Event".amount::double precision::double precision
+    (CASE
+      WHEN "Event".method = 'Deposit' THEN "Event".amount::numeric
       ELSE 0
     END)
   `,
-  collection_id: '("Event".data::json->>0)::int',
-  token_id: '("Event".data::json->>1)::int',
+  collection_id: `COALESCE((("Event".values::json->>'collectionId')::int), NULL)`,
+  token_id: `COALESCE((("Event".values::json->>'tokenId')::int), NULL)`,
 };
 
 @Injectable()
