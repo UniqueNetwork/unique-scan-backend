@@ -48,13 +48,18 @@ export class SubscribersService {
 
     await client.connect();
     await client.query(`LISTEN ${FORCE_RESCAN_BLOCK}`);
+    this.logger.log(
+      `Listening for notifications on channel ${FORCE_RESCAN_BLOCK}`,
+    );
   }
 
   async run() {
     const subscribersConfig = this.configService.get('subscribers');
 
     if (subscribersConfig[SubscriberName.BLOCKS]) {
-      await this.blocksSubscriberService.subscribe();
+      this.blocksSubscriberService
+        .subscribe()
+        .then(() => this.logger.log('subscribe() resolved'));
     }
 
     await this.listenPgEvents();
