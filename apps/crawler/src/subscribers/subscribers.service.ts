@@ -39,10 +39,22 @@ export class SubscribersService {
       this.logger.log(`Received notification on channel ${channel}`);
 
       if (channel === FORCE_RESCAN_BLOCK && payload) {
-        const blockNumber = parseInt(payload, 10);
+        const blockNumbers = payload
+          .split(',')
+          .map((n) => parseInt(n.trim(), 10))
+          .filter((n) => !isNaN(n));
 
-        this.logger.log(`Force rescan called for block ${blockNumber} started`);
-        await this.blocksSubscriberService.processBlockByNumber(blockNumber);
+        this.logger.log(
+          `Going to force rescan blocks: ${blockNumbers.join(', ')}`,
+        );
+
+        for (const blockNumber of blockNumbers) {
+          this.logger.log(`Rescan for block ${blockNumber}`);
+
+          await this.blocksSubscriberService.processBlockByNumber(blockNumber);
+
+          this.logger.log(`Rescan for block ${blockNumber} finished`);
+        }
       }
     });
 
