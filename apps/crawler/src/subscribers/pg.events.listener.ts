@@ -1,5 +1,5 @@
 import { Client as PgClient } from 'pg';
-import { Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { BlocksSubscriberService } from './blocks.subscriber.service';
 import { HarvesterStoreService } from './processor/harvester-store.service';
 
@@ -18,6 +18,7 @@ type NextBlocksQueryParams = {
 
 const FAST_RESCAN_PAGE_SIZE = 10;
 
+@Injectable()
 export class PgEventsListener implements OnApplicationBootstrap {
   readonly logger = new Logger(PgEventsListener.name);
   private client: PgClient;
