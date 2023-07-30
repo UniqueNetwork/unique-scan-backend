@@ -16,8 +16,6 @@ type NextBlocksQueryParams = {
   limit: number;
 };
 
-const FAST_RESCAN_PAGE_SIZE = 10;
-
 @Injectable()
 export class PgEventsListener implements OnApplicationBootstrap {
   readonly logger = new Logger(PgEventsListener.name);
@@ -96,10 +94,8 @@ export class PgEventsListener implements OnApplicationBootstrap {
       return;
     }
 
-    const range = PgEventsListener.parseBlockRangePayload(payload);
-    const { from } = range;
-    const to = range.to || (await this.harvesterStore.getState())[0];
-
+    const { from, to, pageSize } =
+      PgEventsListener.parseBlockRangePayload(payload);
     this.logger.log(`Going to start fast rescan from ${from} to ${to}`);
 
     let offset = 0;
@@ -110,7 +106,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
         from,
         to,
         offset,
-        limit: FAST_RESCAN_PAGE_SIZE,
+        limit: pageSize,
       });
 
       if (nextBlockNumbers.length === 0) {
@@ -130,7 +126,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
         this.logger.log(`Rescan for block ${blockNumber} finished`);
       }
 
-      offset += FAST_RESCAN_PAGE_SIZE;
+      offset += pageSize;
     }
   }
 
@@ -172,18 +168,18 @@ export class PgEventsListener implements OnApplicationBootstrap {
   static parseBlockRangePayload(payload: string): {
     from: number;
     to: number;
+    pageSize: number;
   } {
     const numbers = payload.split('-').map((n) => parseInt(n.trim(), 10));
 
-    if (numbers.length !== 2) {
+    if (numbers.length < 2) {
       throw new Error(
-        `Invalid block range payload ${payload}, expected format: from-to`,
+        `Invalid block range payload ${payload}, expected format: from-to or from-to-pageSize`,
       );
     }
 
-    const from = Math.min(...numbers);
-    const to = Math.max(...numbers);
+    const [from, to, pageSize = 100] = numbers;
 
-    return { from, to };
+    return { from, to, pageSize };
   }
 }
