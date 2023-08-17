@@ -2,14 +2,10 @@ enum TABLES {
   BLOCKS = 'harvester_blocks',
   EXTRINSICS = 'harvester_extrinsics',
   EVENTS = 'harvester_events',
-  EVENT_DATA_PARSED = 'harvester_event_data_parsed',
 }
 
 export const FIRST_BLOCK_QUERY = `SELECT * FROM ${TABLES.BLOCKS} ORDER BY id ASC LIMIT 1`;
 export const LAST_BLOCK_QUERY = `SELECT * FROM ${TABLES.BLOCKS} ORDER BY id DESC LIMIT 1`;
-
-const toTimestamp = (param: string) =>
-  `TO_TIMESTAMP(cast(${param} as INT8) / 1000)`;
 
 const BETWEEN_TIMESTAMPS = `BETWEEN TO_TIMESTAMP(cast($1 as INT8) / 1000) AND TO_TIMESTAMP(cast($2 as INT8) / 1000)`;
 
