@@ -76,4 +76,11 @@ export class StatisticsV2Resolver {
   ): Promise<CountResponse> {
     return this.service.getTokenCreatedCount(args);
   }
+
+  @Query(() => StatisticsV2Dto)
+  public async newAccountsCount(
+    @Args() args: StatisticsV2Args,
+  ): Promise<StatisticsV2Dto> {
+    return this.service.getNewAccountCount(args);
+  }
 }

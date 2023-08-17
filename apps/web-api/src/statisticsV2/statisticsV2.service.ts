@@ -10,6 +10,7 @@ import {
   BALANCE_TRANSFER_STATISTICS_QUERY,
   COLLECTION_CREATED_STATISTICS_QUERY,
   TOKEN_CREATED_STATISTICS_QUERY,
+  NEW_ACCOUNT_STATISTICS_QUERY,
 } from './constants';
 import { UserInputError } from 'apollo-server-express';
 
@@ -102,5 +103,10 @@ export class StatisticsV2Service {
   @SentryWrapper()
   public async getTokenCreatedCount(fromTo: FromTo): Promise<Count> {
     return await this.executeQuery(TOKEN_CREATED_STATISTICS_QUERY, fromTo);
+  }
+
+  @SentryWrapper()
+  public async getNewAccountCount(fromTo: FromTo): Promise<Count> {
+    return await this.executeQuery(NEW_ACCOUNT_STATISTICS_QUERY, fromTo);
   }
 }
