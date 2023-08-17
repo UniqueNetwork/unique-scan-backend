@@ -27,7 +27,7 @@ export const COLLECTION_CREATED_STATISTICS_QUERY = `
 SELECT COUNT(1) AS count
 FROM ${TABLES.BLOCKS} hb
 JOIN ${TABLES.EVENTS} he ON he."blockId" = hb.id
-WHERE hb."timestamp" BETWEEN $1::timestamp AND $2::timestamp
+WHERE hb."timestamp" ${BETWEEN_TIMESTAMPS}
 AND he."method" = 'CollectionCreated'
 ;
 `;
@@ -36,7 +36,7 @@ export const BALANCE_TRANSFER_STATISTICS_QUERY = `
 SELECT COUNT(1) AS count
 FROM ${TABLES.BLOCKS} hb
 JOIN ${TABLES.EVENTS} he ON he."blockId" = hb.id
-WHERE hb."timestamp" BETWEEN $1::timestamp AND $2::timestamp
+WHERE hb."timestamp" ${BETWEEN_TIMESTAMPS}
 AND he."section" = 'balances'
 AND he."method" = 'Transfer'
 ;
@@ -46,7 +46,7 @@ export const TOKEN_TRANSFER_STATISTICS_QUERY = `
 SELECT COUNT(1) AS count
 FROM ${TABLES.BLOCKS} hb
 JOIN ${TABLES.EVENTS} he ON he."blockId" = hb.id
-WHERE hb."timestamp" BETWEEN $1::timestamp AND $2::timestamp
+WHERE hb."timestamp" ${BETWEEN_TIMESTAMPS}
 AND (he."section" = 'unique' OR section = 'common')
 AND he."method" = 'Transfer';
 `;
@@ -55,7 +55,7 @@ export const NEW_ACCOUNT_STATISTICS_QUERY = `
 SELECT COUNT(1) AS count
 FROM ${TABLES.BLOCKS} hb
 JOIN ${TABLES.EVENTS} he ON he."blockId" = hb.id
-WHERE hb."timestamp" BETWEEN $1::timestamp AND $2::timestamp
+WHERE hb."timestamp" ${BETWEEN_TIMESTAMPS}
 AND he."section" = 'system'
 AND he."method" = 'NewAccount';
 `;
@@ -64,7 +64,7 @@ export const EXTRINSICS_STATISTICS_QUERY = `
 SELECT COUNT(1) AS count
 FROM ${TABLES.BLOCKS} hb
 JOIN ${TABLES.EXTRINSICS} he ON he."blockId" = hb.id
-WHERE hb."timestamp" BETWEEN $1::timestamp AND $2::timestamp
+WHERE hb."timestamp" ${BETWEEN_TIMESTAMPS}
 AND NOT (
     (he."section" = 'parachainSystem' AND he."method" = 'setValidationData')
     OR
