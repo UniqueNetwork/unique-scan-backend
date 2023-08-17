@@ -20,6 +20,8 @@ type FromTo = {
   to: number;
 };
 
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
+
 const checkArgs = (fromTo: FromTo): FromTo => {
   const { from, to } = fromTo;
 
@@ -39,7 +41,7 @@ const checkArgs = (fromTo: FromTo): FromTo => {
     throw new UserInputError('From and to params should be positive');
   }
 
-  if (to - from > 60 * 60 * 24.5) {
+  if (to - from > MS_IN_DAY + 1) {
     throw new UserInputError(
       'From and to params should be at least 24 hours apart',
     );
