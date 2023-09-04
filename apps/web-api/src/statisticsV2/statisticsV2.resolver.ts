@@ -1,86 +1,50 @@
-import {
-  Args,
-  ArgsType,
-  Field,
-  ObjectType,
-  Query,
-  Resolver,
-} from '@nestjs/graphql';
-import { StatisticsV2Dto } from './statisticsV2.dto';
+import { Args, Query, Resolver } from '@nestjs/graphql';
 import { StatisticsV2Service } from './statisticsV2.service';
+import {
+  BlockNumbersInputDto,
+  BlockNumbersResponseDto,
+  AllEventsResponseDto,
+  GroupedEventsInputDto,
+  GroupedEventsResponseDto,
+} from './dto';
+import {
+  AllEventsResponse,
+  BlockNumbersResponse,
+  GroupedEventsResponse,
+} from './types';
 
-@ObjectType()
-class BlockchainTimestampsResponse {
-  @Field(() => Number)
-  firstBlockTimestamp: number;
-
-  @Field(() => Number)
-  lastBlockTimestamp: number;
-}
-
-@ObjectType()
-class CountResponse {
-  @Field(() => Number)
-  count: number;
-}
-
-@ArgsType()
-class StatisticsV2Args {
-  @Field(() => Number, { nullable: false })
-  from: number;
-
-  @Field(() => Number, { nullable: false })
-  to: number;
-}
-
-@Resolver(() => StatisticsV2Dto)
+@Resolver()
 export class StatisticsV2Resolver {
   constructor(private service: StatisticsV2Service) {}
 
-  @Query(() => BlockchainTimestampsResponse)
-  public async blockchainTimestamps(): Promise<BlockchainTimestampsResponse> {
-    return this.service.getBlockchainTimestamps();
+  @Query(() => BlockNumbersResponseDto)
+  public async blockNumbersByInterval(
+    @Args() args: BlockNumbersInputDto,
+  ): Promise<BlockNumbersResponse> {
+    return this.service.getBlockNumbers(args);
   }
 
-  @Query(() => CountResponse)
-  public async extrinsicsCount(
-    @Args() args: StatisticsV2Args,
-  ): Promise<CountResponse> {
-    return this.service.getExtrinsicsCount(args);
+  @Query(() => AllEventsResponseDto)
+  public async allEvents(): Promise<AllEventsResponse> {
+    return this.service.getAllEvents();
   }
 
-  @Query(() => CountResponse)
-  public async tokenTransferCount(
-    @Args() args: StatisticsV2Args,
-  ): Promise<CountResponse> {
-    return this.service.getTokenTransferCount(args);
+  @Query(() => AllEventsResponseDto)
+  public async allExtrinsics(): Promise<AllEventsResponse> {
+    return this.service.getAllExtrinsics();
   }
 
-  @Query(() => CountResponse)
-  public async balanceTransferCount(
-    @Args() args: StatisticsV2Args,
-  ): Promise<CountResponse> {
-    return this.service.getBalanceTransferCount(args);
+  @Query(() => GroupedEventsResponseDto)
+  public async eventsGroupedByInterval(
+    @Args() args: GroupedEventsInputDto,
+  ): Promise<GroupedEventsResponse> {
+    return this.service.getEventsGroupedByInterval(args);
   }
 
-  @Query(() => CountResponse)
-  public async collectionCreatedCount(
-    @Args() args: StatisticsV2Args,
-  ): Promise<CountResponse> {
-    return this.service.getCollectionCreatedCount(args);
-  }
-
-  @Query(() => CountResponse)
-  public async tokenCreatedCount(
-    @Args() args: StatisticsV2Args,
-  ): Promise<CountResponse> {
-    return this.service.getTokenCreatedCount(args);
-  }
-
-  @Query(() => CountResponse)
-  public async newAccountsCount(
-    @Args() args: StatisticsV2Args,
-  ): Promise<CountResponse> {
-    return this.service.getNewAccountCount(args);
+  @Query(() => GroupedEventsResponseDto)
+  public async extrinsicsGroupedByInterval(
+    @Args() args: GroupedEventsInputDto,
+  ): Promise<GroupedEventsResponse> {
+    return this.service.getEventsGroupedByInterval(args);
   }
 }
