@@ -45,6 +45,6 @@ export class StatisticsV2Resolver {
   public async extrinsicsGroupedByInterval(
     @Args() args: GroupedEventsInputDto,
   ): Promise<GroupedEventsResponse> {
-    return this.service.getEventsGroupedByInterval(args);
+    return this.service.getExtrinsicsGroupedByInterval(args);
   }
 }
