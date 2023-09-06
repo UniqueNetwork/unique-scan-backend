@@ -1,12 +1,13 @@
-import { Total } from '@entities/Total';
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { StatisticsV2Resolver } from './statisticsV2.resolver';
 import { StatisticsV2Service } from './statisticsV2.service';
+import { StatisticsV2Repository } from './statisticsV2.repository';
 
 @Module({
-  // imports: [TypeOrmModule.forFeature([Total])],
-  providers: [StatisticsV2Resolver, StatisticsV2Service],
-  // providers: [StatisticsV2Service],
+  providers: [
+    StatisticsV2Resolver,
+    StatisticsV2Service,
+    StatisticsV2Repository,
+  ],
 })
 export class StatisticsV2Module {}
