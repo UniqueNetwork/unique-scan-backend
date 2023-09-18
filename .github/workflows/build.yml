@@ -1,0 +1,23 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-crawler:
+    name: Build Crawler
+    uses: UniqueNetwork/web-deploy/.github/workflows/build-docker-image.yml@master
+    secrets: inherit
+    with:
+      tag: scan-backend-crawler
+      dockerfile: Dockerfile.crawler
+
+  build-web-api:
+    name: Build Web API
+    uses: UniqueNetwork/web-deploy/.github/workflows/build-docker-image.yml@master
+    secrets: inherit
+    with:
+      tag: scan-backend-web-api
