@@ -6,7 +6,7 @@ on:
 jobs:
   build-crawler:
     name: Build Crawler
-    uses: ./build-docker-image.yml@develop
+    uses: .github/workflows/build-docker-image.yml@develop
     secrets: inherit
     with:
       tag: scan-backend-crawler
@@ -14,7 +14,7 @@ jobs:
 
   build-web-api:
     name: Build Web API
-    uses: ./build-docker-image.yml@develop
+    uses: .github/workflows/build-docker-image.yml@develop
     secrets: inherit
     with:
       tag: scan-backend-web-api
