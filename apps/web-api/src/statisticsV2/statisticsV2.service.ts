@@ -98,6 +98,29 @@ export class StatisticsV2Service {
     };
   }
 
+  async getExtrinsicsGroupedByInterval(
+    groupedEventsInput: GroupedEventsInputDto,
+  ): Promise<GroupedEventsResponse> {
+    const args = fillGroupedEventsInput(groupedEventsInput);
+    const rawItems = await this.statisticsV2Repository.countGroupedExtrinsics(
+      args,
+    );
+
+    const items = rawItems.map((item) => ({
+      intervalTimestamp: dateToTimestamp(
+        args.timestampType,
+        item.interval_timestamp,
+      ),
+      count: parseInt(item.event_count, 10),
+    }));
+
+    return {
+      items,
+      groupByInterval: args.groupByInterval,
+      timestampType: args.timestampType,
+    };
+  }
+
   private async withCache<T>(key: string, fn: () => Promise<T>): Promise<T> {
     const cached = await this.cache.get<T>(key);
 
