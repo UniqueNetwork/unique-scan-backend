@@ -194,4 +194,13 @@ export class SdkService {
       method: 'totalIssuance',
     });
   }
+
+  @SdkCache('getTotalStaked')
+  async getTotalStaked(): Promise<ITotalIssuance> {
+    return await this.sdk.stateQueries.execute({
+      endpoint: 'query',
+      module: 'appPromotion',
+      method: 'totalStaked',
+    });
+  }
 }
