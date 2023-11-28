@@ -25,7 +25,7 @@ export class CirculatingSupplyService {
     const count = BigInt(total.json).toString();
     this.logger.log({ request: 'circulating supply', count, total, staked });
     return {
-      circulatingSupply: Number(circulatingTotal.toString()),
+      circulatingSupply: Number(getAmount(circulatingTotal.toString())),
       totalSupply: Number(getAmount(count)),
     };
   }
