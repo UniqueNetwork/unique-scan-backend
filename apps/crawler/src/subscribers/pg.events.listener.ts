@@ -51,28 +51,26 @@ export class PgEventsListener implements OnApplicationBootstrap {
   }
 
   async listenPgEvents() {
-    this.client.on('notification', async ({ channel, payload }) => {
+    this.client.on('notification', async ({ channel, payload = '' }) => {
       this.logger.log(
         `Received notification on channel ${channel}, payload: ${payload}`,
       );
 
-      if (channel === PG_EVENTS_CHANNELS.FORCE_RESCAN_BLOCK) {
-        await this.handleRescanBlocks(payload);
-      }
+      const handlersMap: Record<string, (payload: string) => Promise<void>> = {
+        [PG_EVENTS_CHANNELS.FORCE_RESCAN_BLOCK]: this.handleRescanBlocks,
+        [PG_EVENTS_CHANNELS.START_FAST_RESCAN]: this.startFastRescan,
+        [PG_EVENTS_CHANNELS.STOP_FAST_RESCAN]: async () =>
+          this.stopFastRescan('manual'),
+        [PG_EVENTS_CHANNELS.RESCAN_TOKENS]: this.handleRescanTokens,
+      };
 
-      if (channel === PG_EVENTS_CHANNELS.START_FAST_RESCAN) {
-        await this.startFastRescan(payload || '');
-      }
+      const handler = handlersMap[channel];
 
-      if (channel === PG_EVENTS_CHANNELS.STOP_FAST_RESCAN) {
-        this.stopFastRescan('manual');
+      if (handler) {
+        await handler(payload);
+      } else {
+        this.logger.log(`No handler for channel "${channel}", ignoring...`);
       }
-
-      if (channel === PG_EVENTS_CHANNELS.RESCAN_TOKENS) {
-        await this.handleRescanTokens(payload);
-      }
-
-      this.logger.log(`No handler for channel "${channel}", ignoring...`);
     });
 
     await this.client.connect();
