@@ -34,15 +34,16 @@ export const parseBlockRangePayload = (
 };
 
 /**
- * Parse string like "1/1,2,3,4,5" to object with collectionId and tokenIds
+ * Parse string like "1/1,2,3,4,5@block_number" to object with collectionId, tokenIds and blockNumber
  * @param payload
  */
 export const parseTokenRangePayload = (payload: string) => {
-  const [collectionIdString, tokenIdsString] = payload.split('/');
+  const [collectionIdString, tokenIdsString, blockNumberString] =
+    payload.split(/[\/@]/);
 
-  if (!collectionIdString || !tokenIdsString) {
+  if (!collectionIdString || !tokenIdsString || !blockNumberString) {
     throw new Error(
-      `Invalid token range payload ${payload}, expected format: collectionId/tokenId,tokenId,tokenId`,
+      `Invalid token range payload ${payload}, expected format: collectionId/tokenId,tokenId@blockNumber`,
     );
   }
 
@@ -53,10 +54,17 @@ export const parseTokenRangePayload = (payload: string) => {
     );
   }
 
+  const blockNumber = parseInt(blockNumberString, 10);
+  if (isNaN(blockNumber)) {
+    throw new Error(
+      `Invalid token range payload ${payload}, blockNumber is not a number`,
+    );
+  }
+
   const tokenIds = tokenIdsString
     .split(',')
     .map((n) => parseInt(n.trim(), 10))
     .filter((n) => !isNaN(n));
 
-  return { collectionId, tokenIds };
+  return { collectionId, tokenIds, blockNumber };
 };

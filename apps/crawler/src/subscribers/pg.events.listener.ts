@@ -6,9 +6,8 @@ import {
   parseBlockRangePayload,
   parseTokenRangePayload,
 } from './pg.payload.parsers';
-import { TokenService } from '../services/token/token.service';
-import { EventName } from '@common/constants';
-import { BlocksRepository } from '@unique-nft/harvester/src/database/repositories/private.repositories';
+import { BlockService } from '../services/block.service';
+import { TokenReScanner } from './token.rescaner';
 
 enum PG_EVENTS_CHANNELS {
   FORCE_RESCAN_BLOCK = 'force_rescan_block',
@@ -33,8 +32,8 @@ export class PgEventsListener implements OnApplicationBootstrap {
 
   constructor(
     private blocksSubscriberService: BlocksSubscriberService,
-    private tokenService: TokenService,
-    private blocksRepository: BlocksRepository,
+    private blockService: BlockService,
+    private tokenReScanner: TokenReScanner,
   ) {
     const config = {
       host: process.env.POSTGRES_HOST,
@@ -99,39 +98,10 @@ export class PgEventsListener implements OnApplicationBootstrap {
   }
 
   private async handleRescanTokens(payload: string) {
-    const { collectionId, tokenIds } = parseTokenRangePayload(payload);
+    const { collectionId, tokenIds, blockNumber } =
+      parseTokenRangePayload(payload);
 
-    this.logger.log(
-      `Going to force rescan tokens for collection ${collectionId} and tokens: ${tokenIds.join(
-        ', ',
-      )}`,
-    );
-
-    const lastBlock = await this.blocksRepository.findOne({
-      order: { id: 'DESC' },
-    });
-
-    for (const tokenId of tokenIds) {
-      try {
-        this.logger.log(`Rescan for token ${collectionId}/${tokenId}`);
-
-        await this.tokenService.update({
-          blockNumber: lastBlock.id,
-          collectionId,
-          tokenId,
-          eventName: EventName.TOKEN_PROPERTY_SET,
-          blockTimestamp: lastBlock.timestamp.getTime(),
-          blockHash: lastBlock.hash,
-          data: [],
-        });
-
-        this.logger.log(`Rescan for token ${collectionId}/${tokenId} finished`);
-      } catch (e: any) {
-        this.logger.error(
-          `Rescan for token ${collectionId}/${tokenId} failed: ${e.message}`,
-        );
-      }
-    }
+    await this.tokenReScanner.rescanTokens(collectionId, tokenIds, blockNumber);
   }
 
   private async startFastRescan(payload: string) {
