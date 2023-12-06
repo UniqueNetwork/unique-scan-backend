@@ -67,7 +67,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
       const handler = handlersMap[channel];
 
       if (handler) {
-        await handler(payload);
+        await handler.call(this, payload);
       } else {
         this.logger.log(`No handler for channel "${channel}", ignoring...`);
       }
