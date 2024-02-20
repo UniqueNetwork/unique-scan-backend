@@ -77,7 +77,8 @@ export class ExtrinsicService {
         method.toLowerCase() === EventMethod.TRANSFER.toLowerCase()
       ) {
         acc.amount = values.amount;
-        acc.toOwner = values.to?.value || null;
+        acc.toOwner =
+          typeof values.to === 'string' ? values.to : values.to?.value || null;
       } else if (
         section.toLowerCase() === EventSection.TREASURY.toLowerCase() &&
         method.toLowerCase() === EventMethod.DEPOSIT.toLowerCase()
@@ -88,7 +89,8 @@ export class ExtrinsicService {
           section.toLowerCase() === EventSection.UNIQUE.toLowerCase() ) &&
         method.toLowerCase() === EventMethod.TRANSFER.toLowerCase()
       ) {
-        acc.toOwner = values.to?.value || null;
+        acc.toOwner =
+          typeof values.to === 'string' ? values.to : values.to?.value || null;
       }
     }
     return acc;

@@ -5,7 +5,7 @@ import { SubscribersService } from './subscribers/subscribers.service';
 export class CrawlerService {
   constructor(private subscribersService: SubscribersService) {}
 
-  run() {
+  async run() {
     return this.subscribersService.run();
   }
 }

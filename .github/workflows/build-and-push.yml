@@ -1,0 +1,20 @@
+name: Build and push docker images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-crawler:
+    name: Build Crawler
+    uses: ./.github/workflows/build-docker-image.yml
+    secrets: inherit
+    with:
+      tag: scan-backend-crawler
+      dockerfile: Dockerfile.crawler
+
+  build-web-api:
+    name: Build Web API
+    uses: ./.github/workflows/build-docker-image.yml
+    secrets: inherit
+    with:
+      tag: scan-backend-web-api

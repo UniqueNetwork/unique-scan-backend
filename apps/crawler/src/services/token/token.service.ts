@@ -23,9 +23,21 @@ import { ConfigService } from '@nestjs/config';
 import { Config } from '../../config/config.module';
 import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
-import * as console from 'console';
 import { yellow } from '@nestjs/common/utils/cli-colors.util';
 import { SdkService } from '@common/sdk/sdk.service';
+
+const tryGetNormalizedAddress = (data: any[], index: number) => {
+  const field = data[index];
+  const address = field?.substrate || field?.ethereum || field?.value;
+
+  if (!address) {
+    throw new Error(
+      `Address not found in ${JSON.stringify(data)} at index ${index}`,
+    );
+  }
+
+  return normalizeSubstrateAddress(address);
+};
 
 @Injectable()
 export class TokenService {
@@ -315,9 +327,7 @@ export class TokenService {
       }
       result = SubscriberAction.UPSERT;
     } else {
-      const tokenOwnSelect =
-        data[2].substrate || data[2].ethereum || data[2].value;
-      const ownerToken = normalizeSubstrateAddress(tokenOwnSelect);
+      const ownerToken = tryGetNormalizedAddress(data, 2);
 
       await this.burnTokenOwnerPart({
         collection_id: collectionId,
@@ -369,19 +379,19 @@ export class TokenService {
       },
     );
 
-    const ownerAddress = data[2].substrate || data[2].ethereum;
+    const ownerAddress = tryGetNormalizedAddress(data, 2);
 
     const pieceFrom = await this.sdkService.getRFTBalances(
       {
-        address: normalizeSubstrateAddress(ownerAddress),
+        address: ownerAddress,
         collectionId: collectionId,
         tokenId: tokenId,
       },
       blockHash,
     );
     arrayToken.push({
-      owner: normalizeSubstrateAddress(ownerAddress),
-      owner_normalized: normalizeSubstrateAddress(ownerAddress),
+      owner: ownerAddress,
+      owner_normalized: ownerAddress,
       collection_id: collectionId,
       token_id: tokenId,
       date_created: String(normalizeTimestamp(blockTimestamp)),
@@ -392,8 +402,7 @@ export class TokenService {
       children: preparedData.children,
     });
     if (data.length === 5) {
-      const ownerAddressTo = data[3].substrate || data[3].ethereum;
-      const owner = normalizeSubstrateAddress(ownerAddressTo);
+      const owner = tryGetNormalizedAddress(data, 3);
       const pieceTo = await this.sdkService.getRFTBalances(
         {
           address: owner,
@@ -411,7 +420,7 @@ export class TokenService {
       }
       arrayToken.push({
         owner: owner,
-        owner_normalized: normalizeSubstrateAddress(ownerAddressTo),
+        owner_normalized: owner,
         collection_id: collectionId,
         token_id: tokenId,
         date_created: String(normalizeTimestamp(blockTimestamp)),
@@ -438,8 +447,8 @@ export class TokenService {
           'owner',
         ]);
         this.logger.log(
-          `${eventName} token: ${tokenOwnerData.token_id} collection:
-          ${tokenOwnerData.collection_id} in ${tokenOwnerData.block_number}`,
+          `${eventName} token: ${tokenOwnerData.token_id} collection:` +
+            ` ${tokenOwnerData.collection_id} in ${tokenOwnerData.block_number}`,
         );
       }
     }

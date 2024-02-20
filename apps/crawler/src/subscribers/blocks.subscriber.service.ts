@@ -6,7 +6,6 @@ import { ExtrinsicService } from '../services/extrinsic.service';
 import { EventService } from '../services/event/event.service';
 import { Event } from '@entities/Event';
 import { HarvesterStoreService } from './processor/harvester-store.service';
-import * as console from 'console';
 import { Chain, Reader } from '@unique-nft/harvester';
 import { cyan, blue } from 'cli-color';
 import { capitalize } from '@common/utils';
@@ -91,6 +90,8 @@ export class BlocksSubscriberService implements ISubscriberService {
     await this.harvesterStore.connect();
     const stateNumber = await this.harvesterStore.getState();
 
+    this.logger.log(`stateNumber: ${stateNumber[0]} - ${stateNumber[1]}`);
+
     this.readFromHeadInterval = setInterval(async () => {
       if (
         (await this.sdkService.getLastBlockHash()) === this.lastHandledBlockHash
@@ -101,7 +102,6 @@ export class BlocksSubscriberService implements ISubscriberService {
       this.cutOff = true;
     }, 60_000);
 
-    console.dir(stateNumber);
     for await (const block of this.reader.readBlocks(
       stateNumber[0],
       stateNumber[1],
