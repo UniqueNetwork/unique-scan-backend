@@ -1,4 +1,6 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
+import { IV2Collection } from '@unique-nft/substrate-client/tokens';
+import { Attribute } from './Attributes';
 
 @Index('collections_pkey', ['collection_id'], { unique: true })
 @Index('collections_owner_normalized_idx', ['owner_normalized'], {})
@@ -21,6 +23,9 @@ export class Collections {
 
   @Column('bigint', { name: 'token_limit' })
   token_limit: number;
+
+  @Column('jsonb', { name: 'schema_v2', default: null })
+  schemaV2: IV2Collection | null;
 
   @Column('jsonb', { name: 'properties', default: [] })
   properties: object | null;
@@ -104,4 +109,7 @@ export class Collections {
 
   @Column('boolean', { name: 'burned', default: false })
   burned: boolean;
+
+  @OneToMany(() => Attribute, (attribute) => attribute.collection)
+  attributesV2: Attribute[];
 }

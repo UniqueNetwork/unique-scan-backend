@@ -1,4 +1,13 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { DecodedAttributes } from '@unique-nft/schemas';
+import { TokenByIdResultV2 } from '@unique-nft/substrate-client/tokens';
+import { Attribute } from './Attributes';
 
 export enum TokenType {
   NFT = 'NFT',
@@ -31,13 +40,18 @@ export class Tokens {
   owner: string;
 
   @Column('jsonb', { name: 'properties', default: [] })
-  properties: object;
+  properties: Array<{ key: string; value: string; valueHex: string }>;
 
   @Column('jsonb', { name: 'attributes', nullable: true, default: null })
-  attributes: object;
+  attributes: DecodedAttributes | null;
 
   @Column('jsonb', { name: 'image', nullable: true, default: null })
-  image: object;
+  image: {
+    fullUrl?: string;
+    url?: string;
+    ipfsCid?: string;
+    urlInfix?: string;
+  } | null;
 
   @Column('bigint', { name: 'collection_id' })
   collection_id: number;
@@ -83,4 +97,10 @@ export class Tokens {
 
   @Column('boolean', { name: 'nested', default: false })
   nested: boolean;
+
+  @Column('jsonb', { name: 'schema_v2', default: null })
+  schemaV2: TokenByIdResultV2 | null;
+
+  @OneToMany(() => Attribute, (attribute) => attribute.token)
+  attributesV2: Attribute[];
 }

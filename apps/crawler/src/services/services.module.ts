@@ -5,6 +5,7 @@ import { Event } from '@entities/Event';
 import { EvmTransaction } from '@entities/EvmTransaction';
 import { Extrinsic } from '@entities/Extrinsic';
 import { Account } from '@entities/Account';
+import { Attribute } from '@common/entities';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -24,6 +25,7 @@ import { SdkModule } from '@common/sdk/sdk.module';
   imports: [
     TypeOrmModule.forFeature([
       Account,
+      Attribute,
       Block,
       Collections,
       Event,

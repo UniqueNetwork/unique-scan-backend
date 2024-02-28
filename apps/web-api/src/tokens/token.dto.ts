@@ -1,6 +1,7 @@
 import { Tokens, TokenType } from '@entities/Tokens';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSON, GraphQLJSONObject } from 'graphql-type-json';
+import { DecodedAttributes } from '@unique-nft/schemas';
 
 export enum TokenDistinctFieldsEnum {
   token_id = 'token_id',
@@ -22,10 +23,10 @@ export class SimpleTokenDTO implements Partial<Tokens> {
   collection_id?: number;
 
   @Field(() => GraphQLJSONObject, { nullable: true })
-  attributes?: object;
+  attributes?: DecodedAttributes;
 
   @Field(() => GraphQLJSON, { nullable: true })
-  properties?: object;
+  properties?: Array<{ key: string; value: string; valueHex: string }>;
 
   @Field(() => GraphQLJSONObject, { nullable: true })
   image?: object;
