@@ -298,7 +298,11 @@ export class CollectionService {
     blockCommonData,
   }: {
     events: Event[];
-    blockCommonData: any;
+    blockCommonData: {
+      block_hash: string;
+      timestamp: number;
+      block_number: number;
+    };
   }): Promise<any> {
     const collectionEvents = this.extractCollectionEvents(events);
     const eventChunks = chunk(
@@ -315,7 +319,7 @@ export class CollectionService {
             collectionId: number;
           };
 
-          const { block_hash, timestamp } = blockCommonData;
+          const { block_hash, timestamp, block_number } = blockCommonData;
           const eventName = `${section}.${method}`;
 
           if (COLLECTION_UPDATE_EVENTS.includes(eventName)) {
@@ -324,6 +328,7 @@ export class CollectionService {
               eventName,
               blockTimestamp: timestamp,
               blockHash: block_hash,
+              blockNumber: block_number,
             });
           } else {
             return this.burn(collectionId);
@@ -351,11 +356,13 @@ export class CollectionService {
     eventName,
     blockTimestamp,
     blockHash,
+    blockNumber,
   }: {
     collectionId: number;
     eventName: string;
     blockTimestamp: number;
     blockHash: string;
+    blockNumber: number;
   }): Promise<SubscriberAction> {
     const collectionData = await this.getCollectionData(
       collectionId,
@@ -371,12 +378,12 @@ export class CollectionService {
         preparedData.date_of_creation = normalizeTimestamp(blockTimestamp);
 
         preparedData.created_at_block_hash = blockHash;
-        preparedData.created_at_block_number = blockTimestamp;
+        preparedData.created_at_block_number = blockNumber;
         preparedData.updated_at_block_hash = blockHash;
-        preparedData.updated_at_block_number = blockTimestamp;
+        preparedData.updated_at_block_number = blockNumber;
       } else {
         preparedData.updated_at_block_hash = blockHash;
-        preparedData.updated_at_block_number = blockTimestamp;
+        preparedData.updated_at_block_number = blockNumber;
       }
 
       await this.collectionsRepository.upsert(preparedData, ['collection_id']);

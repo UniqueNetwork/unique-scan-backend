@@ -141,7 +141,11 @@ export class TokenService {
     blockCommonData,
   }: {
     events: Event[];
-    blockCommonData: any;
+    blockCommonData: {
+      block_hash: string;
+      block_number: number;
+      timestamp: number;
+    };
   }): Promise<any> {
     const tokenEventsRaw = this.extractTokenEvents(events);
 
