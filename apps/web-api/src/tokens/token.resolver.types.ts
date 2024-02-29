@@ -16,6 +16,7 @@ import {
   IWhereOperators,
   ListDataType,
   TOrderByParams,
+  TWhere,
   TWhereParams,
 } from '../utils/gql-query-args';
 import { SimpleTokenDTO, TokenDistinctFieldsEnum, TokenDTO } from './token.dto';
@@ -38,7 +39,7 @@ export class GQLWhereTokensType {
 }
 
 @InputType()
-export class AttributeFilterValue {
+export class AttributeV1FilterValue {
   @Field({
     description:
       "The 'key' of attribute from 'attributes' object from the attributes query",
@@ -113,6 +114,18 @@ export class TokenWhereParams implements TWhereParams<TokenDTO> {
 
   @Field(() => [TokenWhereParams], { nullable: true })
   _or?: TokenWhereParams[];
+
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  created_at_block_number?: GQLWhereOpsInt;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  created_at_block_hash?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  updated_at_block_number?: GQLWhereOpsInt;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  updated_at_block_hash?: GQLWhereOpsString;
 }
 
 @InputType()
@@ -170,6 +183,12 @@ export class TokenOrderByParams implements TOrderByParams<TokenDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   amount?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  created_at_block_number?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  updated_at_block_number?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()
@@ -181,10 +200,10 @@ export class QueryArgs
   distinct_on?: TokenDistinctFieldsEnum;
 
   @Field(() => TokenWhereParams, { nullable: true })
-  where?: TokenWhereParams;
+  where?: TWhereParams<TokenDTO>;
 
-  @Field(() => [AttributeFilterValue], { nullable: true })
-  attributes_filter?: AttributeFilterValue[];
+  @Field(() => [AttributeV1FilterValue], { nullable: true })
+  attributes_v1_filter?: AttributeV1FilterValue[];
 
   @Field(() => TokenOrderByParams, { nullable: true })
   order_by?: TokenOrderByParams;

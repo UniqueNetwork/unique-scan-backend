@@ -42,7 +42,7 @@ const customQueryFields = {
 export class CollectionService extends BaseService<Collections, CollectionDTO> {
   constructor(
     @InjectRepository(Collections) private repo: Repository<Collections>,
-    @Inject(forwardRef(() => TokenService)) private tokenService: TokenService,
+    @Inject(forwardRef(() => TokenService)) private tokenService: TokenService
   ) {
     super({
       relationsFields,
@@ -55,7 +55,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: IGQLQueryArgs<CollectionDTO>,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ): Promise<IDataListResponse<CollectionDTO>> {
     const qb = this.repo.createQueryBuilder();
 
@@ -66,7 +66,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
 
   public getCollectionById(
     id: number,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ): Promise<CollectionDTO> {
     const qb = this.repo.createQueryBuilder();
     qb.where(`collection_id = :id`, { id });
@@ -101,7 +101,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   private applyArgs(
     qb: SelectQueryBuilder<Collections>,
     queryArgs: IGQLQueryArgs<CollectionDTO>,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ): void {
     this.select(qb, queryArgs, queryInfo);
 
@@ -110,7 +110,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
     this.applyWhereCondition(
       qb,
       queryArgs,
-      this.applyRelationFilter.bind(this),
+      this.applyRelationFilter.bind(this)
     );
     this.applyDistinctOn(qb, queryArgs);
   }
@@ -118,7 +118,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   private applyRelationFilter(
     qb: SelectQueryBuilder<Collections>,
     where: TWhere<TokenDTO>,
-    op?: OperatorMethods.AND,
+    op?: OperatorMethods.AND
   ) {
     const { query, params } = this.tokenService.getCollectionIdsQuery({
       limit: null,
@@ -133,7 +133,7 @@ export class CollectionService extends BaseService<Collections, CollectionDTO> {
   private select(
     qb: SelectQueryBuilder<Collections>,
     queryArgs: IGQLQueryArgs<CollectionDTO>,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ): void {
     const queryFields = this.getQueryFields(queryInfo);
 

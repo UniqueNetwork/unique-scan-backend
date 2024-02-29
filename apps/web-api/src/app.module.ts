@@ -19,6 +19,7 @@ import { StatisticsV2Module } from './statisticsV2/statisticsV2.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { ContractModule } from './contract/contract.module';
+import { AttributesV1Module } from './attributes_v1/attributesV1.module';
 import { AttributesModule } from './attributes/attributes.module';
 import { EvmTransactionModule } from './evm-transactions/evm-transaction.module';
 import { TokenOwnersModule } from './tokens-owners/token-owners.module';
@@ -65,6 +66,7 @@ import { GlobalConfigModule } from '@common/config/config.module';
     StatisticsModule,
     StatisticsV2Module,
     TransactionModule,
+    AttributesV1Module,
     AttributesModule,
     EvmTransactionModule,
     CirculatingModule,

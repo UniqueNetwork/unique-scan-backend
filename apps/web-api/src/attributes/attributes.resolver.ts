@@ -1,20 +1,22 @@
-import { Args, Query, Resolver } from '@nestjs/graphql';
+import { Args, Info, Query, Resolver } from '@nestjs/graphql';
 import { IDataListResponse } from '../utils/gql-query-args';
-import { AttributeDTO } from './attribute.dto';
+import { AttributesDto } from './attributes.dto';
 import {
   AttributesDataResponse,
   AttributesQueryArgs,
 } from './attributes.resolver.types';
 import { AttributesService } from './attributes.service';
+import { GraphQLResolveInfo } from 'graphql';
 
-@Resolver(() => AttributeDTO)
+@Resolver(() => AttributesDto)
 export class AttributesResolver {
-  constructor(private service: AttributesService) {}
+  constructor(private attributesService: AttributesService) {}
 
   @Query(() => AttributesDataResponse)
   public async attributes(
     @Args() args: AttributesQueryArgs,
-  ): Promise<IDataListResponse<AttributeDTO>> {
-    return this.service.getCollectionAttributes(args);
+    @Info() info: GraphQLResolveInfo
+  ): Promise<IDataListResponse<AttributesDto>> {
+    return this.attributesService.find(args, info);
   }
 }

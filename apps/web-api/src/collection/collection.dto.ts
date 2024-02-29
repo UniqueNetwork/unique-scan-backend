@@ -1,6 +1,7 @@
 import { Collections } from '@entities/Collections';
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSON, GraphQLJSONObject } from 'graphql-type-json';
+import { IV2Collection } from '@unique-nft/substrate-client/tokens';
 
 export enum CollectionEnum {
   collection_id = 'collection_id',
@@ -104,4 +105,19 @@ export class CollectionDTO implements Partial<Collections> {
 
   @Field(() => Boolean)
   burned?: boolean;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  schema_v2?: IV2Collection;
+
+  @Field(() => String, { nullable: true })
+  created_at_block_hash?: string;
+
+  @Field(() => Int, { nullable: true })
+  created_at_block_number?: number;
+
+  @Field(() => String, { nullable: true })
+  updated_at_block_hash?: string;
+
+  @Field(() => Int, { nullable: true })
+  updated_at_block_number?: number;
 }

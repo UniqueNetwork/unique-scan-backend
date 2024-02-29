@@ -62,7 +62,7 @@ export class TokenService {
     totalPieces: number,
     blockTimestamp?: number,
     needCheckNesting = false
-  ): Promise<Omit<Tokens, 'id' | 'attributesV2'>> {
+  ): Promise<Omit<Tokens, 'id' | 'attributes'>> {
     let nested = false;
     const { tokenDecoded, tokenDecodedV2, tokenProperties, isBundle } =
       tokenData;
@@ -70,14 +70,14 @@ export class TokenService {
     const {
       tokenId: token_id,
       collectionId: collection_id,
-      attributes,
+      attributes: attributes_v1,
       nestingParentToken,
       owner,
     } = tokenDecoded;
 
-    const image = tokenDecoded.image;
-    if (!image.fullUrl && tokenDecodedV2?.image)
-      image.fullUrl = tokenDecodedV2.image;
+    const image_v1 = tokenDecoded.image;
+    if (!image_v1.fullUrl && tokenDecodedV2?.image)
+      image_v1.fullUrl = tokenDecodedV2.image;
 
     const { owner: collectionOwner, tokenPrefix } = tokenDecoded.collection;
 
@@ -117,8 +117,9 @@ export class TokenService {
       collection_id,
       owner: ownerCollection,
       owner_normalized: normalizeSubstrateAddress(ownerCollection),
-      image,
-      attributes,
+      image_v1,
+      image: tokenDecodedV2?.image || null,
+      attributes_v1,
       properties: tokenProperties.properties
         ? sanitizePropertiesValues(tokenProperties.properties)
         : [],
@@ -131,7 +132,7 @@ export class TokenService {
       bundle_created: tokenType === TokenType.NFT ? null : undefined,
       total_pieces: totalPieces,
       nested,
-      schemaV2: tokenDecodedV2 || null,
+      schema_v2: tokenDecodedV2 || null,
     };
   }
 
@@ -265,7 +266,7 @@ export class TokenService {
         ).amount;
       }
 
-      const dbTokenInstance = await this.prepareDataForDb(
+      const dbTokenEntity = await this.prepareDataForDb(
         tokenData,
         blockHash,
         pieces,
@@ -287,7 +288,7 @@ export class TokenService {
               tokenId,
               blockNumber,
               blockTimestamp,
-              dbTokenInstance,
+              dbTokenEntity,
               typeMode,
               eventName
             );
@@ -300,7 +301,7 @@ export class TokenService {
               blockNumber,
               blockHash,
               data,
-              dbTokenInstance,
+              dbTokenEntity,
               typeMode,
               eventName,
               blockTimestamp
@@ -309,18 +310,23 @@ export class TokenService {
         }
       }
 
-      const date_of_creation =
-        eventName === EventName.ITEM_CREATED
-          ? normalizeTimestamp(blockTimestamp)
-          : undefined;
-
       // Write token data into db
-      const entity = { ...dbTokenInstance, date_of_creation };
+
+      if (eventName === EventName.ITEM_CREATED) {
+        dbTokenEntity.date_of_creation = normalizeTimestamp(blockTimestamp);
+        dbTokenEntity.created_at_block_hash = blockHash;
+        dbTokenEntity.created_at_block_number = blockNumber;
+        dbTokenEntity.updated_at_block_hash = blockHash;
+        dbTokenEntity.updated_at_block_number = blockNumber;
+      } else {
+        dbTokenEntity.updated_at_block_hash = blockHash;
+        dbTokenEntity.updated_at_block_number = blockNumber;
+      }
 
       const existingToken = await this.tokensRepository.findOne({
         where: {
-          token_id: dbTokenInstance.token_id,
-          collection_id: dbTokenInstance.collection_id,
+          token_id: dbTokenEntity.token_id,
+          collection_id: dbTokenEntity.collection_id,
         },
       });
 
@@ -329,7 +335,7 @@ export class TokenService {
           {
             id: existingToken.id,
           },
-          entity
+          dbTokenEntity
         );
 
         await this.attributeRepository.delete({
@@ -337,7 +343,7 @@ export class TokenService {
           token_id: tokenId,
         });
       } else {
-        await this.tokensRepository.insert(entity);
+        await this.tokensRepository.insert(dbTokenEntity);
       }
 
       await this.attributeRepository.insert(

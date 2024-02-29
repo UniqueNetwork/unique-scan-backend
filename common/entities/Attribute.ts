@@ -10,7 +10,7 @@ import { Tokens } from './Tokens';
 import { Collections } from './Collections';
 import { TokenByIdResultV2 } from '@unique-nft/substrate-client/tokens';
 
-type IV2Attribute = TokenByIdResultV2['attributes'][0];
+export type IV2Attribute = TokenByIdResultV2['attributes'][0];
 
 @Index('attributes_token_collection', ['token_id', 'collection_id'])
 @Entity('attributes', { schema: 'public' })
@@ -56,14 +56,14 @@ export class Attribute implements IV2Attribute {
     }
   }
 
-  @ManyToOne(() => Tokens, (token) => token.attributesV2)
+  @ManyToOne(() => Tokens, (token) => token.attributes)
   @JoinColumn([
     { name: 'token_id', referencedColumnName: 'token_id' },
     { name: 'collection_id', referencedColumnName: 'collection_id' },
   ])
   token: Tokens;
 
-  @ManyToOne(() => Collections, (collection) => collection.attributesV2)
+  @ManyToOne(() => Collections, (collection) => collection.attributes)
   @JoinColumn([
     { name: 'collection_id', referencedColumnName: 'collection_id' },
   ])
@@ -73,13 +73,13 @@ export class Attribute implements IV2Attribute {
     attr: IV2Attribute,
     ids: { collectionId: number; tokenId: number }
   ): Attribute {
-    const a = new Attribute();
-    a.collection_id = ids.collectionId;
-    a.token_id = ids.tokenId;
-    a.trait_type = attr.trait_type;
-    a.display_type = attr.display_type;
-    a.value = attr.value;
+    const attribute = new Attribute();
+    attribute.collection_id = ids.collectionId;
+    attribute.token_id = ids.tokenId;
+    attribute.trait_type = attr.trait_type;
+    attribute.display_type = attr.display_type;
+    attribute.value = attr.value;
 
-    return a;
+    return attribute;
   }
 }

@@ -17,10 +17,12 @@ import { IRelations } from '../utils/base.service.types';
 import { FieldsListOptions } from 'graphql-fields-list';
 import { JOIN_TYPE } from '@common/constants';
 import { TokensOwners } from '@entities/TokensOwners';
+import * as console from 'console';
 
 const TOKENSOWNERS_RELATION_ALIAS = 'TokenOwners';
 const COLLECTION_RELATION_ALIAS = 'Collection';
 const STATISTICS_RELATION_ALIAS = 'Statistics';
+const ATTRIBUTES_RELATION_ALIAS = 'Attributes';
 
 const relationsFields = {
   token_prefix: COLLECTION_RELATION_ALIAS,
@@ -84,7 +86,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   @SentryWrapper({ data: [], count: 0 })
   public async find(
     queryArgs: QueryArgs,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
 
@@ -96,7 +98,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   @SentryWrapper({ data: [], count: 0 })
   public async findBundles(
     queryArgs: QueryArgs,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ): Promise<IDataListResponse<TokenDTO>> {
     const qb = this.repo.createQueryBuilder();
 
@@ -111,16 +113,16 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   public async getBundleRoot(
     collection_id: number,
     token_id: number,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ): Promise<TokenDTO> {
     const qb = this.repo.createQueryBuilder();
 
     qb.where(
       new Brackets((qb) => {
         qb.where('parent_id is null').andWhere(
-          `"Tokens".children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`,
+          `"Tokens".children @> '[{"token_id": ${token_id}, "collection_id": ${collection_id}}]'::jsonb`
         );
-      }),
+      })
     );
 
     qb.orWhere(
@@ -133,7 +135,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
             collection_id,
           })
           .andWhere(`"Tokens".nested = :nested`, { nested: true });
-      }),
+      })
     );
 
     this.select(qb, {}, queryInfo, { skip: ['__*'] });
@@ -144,7 +146,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   public getByCollectionId(
     id: number,
     queryArgs: QueryArgs,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ) {
     const qb = this.repo.createQueryBuilder();
 
@@ -174,7 +176,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   public findNestingChildren(
     collection_id: number,
     token_id: number,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ) {
     const qb = this.repo.createQueryBuilder();
 
@@ -213,7 +215,7 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
   private applyArgs(
     qb: SelectQueryBuilder<Tokens>,
     queryArgs: QueryArgs,
-    queryInfo: GraphQLResolveInfo,
+    queryInfo: GraphQLResolveInfo
   ): void {
     this.select(qb, queryArgs, queryInfo);
 
@@ -230,40 +232,40 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
 
   private applyAttributesFilter(
     qb: SelectQueryBuilder<Tokens>,
-    queryArgs: QueryArgs,
+    queryArgs: QueryArgs
   ): void {
-    const attributesFilter = queryArgs?.attributes_filter;
+    const attributesV1Filter = queryArgs?.attributes_v1_filter;
 
-    if (!Array.isArray(attributesFilter)) {
+    if (!Array.isArray(attributesV1Filter)) {
       return;
     }
 
     qb.andWhere(
       new Brackets((qb) => {
-        attributesFilter.forEach(({ key, raw_value: rawValue }) => {
+        attributesV1Filter.forEach(({ key, raw_value: rawValue }) => {
           const rawValueParsed = JSON.parse(rawValue);
 
           if (typeof rawValueParsed === 'object') {
             // Text field in format {_: "value"}
             qb.andWhere(
-              `attributes->'${key}'->'rawValue'='${rawValue}'::jsonb`,
+              `attributes->'${key}'->'rawValue'='${rawValue}'::jsonb`
             );
           } else {
             // Select and multiselect field
             qb.andWhere(
               new Brackets((qb) => {
                 qb.where(
-                  `attributes->'${key}'->>'rawValue'='${String(rawValue)}'`,
+                  `attributes->'${key}'->>'rawValue'='${String(rawValue)}'`
                 ).orWhere(
                   // Search value in array
                   // eslint-disable-next-line max-len
-                  `attributes->'${key}'->>'rawValue' ~ '^\\[\\s*((\\S+\\s*,\\s*)|\\s*)*(${rawValue})((\\s*,\\s*\\S+)|\\s*)*\\]$'`,
+                  `attributes->'${key}'->>'rawValue' ~ '^\\[\\s*((\\S+\\s*,\\s*)|\\s*)*(${rawValue})((\\s*,\\s*\\S+)|\\s*)*\\]$'`
                 );
-              }),
+              })
             );
           }
         });
-      }),
+      })
     );
   }
 
@@ -271,9 +273,11 @@ export class TokenService extends BaseService<Tokens, TokenDTO> {
     qb: SelectQueryBuilder<Tokens>,
     queryArgs: QueryArgs,
     queryInfo: GraphQLResolveInfo,
-    queryFieldsOptions?: FieldsListOptions,
+    queryFieldsOptions?: FieldsListOptions
   ): void {
     const queryFields = this.getQueryFields(queryInfo, queryFieldsOptions);
+
+    console.log('queryFields', queryFields);
 
     this.applySelect(qb, queryArgs, queryFields, tokensTableRelations);
   }

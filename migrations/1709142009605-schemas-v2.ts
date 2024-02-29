@@ -11,19 +11,50 @@ export class schemasV21709142009605 implements MigrationInterface {
       `CREATE INDEX "attributes_token_collection" ON "attributes" ("token_id", "collection_id") `
     );
     await queryRunner.query(`ALTER TABLE "collections" ADD "schema_v2" jsonb`);
+    await queryRunner.query(
+      `ALTER TABLE "collections" ADD "created_at_block_hash" text`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "collections" ADD "created_at_block_number" bigint`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "collections" ADD "updated_at_block_hash" text`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "collections" ADD "updated_at_block_number" bigint`
+    );
+
     await queryRunner.query(`ALTER TABLE "tokens" ADD "schema_v2" jsonb`);
+    await queryRunner.query(
+      `ALTER TABLE "tokens" RENAME COLUMN "attributes" TO "attributes_v1"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tokens" RENAME COLUMN "image" TO "image_v1"`
+    );
+    await queryRunner.query(`ALTER TABLE "tokens" ADD "image" text`);
+    await queryRunner.query(
+      `ALTER TABLE "tokens" ADD "created_at_block_hash" text`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tokens" ADD "created_at_block_number" bigint`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tokens" ADD "updated_at_block_hash" text`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tokens" ADD "updated_at_block_number" bigint`
+    );
+
     await queryRunner.query(
       `ALTER TABLE "attributes" ADD CONSTRAINT "FK_aabb8d18b9092592b58cb04a464" FOREIGN KEY ("token_id", "collection_id") REFERENCES "tokens"("token_id","collection_id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
+
     await queryRunner.query(
       `ALTER TABLE "attributes" ADD CONSTRAINT "FK_9a2581e9e9299f68972a57b2bf6" FOREIGN KEY ("collection_id") REFERENCES "collections"("collection_id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "collections" DROP COLUMN "schema_v2"`
-    );
     await queryRunner.query(
       `DROP INDEX "public"."attributes_token_collection"`
     );
@@ -34,6 +65,40 @@ export class schemasV21709142009605 implements MigrationInterface {
       `ALTER TABLE "attributes" DROP CONSTRAINT "FK_aabb8d18b9092592b58cb04a464"`
     );
     await queryRunner.query(`DROP TABLE "attributes"`);
+    await queryRunner.query(
+      `ALTER TABLE "collections" DROP COLUMN "schema_v2"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "collections" DROP COLUMN "created_at_block_hash"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "collections" DROP COLUMN "created_at_block_number"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "collections" DROP COLUMN "updated_at_block_hash"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "collections" DROP COLUMN "updated_at_block_number"`
+    );
     await queryRunner.query(`ALTER TABLE "tokens" DROP COLUMN "schema_v2"`);
+    await queryRunner.query(
+      `ALTER TABLE "tokens" RENAME COLUMN "attributes_v1" TO "attributes"`
+    );
+    await queryRunner.query(`ALTER TABLE "tokens" DROP COLUMN "image"`);
+    await queryRunner.query(
+      `ALTER TABLE "tokens" RENAME COLUMN "image_v1" TO "image"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tokens" DROP COLUMN "created_at_block_hash"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tokens" DROP COLUMN "created_at_block_number"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tokens" DROP COLUMN "updated_at_block_hash"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tokens" DROP COLUMN "updated_at_block_number"`
+    );
   }
 }

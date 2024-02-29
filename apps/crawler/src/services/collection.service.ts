@@ -145,14 +145,6 @@ export class CollectionService {
       attributesSchema,
     };
 
-    console.dir(
-      {
-        result,
-        collectionV2,
-      },
-      { depth: null }
-    );
-
     if (schemaName == '_old_') {
       const {
         oldProperties: {
@@ -214,7 +206,7 @@ export class CollectionService {
 
   private async prepareDataForDb(
     collectionData: CollectionData
-  ): Promise<Omit<Collections, 'attributesV2'>> {
+  ): Promise<Omit<Collections, 'attributes'>> {
     const {
       collectionDecoded,
       collectionDecodedV2,
@@ -277,7 +269,7 @@ export class CollectionService {
       description,
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
-      schemaV2: collectionDecodedV2 || null,
+      schema_v2: collectionDecodedV2 || null,
       properties: sanitizePropertiesValues(properties),
       permissions,
       token_property_permissions: tokenPropertyPermissions,
@@ -375,16 +367,19 @@ export class CollectionService {
     if (collectionData) {
       const preparedData = await this.prepareDataForDb(collectionData);
 
-      await this.collectionsRepository.upsert(
-        {
-          ...preparedData,
-          date_of_creation:
-            eventName === EventName.COLLECTION_CREATED
-              ? normalizeTimestamp(blockTimestamp)
-              : undefined,
-        },
-        ['collection_id']
-      );
+      if (eventName === EventName.COLLECTION_CREATED) {
+        preparedData.date_of_creation = normalizeTimestamp(blockTimestamp);
+
+        preparedData.created_at_block_hash = blockHash;
+        preparedData.created_at_block_number = blockTimestamp;
+        preparedData.updated_at_block_hash = blockHash;
+        preparedData.updated_at_block_number = blockTimestamp;
+      } else {
+        preparedData.updated_at_block_hash = blockHash;
+        preparedData.updated_at_block_number = blockTimestamp;
+      }
+
+      await this.collectionsRepository.upsert(preparedData, ['collection_id']);
 
       result = SubscriberAction.UPSERT;
     } else {

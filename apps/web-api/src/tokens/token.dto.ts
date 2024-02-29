@@ -2,6 +2,7 @@ import { Tokens, TokenType } from '@entities/Tokens';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSON, GraphQLJSONObject } from 'graphql-type-json';
 import { DecodedAttributes } from '@unique-nft/schemas';
+import { TokenByIdResultV2 } from '@unique-nft/substrate-client/tokens';
 
 export enum TokenDistinctFieldsEnum {
   token_id = 'token_id',
@@ -23,13 +24,16 @@ export class SimpleTokenDTO implements Partial<Tokens> {
   collection_id?: number;
 
   @Field(() => GraphQLJSONObject, { nullable: true })
-  attributes?: DecodedAttributes;
+  attributes_v1?: DecodedAttributes;
 
   @Field(() => GraphQLJSON, { nullable: true })
   properties?: Array<{ key: string; value: string; valueHex: string }>;
 
   @Field(() => GraphQLJSONObject, { nullable: true })
-  image?: object;
+  image_v1?: object;
+
+  @Field(() => String, { nullable: true })
+  image?: string;
 
   @Field(() => String)
   owner?: string;
@@ -106,4 +110,19 @@ export class TokenDTO extends SimpleTokenDTO implements Partial<Tokens> {
 
   @Field(() => Int, { nullable: true })
   transfers_count?: number;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  schema_v2?: TokenByIdResultV2;
+
+  @Field(() => String, { nullable: true })
+  created_at_block_hash?: string;
+
+  @Field(() => Int, { nullable: true })
+  created_at_block_number?: number;
+
+  @Field(() => String, { nullable: true })
+  updated_at_block_hash?: string;
+
+  @Field(() => Int, { nullable: true })
+  updated_at_block_number?: number;
 }
