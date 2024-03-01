@@ -1,10 +1,10 @@
 name: Deploy to Stage cluster
 
 on:
-  push:
-    branches:
-      - release/**
-      - hotfix/**
+#  push:
+#    branches:
+#      - release/**
+#      - hotfix/**
   workflow_dispatch:
 
 jobs:

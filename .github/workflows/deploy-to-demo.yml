@@ -1,9 +1,9 @@
 name: Deploy to Demo VM
 
 on:
-  push:
-    branches:
-      - demo
+#  push:
+#    branches:
+#      - demo
   workflow_dispatch:
 
 jobs:
