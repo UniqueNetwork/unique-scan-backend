@@ -356,8 +356,7 @@ export class TokenService {
         )
       );
 
-      if (tokenData.tokenDecodedV2?.attributes)
-        result = SubscriberAction.UPSERT;
+      result = SubscriberAction.UPSERT;
     } else {
       // burn token and update token owners
       const ownerToken = tryGetNormalizedAddress(data, 2);
