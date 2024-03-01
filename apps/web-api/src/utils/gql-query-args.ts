@@ -28,9 +28,9 @@ type TWhereOperations<T> = {
   }[];
 };
 
-export type TWhereParams<T> = {
+export type TWhereParams<T> = Partial<{
   [key in keyof T]: IWhereOperators;
-};
+}>;
 
 export type TWhere<T> = TWhereParams<T> & TWhereOperations<T>;
 
@@ -52,9 +52,9 @@ export enum GQLOrderByParamsArgs {
   desc_nulls_last = 'desc_nulls_last',
 }
 
-export type TOrderByParams<T> = {
+export type TOrderByParams<T> = Partial<{
   [key in keyof T]: GQLOrderByParamsArgs;
-};
+}>;
 
 registerEnumType(GQLOrderByParamsArgs, {
   name: 'GQLOrderByParamsArgs',
@@ -175,7 +175,7 @@ export function ListDataType<T>(classRef: Type<T>): Type<IDataListResponse<T>> {
 }
 
 export function ListDataTypeOwner<T>(
-  classRef: Type<T>,
+  classRef: Type<T>
 ): Type<IDataListResponse<T>> {
   @ObjectType({ isAbstract: false })
   class ListDataTypeOwner implements IDataListResponse<T> {

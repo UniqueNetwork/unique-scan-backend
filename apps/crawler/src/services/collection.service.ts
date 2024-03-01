@@ -18,6 +18,7 @@ import {
   CollectionInfoWithSchema,
   CollectionLimits,
   CollectionProperty,
+  CollectionWithInfoV2,
   PropertyKeyPermission,
   UniqueCollectionSchemaDecoded,
 } from '@unique-nft/substrate-client/tokens';
@@ -38,6 +39,7 @@ type ParsedSchemaFields = {
 
 interface CollectionData {
   collectionDecoded: CollectionInfoWithSchema | null;
+  collectionDecodedV2: CollectionWithInfoV2 | null;
   collectionLimits: CollectionLimits | null;
   tokenPropertyPermissions: PropertyKeyPermission[];
 }
@@ -55,7 +57,7 @@ export class CollectionService {
     private collectionsRepository: Repository<Collections>,
 
     @InjectRepository(Tokens)
-    private tokensRepository: Repository<Tokens>,
+    private tokensRepository: Repository<Tokens>
   ) {}
 
   /**
@@ -63,23 +65,26 @@ export class CollectionService {
    */
   private async getCollectionData(
     collectionId: number,
-    at: string,
+    at: string
   ): Promise<CollectionData | null> {
-    debugger;
     let collectionDecoded = await this.sdkService.getCollection(
       collectionId,
-      at,
+      at
     );
+
+    let collectionDecodedV2 = await this.sdkService.getCollectionV2(
+      collectionId,
+      at
+    );
+
     let checkAt = false; // for burned collections
 
     if (!collectionDecoded) {
       collectionDecoded = await this.sdkService.getCollection(collectionId, at);
       checkAt = true;
     }
-    debugger;
-    if (!collectionDecoded) {
-      return null;
-    }
+
+    if (!collectionDecoded) return null;
 
     // TODO: delete after rft support
     // if (collectionDecoded.mode === CollectionMode.ReFungible) {
@@ -89,16 +94,17 @@ export class CollectionService {
     const [collectionLimits, tokenPropertyPermissions] = await Promise.all([
       this.sdkService.getCollectionLimits(
         collectionId,
-        checkAt ? at : undefined,
+        checkAt ? at : undefined
       ),
       this.sdkService.getTokenPropertyPermissions(
         collectionId,
-        checkAt ? at : undefined,
+        checkAt ? at : undefined
       ),
     ]);
 
     return {
       collectionDecoded,
+      collectionDecodedV2,
       collectionLimits: collectionLimits || collectionDecoded.limits,
       tokenPropertyPermissions:
         tokenPropertyPermissions || collectionDecoded.tokenPropertyPermissions,
@@ -119,8 +125,10 @@ export class CollectionService {
 
   private processSchema(
     schema: UniqueCollectionSchemaDecoded,
+    collectionV2?: CollectionWithInfoV2
   ): ParsedSchemaFields {
     let result = {};
+
     const {
       schemaName,
       schemaVersion,
@@ -132,7 +140,8 @@ export class CollectionService {
     const schemaVersionCombined = `${schemaName}@${schemaVersion}@${attributesSchemaVersion}`;
 
     result = {
-      collectionCover: ipfsCid || fullUrl,
+      collectionCover:
+        ipfsCid || fullUrl || collectionV2?.info?.cover_image?.url,
       schemaVersion: schemaVersionCombined,
       attributesSchema,
     };
@@ -153,10 +162,10 @@ export class CollectionService {
         schemaVersion: `${schemaVersionCombined}@${oldSchemaVersion}`,
         offchainSchema,
         constOnChainSchema: this.processJsonStringifiedValue(
-          rawConstOnChainSchema,
+          rawConstOnChainSchema
         ),
         variableOnChainSchema: this.processJsonStringifiedValue(
-          rawVariableOnChainSchema,
+          rawVariableOnChainSchema
         ),
       };
     }
@@ -165,7 +174,7 @@ export class CollectionService {
   }
 
   private getSchemaValuesFromProperties(
-    properties: CollectionProperty[],
+    properties: CollectionProperty[]
   ): UniqueCollectionSchemaDecoded {
     const result = {
       schemaName: '_properties_',
@@ -197,10 +206,15 @@ export class CollectionService {
   }
 
   private async prepareDataForDb(
-    collectionData: CollectionData,
-  ): Promise<Collections> {
-    const { collectionDecoded, collectionLimits, tokenPropertyPermissions } =
-      collectionData;
+    collectionData: CollectionData
+  ): Promise<Omit<Collections, 'attributes'>> {
+    const {
+      collectionDecoded,
+      collectionDecodedV2,
+      collectionLimits,
+      tokenPropertyPermissions,
+    } = collectionData;
+
     const {
       id: collection_id,
       owner,
@@ -215,6 +229,7 @@ export class CollectionService {
     } = collectionDecoded;
 
     let schemaFromProperties = {} as UniqueCollectionSchemaDecoded;
+
     if (!schema) {
       this.logger.warn(`No collection schema ${collection_id}`);
 
@@ -231,7 +246,7 @@ export class CollectionService {
 
       // @ts-ignore // todo: Remove when sdk ready
       attributesSchema = {},
-    } = this.processSchema(schema || schemaFromProperties);
+    } = this.processSchema(schema || schemaFromProperties, collectionDecodedV2);
 
     const { mintMode, nesting } = permissions;
 
@@ -255,6 +270,7 @@ export class CollectionService {
       description,
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
+      schema_v2: collectionDecodedV2?.info || null,
       properties: sanitizePropertiesValues(properties),
       permissions,
       token_property_permissions: tokenPropertyPermissions,
@@ -283,12 +299,16 @@ export class CollectionService {
     blockCommonData,
   }: {
     events: Event[];
-    blockCommonData: any;
+    blockCommonData: {
+      block_hash: string;
+      timestamp: number;
+      block_number: number;
+    };
   }): Promise<any> {
     const collectionEvents = this.extractCollectionEvents(events);
     const eventChunks = chunk(
       collectionEvents,
-      this.configService.get('scanCollectionsBatchSize'),
+      this.configService.get('scanCollectionsBatchSize')
     );
 
     let rejected = [];
@@ -300,7 +320,7 @@ export class CollectionService {
             collectionId: number;
           };
 
-          const { block_hash, timestamp } = blockCommonData;
+          const { block_hash, timestamp, block_number } = blockCommonData;
           const eventName = `${section}.${method}`;
 
           if (COLLECTION_UPDATE_EVENTS.includes(eventName)) {
@@ -309,11 +329,12 @@ export class CollectionService {
               eventName,
               blockTimestamp: timestamp,
               blockHash: block_hash,
+              blockNumber: block_number,
             });
           } else {
             return this.burn(collectionId);
           }
-        }),
+        })
       );
 
       // todo: Process rejected tokens again or maybe process sdk disconnect
@@ -336,15 +357,17 @@ export class CollectionService {
     eventName,
     blockTimestamp,
     blockHash,
+    blockNumber,
   }: {
     collectionId: number;
     eventName: string;
     blockTimestamp: number;
     blockHash: string;
+    blockNumber: number;
   }): Promise<SubscriberAction> {
     const collectionData = await this.getCollectionData(
       collectionId,
-      blockHash,
+      blockHash
     );
 
     let result;
@@ -352,16 +375,19 @@ export class CollectionService {
     if (collectionData) {
       const preparedData = await this.prepareDataForDb(collectionData);
 
-      await this.collectionsRepository.upsert(
-        {
-          ...preparedData,
-          date_of_creation:
-            eventName === EventName.COLLECTION_CREATED
-              ? normalizeTimestamp(blockTimestamp)
-              : undefined,
-        },
-        ['collection_id'],
-      );
+      if (eventName === EventName.COLLECTION_CREATED) {
+        preparedData.date_of_creation = normalizeTimestamp(blockTimestamp);
+
+        preparedData.created_at_block_hash = blockHash;
+        preparedData.created_at_block_number = blockNumber;
+        preparedData.updated_at_block_hash = blockHash;
+        preparedData.updated_at_block_number = blockNumber;
+      } else {
+        preparedData.updated_at_block_hash = blockHash;
+        preparedData.updated_at_block_number = blockNumber;
+      }
+
+      await this.collectionsRepository.upsert(preparedData, ['collection_id']);
 
       result = SubscriberAction.UPSERT;
     } else {
@@ -378,11 +404,11 @@ export class CollectionService {
     return Promise.allSettled([
       this.collectionsRepository.update(
         { collection_id: collectionId },
-        { burned: true },
+        { burned: true }
       ),
       this.tokensRepository.update(
         { collection_id: collectionId },
-        { burned: true },
+        { burned: true }
       ),
     ]);
   }

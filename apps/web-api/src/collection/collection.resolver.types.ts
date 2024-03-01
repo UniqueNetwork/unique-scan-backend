@@ -65,6 +65,18 @@ export class CollectionWhereParams implements TWhereParams<CollectionDTO> {
 
   @Field(() => [CollectionWhereParams], { nullable: true })
   _or?: CollectionWhereParams[];
+
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  created_at_block_number?: GQLWhereOpsInt;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  created_at_block_hash?: GQLWhereOpsString;
+
+  @Field(() => GQLWhereOpsInt, { nullable: true })
+  updated_at_block_number?: GQLWhereOpsInt;
+
+  @Field(() => GQLWhereOpsString, { nullable: true })
+  updated_at_block_hash?: GQLWhereOpsString;
 }
 
 @InputType()
@@ -119,6 +131,12 @@ export class CollectionOrderByParams implements TOrderByParams<CollectionDTO> {
 
   @Field(() => GQLOrderByParamsArgs, { nullable: true })
   nesting_enabled?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  created_at_block_number?: GQLOrderByParamsArgs;
+
+  @Field(() => GQLOrderByParamsArgs, { nullable: true })
+  updated_at_block_number?: GQLOrderByParamsArgs;
 }
 
 @ArgsType()

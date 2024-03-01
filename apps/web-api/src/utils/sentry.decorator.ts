@@ -15,7 +15,7 @@ export const SentryWrapper = (emptyResult?: Record<string, unknown>) => {
       } catch (error) {
         const sentry = this.sentry as SentryService;
         sentry.instance().captureException(error);
-        logger.error(error);
+        logger.error(error, error.stack);
         if (emptyResult) {
           return emptyResult;
         }

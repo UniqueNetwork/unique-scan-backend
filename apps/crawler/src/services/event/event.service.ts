@@ -31,7 +31,7 @@ export class EventService {
     private collectionService: CollectionService,
     private configService: ConfigService<Config>,
     @InjectRepository(Event)
-    private eventsRepository: Repository<Event>,
+    private eventsRepository: Repository<Event>
   ) {}
 
   private extractEventItemsNew(blockItems: any): EventEntity[] {
@@ -50,7 +50,7 @@ export class EventService {
 
   private async prepareDataForDbNew(
     eventItems,
-    block: BlockEntity,
+    block: BlockEntity
   ): Promise<Event[]> {
     return Promise.all(
       eventItems.map(async (event, num) => {
@@ -60,7 +60,7 @@ export class EventService {
 
         const evenData = await this.eventArgumentsService.eventDataConverter(
           event.dataJson,
-          eventName,
+          eventName
         );
 
         //console.dir({ eventName, evenData }, { depth: 3 });
@@ -76,13 +76,13 @@ export class EventService {
           data: JSON.stringify(evenData.data) || JSON.stringify(event.dataJson),
           values: evenData.values || null,
           timestamp: Math.floor(
-            new Date(block.timestamp.getTime()).getTime() / 1000,
+            new Date(block.timestamp.getTime()).getTime() / 1000
           ),
           amount, // todo: Remove this field and use from values?
           block_index: `${block.id}-${event.indexExtrinsics}`,
         };
         return result;
-      }),
+      })
     );
   }
 
@@ -100,11 +100,11 @@ export class EventService {
 
     const ethereumEvents = events.filter(
       ({ section, method }) =>
-        section === EventSection.ETHEREUM && method === EventMethod.EXECUTED,
+        section === EventSection.ETHEREUM && method === EventMethod.EXECUTED
     );
     const speckEvents = events.filter(
       ({ section, method }) =>
-        section === 'ParachainSystem' && method === 'ValidationFunctionApplied',
+        section === 'ParachainSystem' && method === 'ValidationFunctionApplied'
     );
 
     // this.evmService.parseEvents(
@@ -122,8 +122,9 @@ export class EventService {
         events,
         blockCommonData: {
           block_hash: block.hash,
+          block_number: block.id,
           timestamp: Math.floor(
-            new Date(block.timestamp.getTime()).getTime() / 1000,
+            new Date(block.timestamp.getTime()).getTime() / 1000
           ),
         },
       });
@@ -132,12 +133,12 @@ export class EventService {
         collectionsResult.rejected.length === 0
       ) {
         this.logCollection.log(
-          `Save event collection: ${collectionsResult.collection.collectionId}`,
+          `Save event collection: ${collectionsResult.collection.collectionId}`
         );
       }
       if (collectionsResult.rejected.length > 0) {
         this.logCollection.error(
-          collectionsResult.rejected.map(({ reason }) => reason.toString()),
+          collectionsResult.rejected.map(({ reason }) => reason.toString())
         );
       }
     }
@@ -150,18 +151,18 @@ export class EventService {
           block_hash: block.hash,
           block_number: block.id,
           timestamp: Math.floor(
-            new Date(block.timestamp.getTime()).getTime() / 1000,
+            new Date(block.timestamp.getTime()).getTime() / 1000
           ),
         },
       });
       if (tokensResult.totalEvents >= 4) {
         this.logToken.log(
-          `Save event in collection: ${tokensResult.collection} token: ${tokensResult.token}`,
+          `Save event in collection: ${tokensResult.collection} token: ${tokensResult.token}`
         );
       }
       if (tokensResult.rejected.length > 0) {
         this.logToken.error(
-          tokensResult.rejected.map(({ reason }) => reason.toString()),
+          tokensResult.rejected.map(({ reason }) => reason.toString())
         );
       }
     }

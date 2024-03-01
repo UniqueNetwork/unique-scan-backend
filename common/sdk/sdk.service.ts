@@ -1,4 +1,4 @@
-import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cache } from 'cache-manager';
 import { Client } from '@unique-nft/substrate-client';
@@ -7,6 +7,8 @@ import {
   PropertyKeyPermission,
   TokenByIdResult,
   TokenPropertiesResult,
+  TokenWithInfoV2,
+  CollectionWithInfoV2,
 } from '@unique-nft/substrate-client/tokens';
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
@@ -14,7 +16,6 @@ import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
 import { ChainProperties } from '@unique-nft/substrate-client/types';
 
 import { ITotalIssuance } from '@common/constants';
-import * as console from 'console';
 
 export interface ISpecSystemVersion {
   spec_version: number;
@@ -26,17 +27,19 @@ export class SdkService {
   constructor(
     private sdk: Client,
     private configService: ConfigService<Config>,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
 
-  getLastBlockHash(): Promise<string> {
-    return this.sdk.api.rpc.chain
-      .getHeader()
-      .then((header) => header.hash.toString());
+  readonly logger = new Logger(SdkService.name);
+
+  async getLastBlockHash(): Promise<string> {
+    const header = await this.sdk.api.rpc.chain.getHeader();
+
+    return header.hash.toString();
   }
 
   @SdkCache('getApi')
-  async getApi(hash) {
+  async getApi(hash: string) {
     const optionUpgrade = await this.sdk.api.query.system.events.at(hash);
     return optionUpgrade.toJSON();
   }
@@ -44,7 +47,7 @@ export class SdkService {
   @SdkCache('getCollection')
   async getCollection(
     collectionId: number,
-    at?: string,
+    at?: string
   ): Promise<CollectionInfoWithSchema | null> {
     if (at) {
       return this.sdk.collections.get({ collectionId, at });
@@ -54,10 +57,18 @@ export class SdkService {
     }
   }
 
+  @SdkCache('getCollectionV2')
+  async getCollectionV2(
+    collectionId: number,
+    at?: string
+  ): Promise<CollectionWithInfoV2 | null> {
+    return this.sdk.collections.getV2({ collectionId, at });
+  }
+
   @SdkCache('getSpecLastUpgrade')
   async getSpecLastUpgrade(hash: string): Promise<ISpecSystemVersion> {
     const optionUpgrade = await this.sdk.api.query.system.lastRuntimeUpgrade.at(
-      hash,
+      hash
     );
     const specLastUpgrade = optionUpgrade.toJSON() as any;
     return {
@@ -95,12 +106,27 @@ export class SdkService {
   async getToken(
     collectionId: number,
     tokenId: number,
-    at?: string,
+    at?: string
   ): Promise<TokenByIdResult | null> {
-    if (at) {
-      return await this.sdk.tokens.get({ collectionId, tokenId, at });
-    } else {
-      return await this.sdk.tokens.get({ collectionId, tokenId });
+    return await this.sdk.tokens.get({ collectionId, tokenId, at });
+  }
+
+  @SdkCache('getTokenV2')
+  async getTokenV2(
+    collectionId: number,
+    tokenId: number,
+    at?: string
+  ): Promise<TokenWithInfoV2 | null> {
+    try {
+      return await this.sdk.tokens.getV2({ collectionId, tokenId, at });
+    } catch (error) {
+      this.logger.error(
+        `Error getting token-v2 (${collectionId}/${tokenId} @ ${at || '-'}): ${
+          error.message
+        }`
+      );
+
+      return null;
     }
   }
 
@@ -124,7 +150,7 @@ export class SdkService {
   @SdkCache('getTokenProperties')
   getTokenProperties(
     collectionId: number,
-    tokenId: number,
+    tokenId: number
   ): Promise<TokenPropertiesResult | null> {
     return this.sdk.tokens.properties({ collectionId, tokenId });
   }
@@ -137,57 +163,36 @@ export class SdkService {
   @SdkCache('getRFTBalances')
   async getRFTBalances(
     tokenBalance: TokenBalanceRequest,
-    at?: string,
-  ): Promise<any> {
-    const collection = await this.getCollection(tokenBalance.collectionId);
-    if (collection.mode === 'NFT') {
-      return {
-        amount: 0, // todo tak ne nado
-      };
-    }
+    at?: string
+  ): Promise<{ amount: number }> {
+    const { collectionId, tokenId, address } = tokenBalance;
+
+    const collection = await this.getCollection(collectionId);
+
     if (collection.mode === 'ReFungible') {
-      let dataCheckNalance;
-      if (at) {
-        dataCheckNalance = {
-          address: `${tokenBalance.address}`,
-          collectionId: tokenBalance.collectionId,
-          tokenId: tokenBalance.tokenId,
-          at,
-        };
-      } else {
-        dataCheckNalance = {
-          address: `${tokenBalance.address}`,
-          collectionId: tokenBalance.collectionId,
-          tokenId: tokenBalance.tokenId,
-        };
-      }
-      return await this.sdk.refungible.getBalance(dataCheckNalance);
+      return await this.sdk.refungible.getBalance({
+        collectionId,
+        tokenId,
+        address,
+        at,
+      });
     }
+
+    return { amount: 0 };
   }
 
   @SdkCache('getTotalPieces')
   async getTotalPieces(
     tokenId: number,
     collectionId: number,
-    at?: string,
-  ): Promise<any> {
-    if (at) {
-      return await this.sdk.refungible.totalPieces({
-        tokenId,
-        collectionId,
-        at,
-      });
-    } else {
-      return await this.sdk.refungible.totalPieces({
-        tokenId,
-        collectionId,
-      });
-    }
+    at?: string
+  ): Promise<ReturnType<typeof this.sdk.refungible.totalPieces>> {
+    return await this.sdk.refungible.totalPieces({ tokenId, collectionId, at });
   }
 
   @SdkCache('getTotalSupply')
   async getTotalSupply(): Promise<ITotalIssuance> {
-    //return await this.sdk.api.query.balances.totalIssuance();
+    // return await this.sdk.api.query.balances.totalIssuance();
     return await this.sdk.stateQueries.execute({
       endpoint: 'query',
       module: 'balances',

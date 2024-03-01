@@ -42,11 +42,12 @@ export function sanitizeUnicodeString(str) {
 }
 
 export function sanitizePropertiesValues(
-  propertiesArr: { key: string; value: string }[],
+  propertiesArr: { key: string; value: string; valueHex: string }[]
 ) {
-  return propertiesArr.map(({ key, value }) => ({
+  return propertiesArr.map(({ key, value, valueHex }) => ({
     key,
     value: sanitizeUnicodeString(value),
+    valueHex: valueHex,
   }));
 }
 

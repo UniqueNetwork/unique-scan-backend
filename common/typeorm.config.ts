@@ -1,21 +1,26 @@
-import { Account } from './entities/Account';
-import { Block } from './entities/Block';
-import { Chain } from './entities/Chain';
-import { Collections } from './entities/Collections';
-import { CollectionsStats } from './entities/CollectionsStats';
-import { Contract } from './entities/Contract';
-import { Event } from './entities/Event';
-import { Extrinsic } from './entities/Extrinsic';
-import { HarvesterError } from './entities/HarvesterError';
-import { System } from './entities/System';
-import { Tokens } from './entities/Tokens';
-import { Total } from './entities/Total';
-import { TokensStats } from './entities/TokensStats';
-import { EvmTransaction } from './entities/EvmTransaction';
-import { DataSourceOptions } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-import { TokensOwners } from './entities/TokensOwners';
+
+import { DataSourceOptions } from 'typeorm';
+
+import {
+  Account,
+  Attribute,
+  Block,
+  Chain,
+  Collections,
+  CollectionsStats,
+  Contract,
+  Event,
+  Extrinsic,
+  HarvesterError,
+  System,
+  Tokens,
+  Total,
+  TokensStats,
+  EvmTransaction,
+  TokensOwners,
+} from './entities';
 
 dotenv.config();
 const migrationsDir = path.join(__dirname, '..', 'migrations');
@@ -30,6 +35,7 @@ const typeormConfig: DataSourceOptions = {
   database: process.env.POSTGRES_DATABASE,
   entities: [
     Account,
+    Attribute,
     Block,
     Chain,
     Collections,

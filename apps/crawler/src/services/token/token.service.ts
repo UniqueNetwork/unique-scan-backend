@@ -25,6 +25,7 @@ import { CollectionService } from '../collection.service';
 import { TokensOwners } from '@entities/TokensOwners';
 import { yellow } from '@nestjs/common/utils/cli-colors.util';
 import { SdkService } from '@common/sdk/sdk.service';
+import { Attribute } from '@common/entities';
 
 const tryGetNormalizedAddress = (data: any[], index: number) => {
   const field = data[index];
@@ -32,7 +33,7 @@ const tryGetNormalizedAddress = (data: any[], index: number) => {
 
   if (!address) {
     throw new Error(
-      `Address not found in ${JSON.stringify(data)} at index ${index}`,
+      `Address not found in ${JSON.stringify(data)} at index ${index}`
     );
   }
 
@@ -51,6 +52,8 @@ export class TokenService {
     private tokensOwnersRepository: Repository<TokensOwners>,
     @InjectRepository(Tokens)
     private tokensRepository: Repository<Tokens>,
+    @InjectRepository(Attribute)
+    private attributeRepository: Repository<Attribute>
   ) {}
 
   async prepareDataForDb(
@@ -58,19 +61,23 @@ export class TokenService {
     blockHash: string,
     totalPieces: number,
     blockTimestamp?: number,
-    needCheckNesting = false,
-  ): Promise<Omit<Tokens, 'id'>> {
-    let nestedType = false;
-    const { tokenDecoded, tokenProperties, isBundle } = tokenData;
+    needCheckNesting = false
+  ): Promise<Omit<Tokens, 'id' | 'attributes'>> {
+    let nested = false;
+    const { tokenDecoded, tokenDecodedV2, tokenProperties, isBundle } =
+      tokenData;
 
     const {
       tokenId: token_id,
       collectionId: collection_id,
-      image,
-      attributes,
+      attributes: attributes_v1,
       nestingParentToken,
       owner,
     } = tokenDecoded;
+
+    const image_v1 = tokenDecoded.image;
+    if (!image_v1.fullUrl && tokenDecodedV2?.image)
+      image_v1.fullUrl = tokenDecodedV2.image;
 
     const { owner: collectionOwner, tokenPrefix } = tokenDecoded.collection;
 
@@ -86,33 +93,33 @@ export class TokenService {
     if (nestingParentToken) {
       const { collectionId, tokenId } = nestingParentToken;
       parentId = `${collectionId}_${tokenId}`;
-      nestedType = true;
+      nested = true;
     }
 
     const children: ITokenEntities[] = needCheckNesting
       ? await this.nestingService.handleNesting(
           tokenData,
           blockHash,
-          blockTimestamp,
+          blockTimestamp
         )
       : token?.children ?? [];
 
-    if (isBundle) {
-      nestedType = true;
-    }
+    if (isBundle) nested = true;
 
     if (!children.length && !parentId) {
       tokenType =
         tokenDecoded.collection.mode === 'NFT' ? TokenType.NFT : TokenType.RFT;
     }
     const ownerCollection = owner || collectionOwner;
+
     return {
       token_id,
       collection_id,
       owner: ownerCollection,
       owner_normalized: normalizeSubstrateAddress(ownerCollection),
-      image,
-      attributes,
+      image_v1,
+      image: tokenDecodedV2?.image || null,
+      attributes_v1,
       properties: tokenProperties.properties
         ? sanitizePropertiesValues(tokenProperties.properties)
         : [],
@@ -124,7 +131,8 @@ export class TokenService {
       children,
       bundle_created: tokenType === TokenType.NFT ? null : undefined,
       total_pieces: totalPieces,
-      nested: nestedType,
+      nested,
+      schema_v2: tokenDecodedV2 || null,
     };
   }
 
@@ -133,7 +141,11 @@ export class TokenService {
     blockCommonData,
   }: {
     events: Event[];
-    blockCommonData: any;
+    blockCommonData: {
+      block_hash: string;
+      block_number: number;
+      timestamp: number;
+    };
   }): Promise<any> {
     const tokenEventsRaw = this.extractTokenEvents(events);
 
@@ -154,7 +166,7 @@ export class TokenService {
 
     const eventChunks = chunk(
       tokenEvents,
-      this.configService.get('scanTokensBatchSize'),
+      this.configService.get('scanTokensBatchSize')
     );
     let rejected = [];
     let data = [];
@@ -205,7 +217,7 @@ export class TokenService {
           } else {
             return this.burn(collectionId, tokenId);
           }
-        }),
+        })
       );
 
       // todo: Process rejected tokens again or maybe process sdk disconnect
@@ -247,7 +259,8 @@ export class TokenService {
 
     let result;
     if (tokenData) {
-      const { tokenDecoded } = tokenData;
+      // create or update token and token owners
+      const { tokenDecoded, tokenDecodedV2 } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
 
       let pieces = 1;
@@ -257,12 +270,12 @@ export class TokenService {
         ).amount;
       }
 
-      const preparedData = await this.prepareDataForDb(
+      const dbTokenEntity = await this.prepareDataForDb(
         tokenData,
         blockHash,
         pieces,
         blockTimestamp,
-        needCheckNesting,
+        needCheckNesting
       );
 
       if (data.length != 0) {
@@ -279,9 +292,9 @@ export class TokenService {
               tokenId,
               blockNumber,
               blockTimestamp,
-              preparedData,
+              dbTokenEntity,
               typeMode,
-              eventName,
+              eventName
             );
 
             break;
@@ -292,41 +305,61 @@ export class TokenService {
               blockNumber,
               blockHash,
               data,
-              preparedData,
+              dbTokenEntity,
               typeMode,
               eventName,
-              blockTimestamp,
+              blockTimestamp
             );
             break;
         }
       }
 
       // Write token data into db
-      const entity = {
-        ...preparedData,
-        date_of_creation:
-          eventName === EventName.ITEM_CREATED
-            ? normalizeTimestamp(blockTimestamp)
-            : undefined,
-      };
-      const already = await this.tokensRepository.findOne({
+
+      if (eventName === EventName.ITEM_CREATED) {
+        dbTokenEntity.date_of_creation = normalizeTimestamp(blockTimestamp);
+        dbTokenEntity.created_at_block_hash = blockHash;
+        dbTokenEntity.created_at_block_number = blockNumber;
+        dbTokenEntity.updated_at_block_hash = blockHash;
+        dbTokenEntity.updated_at_block_number = blockNumber;
+      } else {
+        dbTokenEntity.updated_at_block_hash = blockHash;
+        dbTokenEntity.updated_at_block_number = blockNumber;
+      }
+
+      const existingToken = await this.tokensRepository.findOne({
         where: {
-          token_id: preparedData.token_id,
-          collection_id: preparedData.collection_id,
+          token_id: dbTokenEntity.token_id,
+          collection_id: dbTokenEntity.collection_id,
         },
       });
-      if (already) {
+
+      if (existingToken) {
         await this.tokensRepository.update(
           {
-            id: already.id,
+            id: existingToken.id,
           },
-          entity,
+          dbTokenEntity
         );
+
+        await this.attributeRepository.delete({
+          collection_id: collectionId,
+          token_id: tokenId,
+        });
       } else {
-        await this.tokensRepository.insert(entity);
+        await this.tokensRepository.insert(dbTokenEntity);
       }
-      result = SubscriberAction.UPSERT;
+
+      await this.attributeRepository.insert(
+        tokenDecodedV2.attributes.map((a) =>
+          Attribute.fromIV2Attribute(a, { collectionId, tokenId })
+        )
+      );
+
+      if (tokenData.tokenDecodedV2?.attributes)
+        result = SubscriberAction.UPSERT;
     } else {
+      // burn token and update token owners
       const ownerToken = tryGetNormalizedAddress(data, 2);
 
       await this.burnTokenOwnerPart({
@@ -345,7 +378,7 @@ export class TokenService {
 
       if (pieceToken.amount === 0) {
         this.logger.error(
-          `Destroy token full amount: ${pieceToken.amount} / collection: ${collectionId} / token: ${tokenId}`,
+          `Destroy token full amount: ${pieceToken.amount} / collection: ${collectionId} / token: ${tokenId}`
         );
         // No entity returned from sdk. Most likely it was destroyed in a future block.
         await this.burn(collectionId, tokenId);
@@ -365,7 +398,7 @@ export class TokenService {
     preparedData,
     typeMode,
     eventName,
-    blockTimestamp,
+    blockTimestamp
   ) {
     const arrayToken = [];
 
@@ -376,7 +409,7 @@ export class TokenService {
       },
       {
         burned: false,
-      },
+      }
     );
 
     const ownerAddress = tryGetNormalizedAddress(data, 2);
@@ -387,7 +420,7 @@ export class TokenService {
         collectionId: collectionId,
         tokenId: tokenId,
       },
-      blockHash,
+      blockHash
     );
     arrayToken.push({
       owner: ownerAddress,
@@ -409,7 +442,7 @@ export class TokenService {
           collectionId: collectionId,
           tokenId: tokenId,
         },
-        blockHash,
+        blockHash
       );
       let parentId = null;
       let nested = false;
@@ -448,7 +481,7 @@ export class TokenService {
         ]);
         this.logger.log(
           `${eventName} token: ${tokenOwnerData.token_id} collection:` +
-            ` ${tokenOwnerData.collection_id} in ${tokenOwnerData.block_number}`,
+            ` ${tokenOwnerData.collection_id} in ${tokenOwnerData.block_number}`
         );
       }
     }
@@ -462,12 +495,12 @@ export class TokenService {
     blockTimestamp,
     preparedData,
     typeMode,
-    eventName,
+    eventName
   ) {
     const tokenOwner: TokenOwnerData = {
       owner: tokenDecoded.owner || tokenDecoded.collection.owner,
       owner_normalized: normalizeSubstrateAddress(
-        tokenDecoded.owner || tokenDecoded.collection.owner,
+        tokenDecoded.owner || tokenDecoded.collection.owner
       ),
       collection_id: collectionId,
       token_id: tokenId,
@@ -489,18 +522,14 @@ export class TokenService {
     ]);
     this.logger.log(
       `${eventName} token: ${yellow(
-        String(tokenOwner.token_id),
+        String(tokenOwner.token_id)
       )} collection: ${yellow(String(tokenOwner.collection_id))} in ${
         tokenOwner.block_number
-      }`,
+      }`
     );
   }
 
-  async burn(
-    collectionId: number,
-    tokenId: number,
-    owner?: string,
-  ): Promise<any> {
+  async burn(collectionId: number, tokenId: number): Promise<any> {
     await this.nestingService.removeTokenFromParents(collectionId, tokenId);
 
     return this.tokensRepository.update(
@@ -510,51 +539,65 @@ export class TokenService {
       },
       {
         burned: true,
-      },
+      }
     );
   }
 
   private async getTokenData(
     collectionId: number,
     tokenId: number,
-    blockHash: string,
+    blockHash: string
   ): Promise<TokenData | null> {
-    const rand = Math.random();
     let tokenDecoded = null;
+    let tokenDecodedV2 = null;
     let tokenProperties = null;
     let isBundle = false;
+
     try {
       tokenDecoded = await this.sdkService.getToken(
         collectionId,
         tokenId,
-        blockHash,
+        blockHash
       );
 
-      if (!tokenDecoded) {
-        return null;
-      }
+      if (!tokenDecoded) return null;
+
+      tokenDecodedV2 = await this.sdkService.getTokenV2(
+        collectionId,
+        tokenId,
+        blockHash
+      );
+
       const [tokenPropertiesRaw, isBundleRaw] = await Promise.all([
         this.sdkService.getTokenProperties(collectionId, tokenId),
         this.sdkService.isTokenBundle(collectionId, tokenId, blockHash),
       ]);
+
       tokenProperties = tokenPropertiesRaw;
       isBundle = isBundleRaw;
     } catch (e) {
       tokenDecoded = await this.sdkService.getToken(collectionId, tokenId);
 
-      if (!tokenDecoded) {
-        return null;
-      }
+      if (!tokenDecoded) return null;
+
+      tokenDecodedV2 = await this.sdkService.getTokenV2(
+        collectionId,
+        tokenId,
+        blockHash
+      );
+
       const [tokenPropertiesRaw, isBundleRaw] = await Promise.all([
         this.sdkService.getTokenProperties(collectionId, tokenId),
         this.sdkService.isTokenBundle(collectionId, tokenId),
       ]);
+
       tokenProperties = tokenPropertiesRaw;
       isBundle = isBundleRaw;
     }
 
     return {
       tokenDecoded,
+      tokenDecodedV2,
       tokenProperties,
       isBundle,
     };

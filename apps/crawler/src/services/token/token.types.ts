@@ -1,11 +1,13 @@
 import {
   TokenByIdResult,
+  TokenByIdResultV2,
   TokenPropertiesResult,
 } from '@unique-nft/substrate-client/tokens';
 import { ITokenEntities, TokenType } from '@entities/Tokens';
 
 export interface TokenData {
   tokenDecoded: TokenByIdResult;
+  tokenDecodedV2: TokenByIdResultV2;
   tokenProperties: TokenPropertiesResult;
   isBundle: boolean;
 }

@@ -1,4 +1,6 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
+import { IV2Collection } from '@unique-nft/substrate-client/tokens';
+import { Attribute } from './Attribute';
 
 @Index('collections_pkey', ['collection_id'], { unique: true })
 @Index('collections_owner_normalized_idx', ['owner_normalized'], {})
@@ -21,6 +23,9 @@ export class Collections {
 
   @Column('bigint', { name: 'token_limit' })
   token_limit: number;
+
+  @Column('jsonb', { name: 'schema_v2', default: null })
+  schema_v2: IV2Collection | null;
 
   @Column('jsonb', { name: 'properties', default: [] })
   properties: object | null;
@@ -92,6 +97,18 @@ export class Collections {
   @Column('bigint', { name: 'date_of_creation', nullable: true })
   date_of_creation?: number;
 
+  @Column('text', { name: 'created_at_block_hash', nullable: true })
+  created_at_block_hash?: string;
+
+  @Column('bigint', { name: 'created_at_block_number', nullable: true })
+  created_at_block_number?: number;
+
+  @Column('text', { name: 'updated_at_block_hash', nullable: true })
+  updated_at_block_hash?: string;
+
+  @Column('bigint', { name: 'updated_at_block_number', nullable: true })
+  updated_at_block_number?: number;
+
   @Column('text', { name: 'owner_normalized' })
   owner_normalized: string;
 
@@ -104,4 +121,7 @@ export class Collections {
 
   @Column('boolean', { name: 'burned', default: false })
   burned: boolean;
+
+  @OneToMany(() => Attribute, (attribute) => attribute.collection)
+  attributes: Attribute[];
 }
