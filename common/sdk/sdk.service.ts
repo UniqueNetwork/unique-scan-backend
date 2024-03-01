@@ -7,8 +7,8 @@ import {
   PropertyKeyPermission,
   TokenByIdResult,
   TokenPropertiesResult,
-  IV2Collection,
-  TokenByIdResultV2,
+  TokenWithInfoV2,
+  CollectionWithInfoV2,
 } from '@unique-nft/substrate-client/tokens';
 import { Config } from '../config/config.module';
 import { SdkCache } from './sdk-cache.decorator';
@@ -61,7 +61,7 @@ export class SdkService {
   async getCollectionV2(
     collectionId: number,
     at?: string
-  ): Promise<IV2Collection | null> {
+  ): Promise<CollectionWithInfoV2 | null> {
     return this.sdk.collections.getV2({ collectionId, at });
   }
 
@@ -116,7 +116,7 @@ export class SdkService {
     collectionId: number,
     tokenId: number,
     at?: string
-  ): Promise<TokenByIdResultV2 | null> {
+  ): Promise<TokenWithInfoV2 | null> {
     try {
       return await this.sdk.tokens.getV2({ collectionId, tokenId, at });
     } catch (error) {

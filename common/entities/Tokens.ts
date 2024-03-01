@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { DecodedAttributes } from '@unique-nft/schemas';
-import { TokenByIdResultV2 } from '@unique-nft/substrate-client/tokens';
+import { TokenWithInfoV2 } from '@unique-nft/substrate-client/tokens';
 import { Attribute } from './Attribute';
 
 export enum TokenType {
@@ -114,7 +114,7 @@ export class Tokens {
   nested: boolean;
 
   @Column('jsonb', { name: 'schema_v2', default: null })
-  schema_v2: TokenByIdResultV2 | null;
+  schema_v2: TokenWithInfoV2 | null;
 
   @OneToMany(() => Attribute, (attribute) => attribute.token)
   attributes: Attribute[];

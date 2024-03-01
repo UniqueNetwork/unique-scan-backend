@@ -18,7 +18,7 @@ import {
   CollectionInfoWithSchema,
   CollectionLimits,
   CollectionProperty,
-  IV2Collection,
+  CollectionWithInfoV2,
   PropertyKeyPermission,
   UniqueCollectionSchemaDecoded,
 } from '@unique-nft/substrate-client/tokens';
@@ -39,7 +39,7 @@ type ParsedSchemaFields = {
 
 interface CollectionData {
   collectionDecoded: CollectionInfoWithSchema | null;
-  collectionDecodedV2: IV2Collection | null;
+  collectionDecodedV2: CollectionWithInfoV2 | null;
   collectionLimits: CollectionLimits | null;
   tokenPropertyPermissions: PropertyKeyPermission[];
 }
@@ -125,7 +125,7 @@ export class CollectionService {
 
   private processSchema(
     schema: UniqueCollectionSchemaDecoded,
-    collectionV2?: IV2Collection
+    collectionV2?: CollectionWithInfoV2
   ): ParsedSchemaFields {
     let result = {};
 
@@ -140,7 +140,8 @@ export class CollectionService {
     const schemaVersionCombined = `${schemaName}@${schemaVersion}@${attributesSchemaVersion}`;
 
     result = {
-      collectionCover: ipfsCid || fullUrl || collectionV2?.cover_image?.url,
+      collectionCover:
+        ipfsCid || fullUrl || collectionV2?.info?.cover_image?.url,
       schemaVersion: schemaVersionCombined,
       attributesSchema,
     };
@@ -269,7 +270,7 @@ export class CollectionService {
       description,
       offchain_schema: offchainSchema,
       token_limit: token_limit || 0,
-      schema_v2: collectionDecodedV2 || null,
+      schema_v2: collectionDecodedV2?.info || null,
       properties: sanitizePropertiesValues(properties),
       permissions,
       token_property_permissions: tokenPropertyPermissions,

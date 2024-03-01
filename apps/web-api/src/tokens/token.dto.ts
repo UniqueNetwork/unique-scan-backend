@@ -2,7 +2,7 @@ import { Tokens, TokenType } from '@entities/Tokens';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { GraphQLJSON, GraphQLJSONObject } from 'graphql-type-json';
 import { DecodedAttributes } from '@unique-nft/schemas';
-import { TokenByIdResultV2 } from '@unique-nft/substrate-client/tokens';
+import { TokenWithInfoV2 } from '@unique-nft/substrate-client/tokens';
 
 export enum TokenDistinctFieldsEnum {
   token_id = 'token_id',
@@ -112,7 +112,7 @@ export class TokenDTO extends SimpleTokenDTO implements Partial<Tokens> {
   transfers_count?: number;
 
   @Field(() => GraphQLJSONObject, { nullable: true })
-  schema_v2?: TokenByIdResultV2;
+  schema_v2?: TokenWithInfoV2;
 
   @Field(() => String, { nullable: true })
   created_at_block_hash?: string;

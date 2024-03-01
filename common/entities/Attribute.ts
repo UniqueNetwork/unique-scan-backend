@@ -8,9 +8,9 @@ import {
 } from 'typeorm';
 import { Tokens } from './Tokens';
 import { Collections } from './Collections';
-import { TokenByIdResultV2 } from '@unique-nft/substrate-client/tokens';
+import { TokenWithInfoV2 } from '@unique-nft/substrate-client/tokens';
 
-export type IV2Attribute = TokenByIdResultV2['attributes'][0];
+export type IV2Attribute = TokenWithInfoV2['attributes'][0];
 
 @Index('attributes_token_collection', ['token_id', 'collection_id'])
 @Entity('attributes', { schema: 'public' })
