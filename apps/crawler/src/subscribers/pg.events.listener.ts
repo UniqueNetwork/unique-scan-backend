@@ -9,12 +9,23 @@ enum PG_EVENTS_CHANNELS {
   STOP_FAST_RESCAN = 'stop_fast_rescan',
 }
 
-type NextBlocksQueryParams = {
+type ParsedRescanPayload = {
   from: number;
   to: number;
-  offset: number;
-  limit: number;
+  pageSize: number;
+  eventSections: string[];
 };
+
+type NextBlocksQueryParams = ParsedRescanPayload & {
+  page: number;
+};
+
+const DEFAULT_EVENT_SECTIONS_FOR_RESCAN = [
+  'common',
+  'unique',
+  'balances',
+  'appPromotion',
+];
 
 @Injectable()
 export class PgEventsListener implements OnApplicationBootstrap {
@@ -25,7 +36,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
 
   constructor(
     private blocksSubscriberService: BlocksSubscriberService,
-    private harvesterStore: HarvesterStoreService,
+    private harvesterStore: HarvesterStoreService
   ) {
     const config = {
       host: process.env.POSTGRES_HOST,
@@ -45,7 +56,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
   async listenPgEvents() {
     this.client.on('notification', async ({ channel, payload }) => {
       this.logger.log(
-        `Received notification on channel ${channel}, payload: ${payload}`,
+        `Received notification on channel ${channel}, payload: ${payload}`
       );
 
       if (!channel) {
@@ -54,14 +65,12 @@ export class PgEventsListener implements OnApplicationBootstrap {
 
       if (channel === PG_EVENTS_CHANNELS.FORCE_RESCAN_BLOCK) {
         await this.handleRescanBlocks(payload);
-      }
-
-      if (channel === PG_EVENTS_CHANNELS.START_FAST_RESCAN) {
+      } else if (channel === PG_EVENTS_CHANNELS.START_FAST_RESCAN) {
         await this.startFastRescan(payload || '');
-      }
-
-      if (channel === PG_EVENTS_CHANNELS.STOP_FAST_RESCAN) {
+      } else if (channel === PG_EVENTS_CHANNELS.STOP_FAST_RESCAN) {
         this.stopFastRescan('manual');
+      } else {
+        this.logger.log(`Unknown channel ${channel} with payload ${payload}`);
       }
     });
 
@@ -94,24 +103,25 @@ export class PgEventsListener implements OnApplicationBootstrap {
       return;
     }
 
-    const { from, to, pageSize } =
-      PgEventsListener.parseBlockRangePayload(payload);
+    const parsedPayload = PgEventsListener.parseBlockRangePayload(payload);
+    const { from, to, pageSize, eventSections } = parsedPayload;
     this.logger.log(`Going to start fast rescan from ${from} to ${to}`);
 
-    let offset = 0;
+    let page = 0;
 
     this.isFastRescanActive = true;
     while (this.isFastRescanActive) {
       const nextBlockNumbers = await this.getNextBlocks({
         from,
         to,
-        offset,
-        limit: pageSize,
+        pageSize,
+        page,
+        eventSections,
       });
 
       if (nextBlockNumbers.length === 0) {
         this.logger.log(
-          'Fast rescan finished because no more blocks to rescan',
+          'Fast rescan finished because no more blocks to rescan'
         );
         this.stopFastRescan('all blocks processed');
 
@@ -126,7 +136,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
         this.logger.log(`Rescan for block ${blockNumber} finished`);
       }
 
-      offset += pageSize;
+      page++;
     }
   }
 
@@ -136,26 +146,26 @@ export class PgEventsListener implements OnApplicationBootstrap {
   }
 
   private async getNextBlocks(
-    params: NextBlocksQueryParams,
+    params: NextBlocksQueryParams
   ): Promise<number[]> {
-    const { from, to, offset, limit } = params;
+    const { from, to, page, pageSize, eventSections } = params;
 
-    const { rows } = await this.client.query<{ blockId: number }>(
-      `
-        SELECT distinct("blockId") as "blockId"
-        FROM harvester_extrinsics he
-        WHERE he."section" != 'parachainSystem'
-        AND he."section" != 'timestamp'
-        AND he."blockId" >= $1
-        AND he."blockId" <= $2
-        ORDER BY he."blockId"
-        OFFSET $3
-        LIMIT $4;
-      `,
-      [from, to, offset, limit],
-    );
+    const offset = Math.floor(page * pageSize);
+    const limit = pageSize;
+    const sections = eventSections.map((s) => `'${s}'`).join(',');
 
-    return rows.map(({ blockId }) => blockId);
+    const query = `SELECT distinct "blockId" as block_id
+            FROM harvester_events
+            WHERE section in (${sections})
+            AND "blockId" >= ${from}
+            AND "blockId" <= ${to}
+            ORDER BY "blockId"
+            OFFSET ${offset}
+            LIMIT ${limit};`;
+
+    const { rows } = await this.client.query<{ block_id: number }>(query);
+
+    return rows.map(({ block_id }) => block_id);
   }
 
   static parseBlockNumbersPayload(payload: string): number[] {
@@ -165,21 +175,25 @@ export class PgEventsListener implements OnApplicationBootstrap {
       .filter((n) => !isNaN(n));
   }
 
-  static parseBlockRangePayload(payload: string): {
-    from: number;
-    to: number;
-    pageSize: number;
-  } {
-    const numbers = payload.split('-').map((n) => parseInt(n.trim(), 10));
+  static parseBlockRangePayload(payload: string): ParsedRescanPayload {
+    const [numbersPart, sectionsPart] = payload.split('/');
+    const numbers = numbersPart.split('-').map((n) => parseInt(n.trim(), 10));
 
     if (numbers.length < 2) {
       throw new Error(
-        `Invalid block range payload ${payload}, expected format: from-to or from-to-pageSize`,
+        `Invalid block range payload ${payload}, expected format: from-to[-pageSize][/section,section]`
       );
     }
 
     const [from, to, pageSize = 100] = numbers;
 
-    return { from, to, pageSize };
+    const eventSections = sectionsPart
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (eventSections.length === 0)
+      eventSections.push(...DEFAULT_EVENT_SECTIONS_FOR_RESCAN);
+
+    return { from, to, pageSize, eventSections };
   }
 }
