@@ -26,6 +26,7 @@ import { TokensOwners } from '@entities/TokensOwners';
 import { yellow } from '@nestjs/common/utils/cli-colors.util';
 import { SdkService } from '@common/sdk/sdk.service';
 import { Attribute } from '@common/entities';
+import { encodeV2AttributesAsV1 } from './utils';
 
 const tryGetNormalizedAddress = (data: any[], index: number) => {
   const field = data[index];
@@ -70,10 +71,20 @@ export class TokenService {
     const {
       tokenId: token_id,
       collectionId: collection_id,
-      attributes: attributes_v1,
       nestingParentToken,
       owner,
     } = tokenDecoded;
+
+    let attributes_v1 = tokenDecoded.attributes;
+
+    if (
+      Object.keys(attributes_v1).length === 0 &&
+      tokenDecodedV2.attributes.length
+    ) {
+      try {
+        attributes_v1 = encodeV2AttributesAsV1(tokenDecodedV2.attributes);
+      } catch (_) {}
+    }
 
     const image_v1 = tokenDecoded.image;
     if (!image_v1.fullUrl && tokenDecodedV2?.image)
@@ -603,11 +614,21 @@ export class TokenService {
   }
 
   private extractTokenEvents(events: Event[]) {
-    return events.filter(({ section, method }) => {
+    const filtered = events.filter(({ section, method }) => {
       const eventName = `${section}.${method}`;
       return (
         TOKEN_UPDATE_EVENTS.includes(eventName) ||
         TOKEN_BURN_EVENTS.includes(eventName)
+      );
+    });
+
+    return filtered.sort((a, b) => {
+      const aEventName = `${a.section}.${a.method}`;
+      const bEventName = `${b.section}.${b.method}`;
+
+      return (
+        TOKEN_UPDATE_EVENTS.indexOf(aEventName) -
+        TOKEN_UPDATE_EVENTS.indexOf(bEventName)
       );
     });
   }
