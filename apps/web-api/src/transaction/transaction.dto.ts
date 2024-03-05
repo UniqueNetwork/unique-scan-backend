@@ -36,6 +36,6 @@ export class TransactionDTO {
   @Field(() => String, { nullable: true }) // Collection could be not scaned at the moment
   collection_name?: string;
 
-  @Field(() => GraphQLJSONObject, { nullable: true })
-  image?: object;
+  @Field(() => String, { nullable: true })
+  image?: string;
 }
