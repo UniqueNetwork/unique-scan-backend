@@ -83,7 +83,9 @@ export class TokenService {
     ) {
       try {
         attributes_v1 = encodeV2AttributesAsV1(tokenDecodedV2.attributes);
-      } catch (_) {}
+      } catch (error) {
+        this.logger.error(error);
+      }
     }
 
     const image_v1 = tokenDecoded.image;
