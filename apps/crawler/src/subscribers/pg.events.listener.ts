@@ -154,19 +154,18 @@ export class PgEventsListener implements OnApplicationBootstrap {
     const limit = pageSize;
     const sections = eventSections.map((s) => `'${s}'`).join(',');
 
-    const { rows } = await this.client.query<{ blockId: number }>(
-      `SELECT distinct "blockId" as blockId
+    const query = `SELECT distinct "blockId" as block_id
             FROM harvester_events
-            WHERE section in ($1)
-            AND "blockId" >= $2
-            AND "blockId" <= $3
+            WHERE section in (${sections})
+            AND "blockId" >= ${from}
+            AND "blockId" <= ${to}
             ORDER BY "blockId"
-            OFFSET $4
-            LIMIT $5;`,
-      [sections, from, to, offset, limit]
-    );
+            OFFSET ${offset}
+            LIMIT ${limit};`;
 
-    return rows.map(({ blockId }) => blockId);
+    const { rows } = await this.client.query<{ block_id: number }>(query);
+
+    return rows.map(({ block_id }) => block_id);
   }
 
   static parseBlockNumbersPayload(payload: string): number[] {
