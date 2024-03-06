@@ -1,13 +1,4 @@
-import {
-  Column,
-  Entity,
-  Index,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  JoinColumn,
-} from 'typeorm';
-import { Tokens } from './Tokens';
-import { Collections } from './Collections';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import { TokenWithInfoV2 } from '@unique-nft/substrate-client/tokens';
 
 export type IV2Attribute = TokenWithInfoV2['attributes'][0];
@@ -55,19 +46,6 @@ export class Attribute implements IV2Attribute {
       this.value_number = null;
     }
   }
-
-  @ManyToOne(() => Tokens, (token) => token.attributes)
-  @JoinColumn([
-    { name: 'token_id', referencedColumnName: 'token_id' },
-    { name: 'collection_id', referencedColumnName: 'collection_id' },
-  ])
-  token: Tokens;
-
-  @ManyToOne(() => Collections, (collection) => collection.attributes)
-  @JoinColumn([
-    { name: 'collection_id', referencedColumnName: 'collection_id' },
-  ])
-  collection: Collections;
 
   static fromIV2Attribute(
     attr: IV2Attribute,

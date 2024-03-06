@@ -122,6 +122,19 @@ export class Collections {
   @Column('boolean', { name: 'burned', default: false })
   burned: boolean;
 
-  @OneToMany(() => Attribute, (attribute) => attribute.collection)
-  attributes: Attribute[];
+  @Column('text', { name: 'original_schema_version', nullable: true })
+  original_schema_version: string | null;
+
+  @Column('jsonb', { name: 'default_token_image', nullable: true })
+  default_token_image: object | null;
+
+  @Column('jsonb', {
+    name: 'potential_attributes',
+    nullable: true,
+    default: [],
+  })
+  potential_attributes: any[];
+
+  @Column('jsonb', { name: 'customizing', nullable: true })
+  customizing: object | null;
 }

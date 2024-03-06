@@ -116,6 +116,52 @@ export class Tokens {
   @Column('jsonb', { name: 'schema_v2', default: null })
   schema_v2: TokenWithInfoV2 | null;
 
-  @OneToMany(() => Attribute, (attribute) => attribute.token)
-  attributes: Attribute[];
+  @Column('text', { name: 'name', nullable: true })
+  name?: string;
+
+  @Column('text', { name: 'description', nullable: true })
+  description?: string;
+
+  @Column('jsonb', { name: 'image_details', nullable: true })
+  image_details?: object;
+
+  @Column('jsonb', { name: 'attributes', nullable: true })
+  attributes?: object[];
+
+  @Column('jsonb', { name: 'media', nullable: true, default: null })
+  media?: object;
+
+  @Column('jsonb', { name: 'royalties', nullable: true, default: null })
+  royalties?: object[];
+
+  @Column('jsonb', { name: 'customizing', nullable: true, default: null })
+  customizing?: object;
+
+  @Column('jsonb', {
+    name: 'customizing_overrides',
+    nullable: true,
+    default: null,
+  })
+  customizing_overrides?: object;
+
+  @Column('text', { name: 'animation_url', nullable: true })
+  animation_url?: string;
+
+  @Column('jsonb', { name: 'animation_details', nullable: true, default: null })
+  animation_details?: object;
+
+  @Column('text', { name: 'youtube_url', nullable: true })
+  youtube_url?: string;
+
+  @Column('text', { name: 'created_by', nullable: true })
+  created_by?: string;
+
+  @Column('text', { name: 'background_color', nullable: true })
+  background_color?: string;
+
+  @Column('text', { name: 'external_url', nullable: true })
+  external_url?: string;
+
+  @Column('text', { name: 'locale', nullable: true })
+  locale?: string;
 }
