@@ -1,6 +1,6 @@
 {
   "name": "polkastats-backend-uniquenetwork",
-  "version": "2.0.84",
+  "version": "2.0.85",
   "description": "",
   "author": "Unique Network Team",
   "private": true,
@@ -73,6 +73,7 @@
     "graphql-type-json": "^0.3.2",
     "lodash": "^4.17.21",
     "pg": "^8.7.1",
+    "pg-cursor": "^2.10.3",
     "reflect-metadata": "^0.1.13",
     "response-time": "^2.3.2",
     "rimraf": "^3.0.2",
@@ -92,6 +93,7 @@
     "@types/mocha": "^9.1.0",
     "@types/node": "^16.0.0",
     "@types/pg": "^8.10.2",
+    "@types/pg-cursor": "^2.7.2",
     "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
