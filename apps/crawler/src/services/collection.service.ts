@@ -65,7 +65,7 @@ export class CollectionService {
    */
   private async getCollectionData(
     collectionId: number,
-    at: string
+    at?: string
   ): Promise<CollectionData | null> {
     let collectionDecoded = await this.sdkService.getCollection(
       collectionId,
@@ -291,6 +291,10 @@ export class CollectionService {
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
       burned: collection?.burned ?? false,
+      default_token_image: collectionDecodedV2?.info.default_token_image,
+      original_schema_version: collectionDecodedV2?.info?.originalSchemaVersion,
+      potential_attributes: collectionDecodedV2?.info?.potential_attributes,
+      customizing: collectionDecodedV2?.info?.customizing,
     };
   }
 
@@ -350,6 +354,19 @@ export class CollectionService {
         collectionEvents.length === 1 ? collectionEvents[0].values : null,
       rejected,
     };
+  }
+
+  async updateWithoutBlock(collectionId: number) {
+    const collectionData = await this.getCollectionData(collectionId);
+
+    if (collectionData) {
+      const preparedData = await this.prepareDataForDb(collectionData);
+
+      await this.collectionsRepository.upsert(preparedData, ['collection_id']);
+    } else {
+      // No entity returned from sdk. Most likely it was destroyed in a future block.
+      await this.burn(collectionId);
+    }
   }
 
   async update({

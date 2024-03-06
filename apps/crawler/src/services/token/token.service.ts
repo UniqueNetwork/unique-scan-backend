@@ -57,13 +57,21 @@ export class TokenService {
     private attributeRepository: Repository<Attribute>
   ) {}
 
-  async prepareDataForDb(
-    tokenData: TokenData,
-    blockHash: string,
-    totalPieces: number,
-    blockTimestamp?: number,
-    needCheckNesting = false
-  ): Promise<Omit<Tokens, 'id' | 'attributes'>> {
+  async prepareDataForDb(params: {
+    tokenData: TokenData;
+    totalPieces: number;
+    blockHash?: string;
+    blockTimestamp?: number;
+    needCheckNesting?: boolean;
+  }): Promise<Omit<Tokens, 'id'>> {
+    const {
+      tokenData,
+      blockHash,
+      totalPieces,
+      blockTimestamp,
+      needCheckNesting = false,
+    } = params;
+
     let nested = false;
     const { tokenDecoded, tokenDecodedV2, tokenProperties, isBundle } =
       tokenData;
@@ -110,11 +118,7 @@ export class TokenService {
     }
 
     const children: ITokenEntities[] = needCheckNesting
-      ? await this.nestingService.handleNesting(
-          tokenData,
-          blockHash,
-          blockTimestamp
-        )
+      ? await this.nestingService.handleNesting(tokenData, blockTimestamp)
       : token?.children ?? [];
 
     if (isBundle) nested = true;
@@ -146,6 +150,21 @@ export class TokenService {
       total_pieces: totalPieces,
       nested,
       schema_v2: tokenDecodedV2 || null,
+      name: tokenDecodedV2.name || null,
+      description: tokenDecodedV2.description || null,
+      image_details: tokenDecodedV2.image_details || null,
+      attributes: tokenDecodedV2.attributes || null,
+      media: tokenDecodedV2.media || null,
+      royalties: tokenDecodedV2.royalties || null,
+      customizing: tokenDecodedV2.customizing || null,
+      customizing_overrides: tokenDecodedV2.customizing_overrides || null,
+      animation_url: tokenDecodedV2.animation_url || null,
+      animation_details: tokenDecodedV2.animation_details || null,
+      youtube_url: tokenDecodedV2.youtube_url || null,
+      created_by: tokenDecodedV2.created_by || null,
+      background_color: tokenDecodedV2.background_color || null,
+      external_url: tokenDecodedV2.external_url || null,
+      locale: tokenDecodedV2.locale || null,
     };
   }
 
@@ -248,6 +267,57 @@ export class TokenService {
     };
   }
 
+  async updateWithoutBlock({
+    collectionId,
+    tokenId,
+  }: {
+    collectionId: number;
+    tokenId: number;
+  }) {
+    const tokenData = await this.getTokenData(collectionId, tokenId);
+
+    if (tokenData) {
+      const { tokenDecoded, tokenDecodedV2 } = tokenData;
+      const totalPieces = (
+        await this.sdkService.getTotalPieces(tokenId, collectionId, null)
+      ).amount;
+
+      const dbTokenEntity = await this.prepareDataForDb({
+        tokenData,
+        totalPieces,
+      });
+
+      const existingToken = await this.tokensRepository.findOne({
+        where: {
+          token_id: dbTokenEntity.token_id,
+          collection_id: dbTokenEntity.collection_id,
+        },
+      });
+
+      if (existingToken) {
+        await this.tokensRepository.update(
+          {
+            id: existingToken.id,
+          },
+          dbTokenEntity
+        );
+      } else {
+        await this.tokensRepository.insert(dbTokenEntity);
+      }
+
+      const updatedAttributes = tokenDecodedV2.attributes.map((a) =>
+        Attribute.fromIV2Attribute(a, { collectionId, tokenId })
+      );
+
+      await this.attributeRepository.delete({
+        collection_id: collectionId,
+        token_id: tokenId,
+      });
+
+      await this.attributeRepository.insert(updatedAttributes);
+    }
+  }
+
   async update({
     blockNumber,
     collectionId,
@@ -276,20 +346,20 @@ export class TokenService {
       const { tokenDecoded, tokenDecodedV2 } = tokenData;
       const needCheckNesting = eventName === EventName.TRANSFER;
 
-      let pieces = 1;
+      let totalPieces = 1;
       if (tokenDecoded.collection.mode !== 'NFT') {
-        pieces = (
+        totalPieces = (
           await this.sdkService.getTotalPieces(tokenId, collectionId, blockHash)
         ).amount;
       }
 
-      const dbTokenEntity = await this.prepareDataForDb(
+      const dbTokenEntity = await this.prepareDataForDb({
         tokenData,
         blockHash,
-        pieces,
+        totalPieces,
         blockTimestamp,
-        needCheckNesting
-      );
+        needCheckNesting,
+      });
 
       if (data.length != 0) {
         const typeMode =
@@ -558,7 +628,7 @@ export class TokenService {
   private async getTokenData(
     collectionId: number,
     tokenId: number,
-    blockHash: string
+    blockHash?: string
   ): Promise<TokenData | null> {
     let tokenDecoded = null;
     let tokenDecodedV2 = null;

@@ -19,16 +19,12 @@ export class TokenNestingService {
     @InjectRepository(TokensOwners)
     private tokensOwnersRepository: Repository<TokensOwners>,
     private dataSource: DataSource,
-    private readonly sentry: SentryService,
+    private readonly sentry: SentryService
   ) {
     this.sentry.setContext(TokenNestingService.name);
   }
 
-  async handleNesting(
-    tokenData: TokenData,
-    blockHash: string,
-    blockTimestamp?: number,
-  ) {
+  async handleNesting(tokenData: TokenData, blockTimestamp?: number) {
     const { tokenDecoded, isBundle } = tokenData;
 
     const {
@@ -51,21 +47,20 @@ export class TokenNestingService {
       if (isBundle) {
         const nestingBundle = await this.sdkService.getTokenBundle(
           collection_id,
-          token_id,
+          token_id
         );
 
         children = this.getTokenChildren(
           collection_id,
           token_id,
-          nestingBundle,
+          nestingBundle
         );
 
         await this.updateTokenParents(
           collection_id,
           token_id,
           nestingBundle,
-          blockHash,
-          blockTimestamp,
+          blockTimestamp
         );
       }
 
@@ -109,7 +104,7 @@ export class TokenNestingService {
 
   private async unnestBundle(
     token: Tokens,
-    childrenToBeDeleted: ITokenEntities[],
+    childrenToBeDeleted: ITokenEntities[]
   ) {
     const { parent_id, children } = token;
     if (parent_id && children.length) {
@@ -123,8 +118,8 @@ export class TokenNestingService {
       if (parent) {
         const childrenSet = new Set<string>(
           childrenToBeDeleted.map(
-            ({ collection_id, token_id }) => `${collection_id}_${token_id}`,
-          ),
+            ({ collection_id, token_id }) => `${collection_id}_${token_id}`
+          )
         );
 
         await this.tokensRepository.update(
@@ -132,9 +127,9 @@ export class TokenNestingService {
           {
             children: parent.children.filter(
               ({ collection_id, token_id }) =>
-                !childrenSet.has(`${collection_id}_${token_id}`),
+                !childrenSet.has(`${collection_id}_${token_id}`)
             ),
-          },
+          }
         );
 
         if (parent.parent_id) {
@@ -146,7 +141,7 @@ export class TokenNestingService {
 
   private async unnestBundleOwners(
     token: TokensOwners,
-    childrenToBeDeleted: ITokenEntities[],
+    childrenToBeDeleted: ITokenEntities[]
   ) {
     const { parent_id, children } = token;
 
@@ -161,8 +156,8 @@ export class TokenNestingService {
       if (parent) {
         const childrenSet = new Set<string>(
           childrenToBeDeleted.map(
-            ({ collection_id, token_id }) => `${collection_id}_${token_id}`,
-          ),
+            ({ collection_id, token_id }) => `${collection_id}_${token_id}`
+          )
         );
 
         await this.tokensOwnersRepository.update(
@@ -170,9 +165,9 @@ export class TokenNestingService {
           {
             children: parent.children.filter(
               ({ collection_id, token_id }) =>
-                !childrenSet.has(`${collection_id}_${token_id}`),
+                !childrenSet.has(`${collection_id}_${token_id}`)
             ),
-          },
+          }
         );
 
         if (parent.parent_id) {
@@ -186,13 +181,12 @@ export class TokenNestingService {
     collection_id: number,
     token_id: number,
     nestingBundle: NestedToken,
-    blockHash: string,
-    blockTimestamp?: number,
+    blockTimestamp?: number
   ) {
     try {
       const parent = await this.sdkService.getTokenParents(
         collection_id,
-        token_id,
+        token_id
       );
 
       if (parent) {
@@ -200,15 +194,14 @@ export class TokenNestingService {
           parent.collectionId,
           parent.tokenId,
           nestingBundle,
-          blockTimestamp,
+          blockTimestamp
         );
 
         await this.updateTokenParents(
           parent.collectionId,
           parent.tokenId,
           nestingBundle,
-          blockHash,
-          blockTimestamp,
+          blockTimestamp
         );
       }
     } catch (error) {
@@ -220,12 +213,12 @@ export class TokenNestingService {
     collection_id: number,
     token_id: number,
     nestingBundle: NestedToken,
-    blockTimestamp?: number,
+    blockTimestamp?: number
   ) {
     const children = this.getTokenChildren(
       collection_id,
       token_id,
-      nestingBundle,
+      nestingBundle
     );
 
     if (children.length) {
@@ -240,7 +233,7 @@ export class TokenNestingService {
           bundle_created: blockTimestamp
             ? normalizeTimestamp(blockTimestamp)
             : undefined,
-        },
+        }
       );
 
       await this.tokensOwnersRepository.update(
@@ -251,7 +244,7 @@ export class TokenNestingService {
         {
           children,
           nested: true,
-        },
+        }
       );
     }
   }
@@ -266,7 +259,7 @@ export class TokenNestingService {
 
   private async getParentsByChildren(
     collection_id: number,
-    token_id: number,
+    token_id: number
   ): Promise<
     { collection_id: number; token_id: number; children: ITokenEntities[] }[]
   > {
@@ -286,11 +279,11 @@ export class TokenNestingService {
       children: ITokenEntities[];
     },
     child_collection_id: number,
-    child_token_id: number,
+    child_token_id: number
   ) {
     const children = parent.children.filter(
       ({ token_id, collection_id }) =>
-        !(child_collection_id === collection_id && child_token_id === token_id),
+        !(child_collection_id === collection_id && child_token_id === token_id)
     );
     return this.tokensRepository.update(
       {
@@ -300,23 +293,23 @@ export class TokenNestingService {
       {
         children,
         nested: children.length > 0,
-      },
+      }
     );
   }
 
   private getTokenChildren(
     collectionId: number,
     tokenId: number,
-    nestingBundle: NestedToken,
+    nestingBundle: NestedToken
   ) {
     const nestedToken = this.getNestedTokenFromBundle(
       collectionId,
       tokenId,
-      nestingBundle,
+      nestingBundle
     );
 
     const mapNestingBundle = (
-      tree: NestedToken,
+      tree: NestedToken
     ): { collection_id: number; token_id: number }[] => {
       let result = [];
       if (tree?.nestingChildTokens) {
@@ -342,13 +335,13 @@ export class TokenNestingService {
   private getNestedTokenFromBundle(
     collectionId: number,
     tokenId: number,
-    nestingBundle: NestedToken,
+    nestingBundle: NestedToken
   ) {
     let token: NestedToken | null = null;
     const findTokenByArgs = (
       nestingBundle: NestedToken,
       collectionId: number,
-      tokenId: number,
+      tokenId: number
     ) => {
       if (
         nestingBundle.tokenId === tokenId &&
