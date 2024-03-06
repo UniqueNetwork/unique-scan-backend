@@ -291,7 +291,7 @@ export class CollectionService {
       owner_normalized: normalizeSubstrateAddress(owner),
       collection_cover: collectionCover,
       burned: collection?.burned ?? false,
-      default_token_image: collectionDecodedV2?.info.default_token_image,
+      default_token_image: collectionDecodedV2?.info?.default_token_image,
       original_schema_version: collectionDecodedV2?.info?.originalSchemaVersion,
       potential_attributes: collectionDecodedV2?.info?.potential_attributes,
       customizing: collectionDecodedV2?.info?.customizing,
