@@ -305,7 +305,7 @@ export class TokenService {
         await this.tokensRepository.insert(dbTokenEntity);
       }
 
-      const updatedAttributes = tokenDecodedV2.attributes.map((a) =>
+      const updatedAttributes = tokenDecodedV2?.attributes?.map((a) =>
         Attribute.fromIV2Attribute(a, { collectionId, tokenId })
       );
 
@@ -433,11 +433,13 @@ export class TokenService {
         await this.tokensRepository.insert(dbTokenEntity);
       }
 
-      await this.attributeRepository.insert(
-        tokenDecodedV2.attributes.map((a) =>
-          Attribute.fromIV2Attribute(a, { collectionId, tokenId })
-        )
-      );
+      if (tokenDecodedV2?.attributes.length) {
+        await this.attributeRepository.insert(
+          tokenDecodedV2?.attributes?.map((a) =>
+            Attribute.fromIV2Attribute(a, { collectionId, tokenId })
+          )
+        );
+      }
 
       result = SubscriberAction.UPSERT;
     } else {
