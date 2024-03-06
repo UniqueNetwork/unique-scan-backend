@@ -87,7 +87,7 @@ export class TokenService {
 
     if (
       Object.keys(attributes_v1).length === 0 &&
-      tokenDecodedV2.attributes.length
+      tokenDecodedV2?.attributes?.length
     ) {
       try {
         attributes_v1 = encodeV2AttributesAsV1(tokenDecodedV2.attributes);
