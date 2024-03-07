@@ -122,14 +122,14 @@ export class CollectionDTO implements Partial<Collections> {
   updated_at_block_number?: number;
 
   @Field(() => String, { nullable: true })
-  original_schema_version: string | null;
+  original_schema_version?: string | null;
 
   @Field(() => GraphQLJSONObject, { nullable: true })
-  default_token_image: object | null;
+  default_token_image?: object | null;
 
   @Field(() => GraphQLJSONObject, { nullable: true })
-  potential_attributes: any[];
+  potential_attributes?: any[];
 
   @Field(() => GraphQLJSONObject, { nullable: true })
-  customizing: object | null;
+  customizing?: object | null;
 }
