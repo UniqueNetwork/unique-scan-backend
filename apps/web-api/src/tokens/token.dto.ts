@@ -76,6 +76,51 @@ export class SimpleTokenDTO implements Partial<Tokens> {
 
   @Field(() => Boolean)
   nested?: boolean;
+
+  @Field(() => String, { nullable: true })
+  name?: string;
+
+  @Field(() => String, { nullable: true })
+  description?: string;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  image_details?: object;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  attributes?: object[];
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  media?: object;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  royalties?: object[];
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  customizing?: object;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  customizing_overrides?: object;
+
+  @Field(() => String, { nullable: true })
+  animation_url?: string;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  animation_details?: object;
+
+  @Field(() => String, { nullable: true })
+  youtube_url?: string;
+
+  @Field(() => String, { nullable: true })
+  created_by?: string;
+
+  @Field(() => String, { nullable: true })
+  background_color?: string;
+
+  @Field(() => String, { nullable: true })
+  external_url?: string;
+
+  @Field(() => String, { nullable: true })
+  locale?: string;
 }
 
 @ObjectType('token')
