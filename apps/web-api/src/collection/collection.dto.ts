@@ -127,7 +127,7 @@ export class CollectionDTO implements Partial<Collections> {
   @Field(() => GraphQLJSONObject, { nullable: true })
   default_token_image?: object | null;
 
-  @Field(() => GraphQLJSONObject, { nullable: true })
+  @Field(() => GraphQLJSON, { nullable: true })
   potential_attributes?: any[];
 
   @Field(() => GraphQLJSONObject, { nullable: true })

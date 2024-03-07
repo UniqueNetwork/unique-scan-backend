@@ -86,7 +86,7 @@ export class SimpleTokenDTO implements Partial<Tokens> {
   @Field(() => GraphQLJSONObject, { nullable: true })
   image_details?: object;
 
-  @Field(() => GraphQLJSONObject, { nullable: true })
+  @Field(() => GraphQLJSON, { nullable: true })
   attributes?: object[];
 
   @Field(() => GraphQLJSONObject, { nullable: true })
