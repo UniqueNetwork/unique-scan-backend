@@ -2,6 +2,11 @@ name: Build and push docker images
 
 on:
   workflow_dispatch:
+    inputs:
+      is_latest:
+        type: string
+        description: should add latest tag
+        default: "false"
 
 jobs:
   build-crawler:
@@ -11,6 +16,7 @@ jobs:
     with:
       tag: scan-backend-crawler
       dockerfile: Dockerfile.crawler
+      is_latest: ${{ github.event.inputs.is_latest }}
 
   build-web-api:
     name: Build Web API
@@ -18,3 +24,4 @@ jobs:
     secrets: inherit
     with:
       tag: scan-backend-web-api
+      is_latest: ${{ github.event.inputs.is_latest }}
