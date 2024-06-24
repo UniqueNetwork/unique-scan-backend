@@ -1,3 +1,21 @@
+const DEFAULT_EVENT_SECTIONS_FOR_RESCAN = [
+  'common',
+  'unique',
+  'balances',
+  'appPromotion',
+];
+
+export type ParsedRescanPayload = {
+  from: number;
+  to: number;
+  pageSize: number;
+  eventSections: string[];
+};
+
+export type NextBlocksQueryParams = ParsedRescanPayload & {
+  page: number;
+};
+
 /**
  * Parse string like "1,2,3,4,5" to array of numbers
  * @param payload
@@ -14,23 +32,27 @@ export const parseBlockNumbersPayload = (payload: string): number[] => {
  * @param payload
  */
 export const parseBlockRangePayload = (
-  payload: string,
-): {
-  from: number;
-  to: number;
-  pageSize: number;
-} => {
-  const numbers = payload.split('-').map((n) => parseInt(n.trim(), 10));
+  payload: string
+): ParsedRescanPayload => {
+  const [numbersPart, sectionsPart] = payload.split('/');
+  const numbers = numbersPart.split('-').map((n) => parseInt(n.trim(), 10));
 
   if (numbers.length < 2) {
     throw new Error(
-      `Invalid block range payload ${payload}, expected format: from-to or from-to-pageSize`,
+      `Invalid block range payload ${payload}, expected format: from-to[-pageSize][/section,section]`
     );
   }
 
   const [from, to, pageSize = 100] = numbers;
 
-  return { from, to, pageSize };
+  const eventSections = sectionsPart
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (eventSections.length === 0)
+    eventSections.push(...DEFAULT_EVENT_SECTIONS_FOR_RESCAN);
+
+  return { from, to, pageSize, eventSections };
 };
 
 /**
@@ -43,21 +65,21 @@ export const parseTokenRangePayload = (payload: string) => {
 
   if (!collectionIdString || !tokenIdsString || !blockNumberString) {
     throw new Error(
-      `Invalid token range payload ${payload}, expected format: collectionId/tokenId,tokenId@blockNumber`,
+      `Invalid token range payload ${payload}, expected format: collectionId/tokenId,tokenId@blockNumber`
     );
   }
 
   const collectionId = parseInt(collectionIdString, 10);
   if (isNaN(collectionId)) {
     throw new Error(
-      `Invalid token range payload ${payload}, collectionId is not a number`,
+      `Invalid token range payload ${payload}, collectionId is not a number`
     );
   }
 
   const blockNumber = parseInt(blockNumberString, 10);
   if (isNaN(blockNumber)) {
     throw new Error(
-      `Invalid token range payload ${payload}, blockNumber is not a number`,
+      `Invalid token range payload ${payload}, blockNumber is not a number`
     );
   }
 

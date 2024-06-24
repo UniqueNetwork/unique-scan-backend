@@ -6,8 +6,8 @@ import {
   parseBlockNumbersPayload,
   parseBlockRangePayload,
   parseTokenRangePayload,
+  NextBlocksQueryParams,
 } from './pg.payload.parsers';
-import { BlockService } from '../services/block.service';
 import { TokenReScanner } from './token.rescaner';
 import { CollectionService } from '../services/collection.service';
 import { TokenService } from '../services/token/token.service';
@@ -19,24 +19,6 @@ enum PG_EVENTS_CHANNELS {
   RESCAN_ALL_COLLECTION = 'rescan_all_collection',
   RESCAN_TOKENS = 'rescan_tokens',
 }
-
-type ParsedRescanPayload = {
-  from: number;
-  to: number;
-  pageSize: number;
-  eventSections: string[];
-};
-
-type NextBlocksQueryParams = ParsedRescanPayload & {
-  page: number;
-};
-
-const DEFAULT_EVENT_SECTIONS_FOR_RESCAN = [
-  'common',
-  'unique',
-  'balances',
-  'appPromotion',
-];
 
 @Injectable()
 export class PgEventsListener implements OnApplicationBootstrap {
@@ -52,8 +34,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
     private blocksSubscriberService: BlocksSubscriberService,
     private collectionService: CollectionService,
     private tokenService: TokenService,
-    private blockService: BlockService,
-    private tokenReScanner: TokenReScanner,
+    private tokenReScanner: TokenReScanner
   ) {
     const config = {
       host: process.env.POSTGRES_HOST,
@@ -84,6 +65,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
         [PG_EVENTS_CHANNELS.STOP_FAST_RESCAN]: async () =>
           this.stopFastRescan('manual'),
         [PG_EVENTS_CHANNELS.RESCAN_TOKENS]: this.handleRescanTokens,
+        [PG_EVENTS_CHANNELS.RESCAN_ALL_COLLECTION]: this.rescanAllCollections,
       };
 
       const handler = handlersMap[channel];
@@ -129,7 +111,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
       return;
     }
 
-    const parsedPayload = PgEventsListener.parseBlockRangePayload(payload);
+    const parsedPayload = parseBlockRangePayload(payload);
     const { from, to, pageSize, eventSections } = parsedPayload;
     this.logger.log(`Going to start fast rescan from ${from} to ${to}`);
 
@@ -261,34 +243,5 @@ export class PgEventsListener implements OnApplicationBootstrap {
 
     client.release();
     this.logger.log(`Rescan for collection ${collectionId} finished`);
-  }
-
-  static parseBlockNumbersPayload(payload: string): number[] {
-    return payload
-      .split(',')
-      .map((n) => parseInt(n.trim(), 10))
-      .filter((n) => !isNaN(n));
-  }
-
-  static parseBlockRangePayload(payload: string): ParsedRescanPayload {
-    const [numbersPart, sectionsPart] = payload.split('/');
-    const numbers = numbersPart.split('-').map((n) => parseInt(n.trim(), 10));
-
-    if (numbers.length < 2) {
-      throw new Error(
-        `Invalid block range payload ${payload}, expected format: from-to[-pageSize][/section,section]`
-      );
-    }
-
-    const [from, to, pageSize = 100] = numbers;
-
-    const eventSections = sectionsPart
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (eventSections.length === 0)
-      eventSections.push(...DEFAULT_EVENT_SECTIONS_FOR_RESCAN);
-
-    return { from, to, pageSize, eventSections };
   }
 }
