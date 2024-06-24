@@ -1,12 +1,19 @@
 import { Client as PgClient } from 'pg';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { BlocksSubscriberService } from './blocks.subscriber.service';
-import { HarvesterStoreService } from './processor/harvester-store.service';
+import {
+  parseBlockNumbersPayload,
+  parseBlockRangePayload,
+  parseTokenRangePayload,
+} from './pg.payload.parsers';
+import { BlockService } from '../services/block.service';
+import { TokenReScanner } from './token.rescaner';
 
 enum PG_EVENTS_CHANNELS {
   FORCE_RESCAN_BLOCK = 'force_rescan_block',
   START_FAST_RESCAN = 'start_fast_rescan',
   STOP_FAST_RESCAN = 'stop_fast_rescan',
+  RESCAN_TOKENS = 'rescan_tokens',
 }
 
 type NextBlocksQueryParams = {
@@ -25,7 +32,8 @@ export class PgEventsListener implements OnApplicationBootstrap {
 
   constructor(
     private blocksSubscriberService: BlocksSubscriberService,
-    private harvesterStore: HarvesterStoreService,
+    private blockService: BlockService,
+    private tokenReScanner: TokenReScanner,
   ) {
     const config = {
       host: process.env.POSTGRES_HOST,
@@ -43,25 +51,25 @@ export class PgEventsListener implements OnApplicationBootstrap {
   }
 
   async listenPgEvents() {
-    this.client.on('notification', async ({ channel, payload }) => {
+    this.client.on('notification', async ({ channel, payload = '' }) => {
       this.logger.log(
         `Received notification on channel ${channel}, payload: ${payload}`,
       );
 
-      if (!channel) {
-        return;
-      }
+      const handlersMap: Record<string, (payload: string) => Promise<void>> = {
+        [PG_EVENTS_CHANNELS.FORCE_RESCAN_BLOCK]: this.handleRescanBlocks,
+        [PG_EVENTS_CHANNELS.START_FAST_RESCAN]: this.startFastRescan,
+        [PG_EVENTS_CHANNELS.STOP_FAST_RESCAN]: async () =>
+          this.stopFastRescan('manual'),
+        [PG_EVENTS_CHANNELS.RESCAN_TOKENS]: this.handleRescanTokens,
+      };
 
-      if (channel === PG_EVENTS_CHANNELS.FORCE_RESCAN_BLOCK) {
-        await this.handleRescanBlocks(payload);
-      }
+      const handler = handlersMap[channel];
 
-      if (channel === PG_EVENTS_CHANNELS.START_FAST_RESCAN) {
-        await this.startFastRescan(payload || '');
-      }
-
-      if (channel === PG_EVENTS_CHANNELS.STOP_FAST_RESCAN) {
-        this.stopFastRescan('manual');
+      if (handler) {
+        await handler.call(this, payload);
+      } else {
+        this.logger.log(`No handler for channel "${channel}", ignoring...`);
       }
     });
 
@@ -74,7 +82,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
   }
 
   private async handleRescanBlocks(payload: string) {
-    const blockNumbers = PgEventsListener.parseBlockNumbersPayload(payload);
+    const blockNumbers = parseBlockNumbersPayload(payload);
 
     this.logger.log(`Going to force rescan blocks: ${blockNumbers.join(', ')}`);
 
@@ -87,6 +95,13 @@ export class PgEventsListener implements OnApplicationBootstrap {
     }
   }
 
+  private async handleRescanTokens(payload: string) {
+    const { collectionId, tokenIds, blockNumber } =
+      parseTokenRangePayload(payload);
+
+    await this.tokenReScanner.rescanTokens(collectionId, tokenIds, blockNumber);
+  }
+
   private async startFastRescan(payload: string) {
     if (this.isFastRescanActive) {
       this.logger.warn('Fast rescan is already active');
@@ -94,8 +109,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
       return;
     }
 
-    const { from, to, pageSize } =
-      PgEventsListener.parseBlockRangePayload(payload);
+    const { from, to, pageSize } = parseBlockRangePayload(payload);
     this.logger.log(`Going to start fast rescan from ${from} to ${to}`);
 
     let offset = 0;
@@ -156,30 +170,5 @@ export class PgEventsListener implements OnApplicationBootstrap {
     );
 
     return rows.map(({ blockId }) => blockId);
-  }
-
-  static parseBlockNumbersPayload(payload: string): number[] {
-    return payload
-      .split(',')
-      .map((n) => parseInt(n.trim(), 10))
-      .filter((n) => !isNaN(n));
-  }
-
-  static parseBlockRangePayload(payload: string): {
-    from: number;
-    to: number;
-    pageSize: number;
-  } {
-    const numbers = payload.split('-').map((n) => parseInt(n.trim(), 10));
-
-    if (numbers.length < 2) {
-      throw new Error(
-        `Invalid block range payload ${payload}, expected format: from-to or from-to-pageSize`,
-      );
-    }
-
-    const [from, to, pageSize = 100] = numbers;
-
-    return { from, to, pageSize };
   }
 }

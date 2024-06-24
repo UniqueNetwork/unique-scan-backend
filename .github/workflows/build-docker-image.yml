@@ -11,10 +11,6 @@ on:
         type: string
         description: tag
         required: true
-      push:
-        type: boolean
-        description: is push
-        default: false
       dockerfile:
         type: string
         description: dockerfile path
@@ -23,6 +19,10 @@ on:
         type: string
         description: build target
         required: false
+      is_latest:
+        type: string
+        description: should add latest tag
+        default: false
 
 jobs:
   docker:
@@ -46,4 +46,12 @@ jobs:
         with:
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: ${{ inputs.image }}:${{ inputs.tag }}-${{ github.sha }},${{ inputs.image }}:${{ inputs.tag }}-latest
+          tags: ${{ inputs.image }}:${{ inputs.tag }}-${{ github.sha }}
+      -
+        name: Build and push latest
+        if: ${{ inputs.is_latest == 'true' }}
+        uses: docker/build-push-action@v4
+        with:
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: ${{ inputs.image }}:${{ inputs.tag }}-latest
