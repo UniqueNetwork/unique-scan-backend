@@ -8,6 +8,7 @@ import { SubscribersService } from './subscribers.service';
 import { BlocksRepository } from '@unique-nft/harvester/src/database/repositories/private.repositories';
 import { HarvesterStoreService } from './processor/harvester-store.service';
 import { PgEventsListener } from './pg.events.listener';
+import { TokenReScanner } from './token.rescaner';
 
 @Module({
   imports: [ConfigModule, ServicesModule],
@@ -19,6 +20,7 @@ import { PgEventsListener } from './pg.events.listener';
     HarvesterStoreService,
     BlocksRepository,
     PgEventsListener,
+    TokenReScanner,
   ],
   exports: [SubscribersService],
 })

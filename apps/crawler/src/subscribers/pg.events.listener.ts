@@ -2,6 +2,13 @@ import { Pool as PgPool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { BlocksSubscriberService } from './blocks.subscriber.service';
+import {
+  parseBlockNumbersPayload,
+  parseBlockRangePayload,
+  parseTokenRangePayload,
+} from './pg.payload.parsers';
+import { BlockService } from '../services/block.service';
+import { TokenReScanner } from './token.rescaner';
 import { CollectionService } from '../services/collection.service';
 import { TokenService } from '../services/token/token.service';
 
@@ -10,6 +17,7 @@ enum PG_EVENTS_CHANNELS {
   START_FAST_RESCAN = 'start_fast_rescan',
   STOP_FAST_RESCAN = 'stop_fast_rescan',
   RESCAN_ALL_COLLECTION = 'rescan_all_collection',
+  RESCAN_TOKENS = 'rescan_tokens',
 }
 
 type ParsedRescanPayload = {
@@ -43,7 +51,9 @@ export class PgEventsListener implements OnApplicationBootstrap {
   constructor(
     private blocksSubscriberService: BlocksSubscriberService,
     private collectionService: CollectionService,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    private blockService: BlockService,
+    private tokenReScanner: TokenReScanner,
   ) {
     const config = {
       host: process.env.POSTGRES_HOST,
@@ -63,25 +73,25 @@ export class PgEventsListener implements OnApplicationBootstrap {
   }
 
   async listenPgEvents() {
-    this.client.on('notification', async ({ channel, payload }) => {
+    this.client.on('notification', async ({ channel, payload = '' }) => {
       this.logger.log(
         `Received notification on channel ${channel}, payload: ${payload}`
       );
 
-      if (!channel) {
-        return;
-      }
+      const handlersMap: Record<string, (payload: string) => Promise<void>> = {
+        [PG_EVENTS_CHANNELS.FORCE_RESCAN_BLOCK]: this.handleRescanBlocks,
+        [PG_EVENTS_CHANNELS.START_FAST_RESCAN]: this.startFastRescan,
+        [PG_EVENTS_CHANNELS.STOP_FAST_RESCAN]: async () =>
+          this.stopFastRescan('manual'),
+        [PG_EVENTS_CHANNELS.RESCAN_TOKENS]: this.handleRescanTokens,
+      };
 
-      if (channel === PG_EVENTS_CHANNELS.FORCE_RESCAN_BLOCK) {
-        await this.handleRescanBlocks(payload);
-      } else if (channel === PG_EVENTS_CHANNELS.START_FAST_RESCAN) {
-        await this.startFastRescan(payload || '');
-      } else if (channel === PG_EVENTS_CHANNELS.STOP_FAST_RESCAN) {
-        this.stopFastRescan('manual');
-      } else if (channel === PG_EVENTS_CHANNELS.RESCAN_ALL_COLLECTION) {
-        await this.rescanAllCollections();
+      const handler = handlersMap[channel];
+
+      if (handler) {
+        await handler.call(this, payload);
       } else {
-        this.logger.log(`Unknown channel ${channel} with payload ${payload}`);
+        this.logger.log(`No handler for channel "${channel}", ignoring...`);
       }
     });
 
@@ -92,7 +102,7 @@ export class PgEventsListener implements OnApplicationBootstrap {
   }
 
   private async handleRescanBlocks(payload: string) {
-    const blockNumbers = PgEventsListener.parseBlockNumbersPayload(payload);
+    const blockNumbers = parseBlockNumbersPayload(payload);
 
     this.logger.log(`Going to force rescan blocks: ${blockNumbers.join(', ')}`);
 
@@ -103,6 +113,13 @@ export class PgEventsListener implements OnApplicationBootstrap {
 
       this.logger.log(`Rescan for block ${blockNumber} finished`);
     }
+  }
+
+  private async handleRescanTokens(payload: string) {
+    const { collectionId, tokenIds, blockNumber } =
+      parseTokenRangePayload(payload);
+
+    await this.tokenReScanner.rescanTokens(collectionId, tokenIds, blockNumber);
   }
 
   private async startFastRescan(payload: string) {

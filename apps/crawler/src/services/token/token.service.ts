@@ -182,7 +182,7 @@ export class TokenService {
     const tokenEventsRaw = this.extractTokenEvents(events);
 
     const same = {};
-    const tokenEvents = [];
+    const tokenEvents: Event[] = [];
     tokenEventsRaw.forEach((event) => {
       const { section, method, values } = event;
       const { collectionId, tokenId } = values as unknown as {

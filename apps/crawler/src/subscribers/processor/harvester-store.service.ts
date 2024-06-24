@@ -5,6 +5,9 @@ import { ProcessorConfigService } from '../../config/processor.config.service';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { STATE_SCHEMA_NAME_BY_MODE } from '@common/constants';
 
+type RescanState = [number, number];
+type ScanState = [number];
+
 @Injectable()
 export class HarvesterStoreService {
   private stateSchema;
@@ -21,7 +24,7 @@ export class HarvesterStoreService {
       : STATE_SCHEMA_NAME_BY_MODE.SCAN;
   }
 
-  async getState(): Promise<any> {
+  async getState(): Promise<ScanState | RescanState> {
     this.logger.log(`Using schema ${this.stateSchema}`);
 
     const forceRescan = this.processorConfigService.isRescan();
@@ -46,7 +49,7 @@ export class HarvesterStoreService {
           ...this.processorConfigService.getAllParams(),
         });
 
-        return Object.values(range);
+        return [range.from, range.to];
       } catch (err) {
         this.logger.error(err);
         // First run, no schema yet
