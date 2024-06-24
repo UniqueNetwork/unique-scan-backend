@@ -14,7 +14,6 @@ import { TokenBalanceRequest } from '@unique-nft/substrate-client/refungible';
 import { ChainProperties } from '@unique-nft/substrate-client/types';
 
 import { ITotalIssuance } from '@common/constants';
-import * as console from 'console';
 
 export interface ISpecSystemVersion {
   spec_version: number;

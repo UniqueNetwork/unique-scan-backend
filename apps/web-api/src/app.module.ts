@@ -15,6 +15,7 @@ import { AccountModule } from './account/account.module';
 import { BlockModule } from './block/block.module';
 import { TimestampTransformInterceptor } from './timestamp.interceptor';
 import { StatisticsModule } from './statistics/statistics.module';
+import { StatisticsV2Module } from './statisticsV2/statisticsV2.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { ContractModule } from './contract/contract.module';
@@ -62,6 +63,7 @@ import { GlobalConfigModule } from '@common/config/config.module';
     AccountModule,
     BlockModule,
     StatisticsModule,
+    StatisticsV2Module,
     TransactionModule,
     AttributesModule,
     EvmTransactionModule,

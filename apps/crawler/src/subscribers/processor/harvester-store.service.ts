@@ -5,6 +5,9 @@ import { ProcessorConfigService } from '../../config/processor.config.service';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { STATE_SCHEMA_NAME_BY_MODE } from '@common/constants';
 
+type RescanState = [number, number];
+type ScanState = [number];
+
 @Injectable()
 export class HarvesterStoreService {
   private stateSchema;
@@ -21,10 +24,17 @@ export class HarvesterStoreService {
       : STATE_SCHEMA_NAME_BY_MODE.SCAN;
   }
 
-  async getState(): Promise<any> {
+  async getState(): Promise<ScanState | RescanState> {
+    this.logger.log(`Using schema ${this.stateSchema}`);
+
     const forceRescan = this.processorConfigService.isRescan();
-    this.logger.log({ msg: 'Run processor service...' });
     const range = this.processorConfigService.getRange();
+
+    this.logger.log({
+      msg: 'Run processor service...',
+      forceRescan: forceRescan || false,
+      range: range,
+    });
 
     if (forceRescan && !isNaN(range.from)) {
       try {
@@ -32,13 +42,16 @@ export class HarvesterStoreService {
         await this.dataSource.query(
           `UPDATE ${this.stateSchema}.status SET height = ${range.from} WHERE id = 0`,
         );
+
         this.logger.log({
           msg: 'Start rescan processor service...',
           forceRescan,
           ...this.processorConfigService.getAllParams(),
         });
-        return Object.values(range);
+
+        return [range.from, range.to];
       } catch (err) {
+        this.logger.error(err);
         // First run, no schema yet
         this.sentry.instance().captureException(err);
       }
@@ -46,9 +59,13 @@ export class HarvesterStoreService {
       const status = await this.dataSource.query(
         `SELECT * FROM ${this.stateSchema}.status `,
       );
+
+      this.logger.log({ status });
+
       const statusBlock = await this.dataSource.query(
         `SELECT block_number FROM "public".block ORDER BY block_number DESC LIMIT 1;`,
       );
+
       if (status[0].height <= 0) {
         await this.dataSource.query(
           `UPDATE ${this.stateSchema}.status SET height = 0 WHERE id = 0`,
@@ -60,6 +77,7 @@ export class HarvesterStoreService {
         statusScan: status[0].height,
         lastSavedBlock: statusBlock.block_number,
       });
+
       return [status[0].height];
     }
   }
